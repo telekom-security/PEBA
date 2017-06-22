@@ -1,0 +1,7 @@
+<EWS-SimpleMessage version="2.0">
+    <Authentication>
+        <username>blabla</username>
+        <token>blabla</token>
+    </Authentication>
+</EWS-SimpleMessage>
+

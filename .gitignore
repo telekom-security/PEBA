@@ -1,0 +1,11 @@
+
+*.pyc
+
+*.iml
+
+.idea/*
+misc/mongo/*
+
+misc/request.av.xml
+
+misc/test.av.sh
