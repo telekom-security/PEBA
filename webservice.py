@@ -8,8 +8,9 @@
 import xml.etree.ElementTree as ET
 import hashlib
 from flask import Flask, request
-from pymongo import MongoClient
-from elasticsearch import Elasticsearch
+from pymongo import MongoClient, errors
+from elasticsearch import Elasticsearch, ElasticsearchException
+from werkzeug.contrib.fixers import ProxyFix
 
 
 
@@ -18,14 +19,15 @@ from elasticsearch import Elasticsearch
 #################
 mongoip = "127.0.0.1"
 mongoport = 27017
+mongoDBtimeout = 10       # Timeout for mongoDB connection
 
 elasticip = "127.0.0.1"
 elasticport = 9200
 elasticindex = "ews3"
+elasticTimeout = 10       # Timeout for elasticsearch connection
 
 maxAlerts = 1000            # maximum alerts to be considered
 defaultResponse = ""        # empty reponse for unsuccessful requests
-
 
 
 ###############
@@ -54,17 +56,59 @@ def getCreds(postdata):
 
 # Authenticate user in mongodb
 def authenticate(username, token):
-    client = MongoClient(mongoip,  mongoport)
+    client = MongoClient(mongoip,  mongoport, serverSelectionTimeoutMS=mongoDBtimeout)
     db = client.ews
-    dbresult = db.WSUser.find_one({'peerName': username})
-    if dbresult == None:
-        return False
-    else:
-        tokenhash = hashlib.sha512(token)
-        if dbresult['token'] == tokenhash.hexdigest():
-                return True
-        else:
+    try:
+        dbresult = db.WSUser.find_one({'peerName': username})
+        if dbresult == None:
             return False
+        else:
+            tokenhash = hashlib.sha512(token)
+            if dbresult['token'] == tokenhash.hexdigest():
+                    return True
+            else:
+                return False
+    except errors.ServerSelectionTimeoutError as err:
+        app.logger.error('MongoDB cannot be reached: %s' %  err)
+        return False
+
+# get IP addresses from alerts in elasticsearch
+def retrieveBadIPs(maxAlerts):
+    es = Elasticsearch(hosts=[{'host': elasticip, 'port': elasticport}], timeout=elasticTimeout)
+    try:
+        res = es.search(index=elasticindex, body={
+            "query": {
+                "match_all": {}
+            },
+            "sort": {
+                "createTime": {
+                    "order": "desc"
+                }
+            },
+            "size": maxAlerts,
+            "_source": [
+                "sourceEntryIp"]
+        })
+        return set([d["_source"]["sourceEntryIp"] for d in res["hits"]["hits"]])
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' %  err)
+        return False
+
+def createBadIPxml(iplist):
+    if iplist is not False:
+        # Create XML Strucure
+        ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
+        sources = ET.SubElement(ewssimpleinfo, 'Sources')
+        for ip in iplist:
+            source = ET.SubElement(sources, 'Source')
+            address = ET.SubElement(source, 'Address')
+            address.text = ip
+        prettify(ewssimpleinfo)
+        iplistxml = '<?xml version="1.0" encoding="UTF-8"?>'
+        iplistxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
+        return iplistxml
+    else:
+        return defaultResponse
 
 # Prettify the xml output
 def prettify(elem, level=0):
@@ -84,25 +128,28 @@ def prettify(elem, level=0):
 
 
 
+###################
+### Initialization
+###################
+
+app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app)
+
 ###############
 ### App Routes
 ###############
-
-app = Flask(__name__)
 
 # Default webroot access
 @app.route("/")
 def webroot():
     return defaultResponse
 
+
 # Retrieve bad IPs
 @app.route("/alert/retrieveAlertsCyber", methods=['POST'])
 def retrieveAlertsCyber():
-    # Retrieve POST Data
-    postdata = request.data.decode('utf-8')
-
-    # Retrieve credentials from postdata
-    username, password = (getCreds(postdata))
+    # Retrieve POST Data and extract credentials
+    username, password = (getCreds(request.data.decode('utf-8')))
     if username == False or password == False:
         app.logger.error('Extracting username and token from postdata failed')
         return defaultResponse
@@ -112,34 +159,13 @@ def retrieveAlertsCyber():
         app.logger.error("Authentication failure for user %s", username)
         return defaultResponse
 
-    # Retrieve IPs from ElasticSearch
-    es = Elasticsearch(hosts=[{'host': elasticip, 'port': elasticport}])
-    res = es.search(index=elasticindex, body={
-          "query": {
-            "match_all": {}
-          },
-          "sort": {
-            "createTime": {
-              "order": "desc"
-            }
-          },
-          "size": maxAlerts,
-          "_source": [
-            "sourceEntryIp" ]
-        })
+    # Retrieve IPs from ElasticSearch and return formatted XML with IPs
+    return createBadIPxml(retrieveBadIPs(maxAlerts))
 
-    iplist= set([d["_source"]["sourceEntryIp"] for d in res["hits"]["hits"]])
 
-    # Create XML Strucure
-    ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
-    sources = ET.SubElement(ewssimpleinfo, 'Sources')
-    for ip in iplist:
-        source = ET.SubElement(sources, 'Source')
-        address = ET.SubElement(source, 'Address')
-        address.text = ip
-    prettify(ewssimpleinfo)
-    iplistxml = '<?xml version="1.0" encoding="UTF-8"?>'
-    iplistxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
+###############
+### Main
+###############
 
-    # Return XML Structure
-    return iplistxml
+if __name__ == '__main__':
+    app.run()

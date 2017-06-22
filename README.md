@@ -2,15 +2,10 @@
 
 Small backend application to offer an API alternative for current EWS backend. 
 
-Currently implemented function: 
+**Currently implemented functions:** 
 
  - */alert/retrieveAlertsCyber* ==> returning the *unique* IP addresses of the last 1000 alerts. 
 
-
-The webapplication runs on port 5000. It needs a reverse proxy (e.g. nginx) for SSL termination.
-
-
-Running the application: 
 
 **Install requirements:**
 
@@ -20,14 +15,17 @@ Running the application:
 
 ***Note:***
 	
-`pip install -r requirements.txt`  may fail for hashlib (known bug). Use `easy_install hashlib` to resolve this issue. 
+`pip install -r requirements.txt`  may fail for *hashlib* (known bug). Use `easy_install hashlib` to resolve this issue. 
 
-**Start Flask:**
+**Run Application:**
 
-    export FLASK_APP=wenbservice.py
-    flask run
+    gunicorn webservice:app -w 4 -b 127.0.0.1
 
-The application can be tested using `./misc/test.sh` which will send the appropriate reuqest to retrieve data. 
+
+The webapplication runs on port 8000. It needs a [reverse proxy](http://flask.pocoo.org/docs/0.12/deploying/wsgi-standalone/#proxy-setups)  for SSL termination. 
+
+
+The application can be tested using `./misc/test.sh` which will send the appropriate request to retrieve data.
 
 
 You need corresponding WSUser username & token to access the API. Replace them in `./misc/request.xml`

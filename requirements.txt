@@ -3,3 +3,4 @@ pymongo
 hashlib
 xml
 elasticsearch
+gunicorn
