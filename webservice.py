@@ -19,15 +19,16 @@ from werkzeug.contrib.fixers import ProxyFix
 #################
 mongoip = "127.0.0.1"
 mongoport = 27017
-mongoDBtimeout = 10       # Timeout for mongoDB connection
+mongoDBtimeout = 10         # Timeout for mongoDB connection
 
 elasticip = "127.0.0.1"
 elasticport = 9200
 elasticindex = "ews3"
-elasticTimeout = 10       # Timeout for elasticsearch connection
+elasticTimeout = 10         # Timeout for elasticsearch connection
 
 maxAlerts = 1000            # maximum alerts to be considered in retrieveAlertsCyber
-badIpTimespan = 1800       # timespan to in seconds to be considered in retrieveIPs
+badIpTimespan = 120         # timespan to in minutes to be considered in retrieveIPs (default: 120 min)
+
 defaultResponse = ""        # empty reponse for unsuccessful requests
 
 
@@ -74,22 +75,26 @@ def authenticate(username, token):
         return False
 
 # get IP addresses from alerts in elasticsearch
-def retrieveBadIPs(maxAlerts):
+def retrieveBadIPs(badIpTimespan):
     es = Elasticsearch(hosts=[{'host': elasticip, 'port': elasticport}], timeout=elasticTimeout)
     try:
         res = es.search(index=elasticindex, body={
-            "query": {
-                "match_all": {}
-            },
-            "sort": {
-                "createTime": {
-                    "order": "desc"
-                }
-            },
-            "size": maxAlerts,
-            "_source": [
-                "sourceEntryIp"]
-        })
+                  "query": {
+                    "range": {
+                      "createTime": {
+                        "gte": "now-"+str(badIpTimespan)+"m"
+                      }
+                    }
+                  },
+                  "sort": {
+                    "createTime": {
+                      "order": "desc"
+                    }
+                  },
+                  "_source": [
+                    "sourceEntryIp"
+                  ]
+                })
         return set([d["_source"]["sourceEntryIp"] for d in res["hits"]["hits"]])
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
@@ -235,7 +240,7 @@ def retrieveIPs():
         return defaultResponse
 
     # Retrieve IPs from ElasticSearch and return formatted XML with IPs
-    return createBadIPxml(retrieveBadIPs(maxAlerts))
+    return createBadIPxml(retrieveBadIPs(badIpTimespan))
 
 
 # Retrieve Alerts
