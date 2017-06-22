@@ -74,7 +74,24 @@ def authenticate(username, token):
         app.logger.error('MongoDB cannot be reached: %s' %  err)
         return False
 
-# get IP addresses from alerts in elasticsearch
+# Find country for peer in mongodb
+def getPeerCountry(peerIdent):
+    client = MongoClient(mongoip, mongoport, serverSelectionTimeoutMS=mongoDBtimeout)
+    db = client.ews
+    try:
+        dbresult = db.peer.find_one({'ident': peerIdent})
+        if dbresult == None:
+            return False
+        else:
+            if "country" in dbresult and dbresult['country'] != "":
+                return dbresult['country']
+            else:
+                return False
+    except errors.ServerSelectionTimeoutError as err:
+        app.logger.error('MongoDB cannot be reached: %s' % err)
+        return False
+
+# Get IP addresses from alerts in elasticsearch
 def retrieveBadIPs(badIpTimespan):
     es = Elasticsearch(hosts=[{'host': elasticip, 'port': elasticport}], timeout=elasticTimeout)
     try:
@@ -100,7 +117,7 @@ def retrieveBadIPs(badIpTimespan):
         app.logger.error('ElasticSearch error: %s' %  err)
         return False
 
-# get IP addresses from alerts in elasticsearch
+# Get IP addresses from alerts in elasticsearch
 def retrieveAlerts(maxAlerts):
     es = Elasticsearch(hosts=[{'host': elasticip, 'port': elasticport}], timeout=elasticTimeout)
     try:
@@ -129,10 +146,9 @@ def retrieveAlerts(maxAlerts):
         app.logger.error('ElasticSearch error: %s' %  err)
         return False
 
-
+# Create XML Strucure for BadIP list
 def createBadIPxml(iplist):
     if iplist is not False:
-        # Create XML Strucure
         ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
         sources = ET.SubElement(ewssimpleinfo, 'Sources')
         for ip in iplist:
@@ -146,9 +162,9 @@ def createBadIPxml(iplist):
     else:
         return defaultResponse
 
+# Create XML Strucure for Alerts list
 def createAlertsXml(alertslist):
     if alertslist is not False:
-        # Create XML Strucure
         EWSSimpleAlertInfo = ET.Element('EWSSimpleAlertInfo')
         alertsElement = ET.SubElement(EWSSimpleAlertInfo, 'Alerts')
         for alert in alertslist:
@@ -164,12 +180,7 @@ def createAlertsXml(alertslist):
             peerType = ET.SubElement(peerElement, 'Type')
             peerType.text = alert['_source']['peerType']
             peerCountry = ET.SubElement(peerElement, 'Country')
-
-
-            ### TODO: Query Peer Country from MongoDB
-            peerCountry.text = "n/a"
-
-
+            peerCountry.text = getPeerCountry(alert['_source']['peerIdent'])
             requestElement = ET.SubElement(alertElement, 'Request')
             requestElement.text = alert['_source']['originalRequestString']
             sourceElement = ET.SubElement(alertElement, 'Source')
@@ -188,7 +199,6 @@ def createAlertsXml(alertslist):
         return alertsxml
     else:
         return defaultResponse
-
 
 # Prettify the xml output
 def prettify(elem, level=0):
