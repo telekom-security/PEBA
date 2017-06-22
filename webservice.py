@@ -26,7 +26,8 @@ elasticport = 9200
 elasticindex = "ews3"
 elasticTimeout = 10       # Timeout for elasticsearch connection
 
-maxAlerts = 1000            # maximum alerts to be considered
+maxAlerts = 1000            # maximum alerts to be considered in retrieveAlertsCyber
+badIpTimespan = 1800       # timespan to in seconds to be considered in retrieveIPs
 defaultResponse = ""        # empty reponse for unsuccessful requests
 
 
@@ -94,6 +95,36 @@ def retrieveBadIPs(maxAlerts):
         app.logger.error('ElasticSearch error: %s' %  err)
         return False
 
+# get IP addresses from alerts in elasticsearch
+def retrieveAlerts(maxAlerts):
+    es = Elasticsearch(hosts=[{'host': elasticip, 'port': elasticport}], timeout=elasticTimeout)
+    try:
+        res = es.search(index=elasticindex, body={
+              "query": {
+                "match_all": {}
+              },
+              "sort": {
+                "createTime": {
+                  "order": "desc"
+                }
+              },
+              "size": maxAlerts,
+              "_source": [
+                "createTime",
+                "peerIdent",
+                "peerType",
+                "country",
+                "originalRequestString",
+                "location",
+                "sourceEntryIp"
+              ]
+        })
+        return res["hits"]["hits"]
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' %  err)
+        return False
+
+
 def createBadIPxml(iplist):
     if iplist is not False:
         # Create XML Strucure
@@ -109,6 +140,50 @@ def createBadIPxml(iplist):
         return iplistxml
     else:
         return defaultResponse
+
+def createAlertsXml(alertslist):
+    if alertslist is not False:
+        # Create XML Strucure
+        EWSSimpleAlertInfo = ET.Element('EWSSimpleAlertInfo')
+        alertsElement = ET.SubElement(EWSSimpleAlertInfo, 'Alerts')
+        for alert in alertslist:
+            alertElement = ET.SubElement(alertsElement, 'Alert')
+            alertId = ET.SubElement(alertElement, 'Id')
+            alertId.text = alert['_id']
+            alertDate = ET.SubElement(alertElement, 'DateCreated')
+            dateString = alert['_source']['createTime']
+            alertDate.text = dateString[0:4]+"-"+dateString[4:6]+"-"+dateString[6:8]+" "+dateString[9:11]+":"+ dateString[11:13]+":"+dateString[13:15]
+            peerElement = ET.SubElement(alertElement, 'Peer')
+            peerId = ET.SubElement(peerElement, 'Id')
+            peerId.text = alert['_source']['peerIdent']
+            peerType = ET.SubElement(peerElement, 'Type')
+            peerType.text = alert['_source']['peerType']
+            peerCountry = ET.SubElement(peerElement, 'Country')
+
+
+            ### TODO: Query Peer Country from MongoDB
+            peerCountry.text = "n/a"
+
+
+            requestElement = ET.SubElement(alertElement, 'Request')
+            requestElement.text = alert['_source']['originalRequestString']
+            sourceElement = ET.SubElement(alertElement, 'Source')
+            sourceAddress = ET.SubElement(sourceElement, 'Address')
+            sourceAddress.text = alert['_source']['sourceEntryIp']
+            sourceCountry = ET.SubElement(sourceElement, 'Country')
+            sourceCountry.text = alert['_source']['country']
+            sourceCoordinates = alert['_source']['location'].split(',')
+            sourceLatitude = ET.SubElement(sourceElement, 'Latitude')
+            sourceLatitude.text = sourceCoordinates[0].strip()
+            sourceLongitude = ET.SubElement(sourceElement, 'Longitude')
+            sourceLongitude.text = sourceCoordinates[1].strip()
+        prettify(EWSSimpleAlertInfo)
+        alertsxml = '<?xml version="1.0" encoding="UTF-8"?>'
+        alertsxml += (ET.tostring(EWSSimpleAlertInfo, encoding="utf-8", method="xml"))
+        return alertsxml
+    else:
+        return defaultResponse
+
 
 # Prettify the xml output
 def prettify(elem, level=0):
@@ -146,8 +221,8 @@ def webroot():
 
 
 # Retrieve bad IPs
-@app.route("/alert/retrieveAlertsCyber", methods=['POST'])
-def retrieveAlertsCyber():
+@app.route("/alert/retrieveIPs", methods=['POST'])
+def retrieveIPs():
     # Retrieve POST Data and extract credentials
     username, password = (getCreds(request.data.decode('utf-8')))
     if username == False or password == False:
@@ -161,6 +236,24 @@ def retrieveAlertsCyber():
 
     # Retrieve IPs from ElasticSearch and return formatted XML with IPs
     return createBadIPxml(retrieveBadIPs(maxAlerts))
+
+
+# Retrieve Alerts
+@app.route("/alert/retrieveAlertsCyber", methods=['POST'])
+def retrieveAlertsCyber():
+    # Retrieve POST Data and extract credentials
+    username, password = (getCreds(request.data.decode('utf-8')))
+    if username == False or password == False:
+        app.logger.error('Extracting username and token from postdata failed')
+        return defaultResponse
+
+    # Check if user is in MongoDB
+    if authenticate(username, password) == False:
+        app.logger.error("Authentication failure for user %s", username)
+        return defaultResponse
+
+    # Retrieve Alerts from ElasticSearch and return formatted XML with limited alert content
+    return createAlertsXml(retrieveAlerts(maxAlerts))
 
 
 ###############

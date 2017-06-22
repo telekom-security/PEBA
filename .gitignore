@@ -9,3 +9,15 @@ misc/mongo/*
 misc/request.av.xml
 
 misc/test.av.sh
+
+misc/alerts.txt
+
+misc/test-alerts.sh
+
+misc/test-ip.sh
+
+misc/test-lokal-dev.sh
+
+misc/test-lokal.sh
+
+misc/test-remote.sh
