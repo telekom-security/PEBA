@@ -12,13 +12,13 @@ The webapplication runs on port 5000. It needs a reverse proxy (e.g. nginx) for 
 
 Running the application: 
 
-**Install requirements: **
+**Install requirements:**
 
     pip install -r requirements.txt 
 
 
 
-***Note: ***
+***Note:***
 	
 `pip install -r requirements.txt`  may fail for hashlib (known bug). Use `easy_install hashlib` to resolve this issue. 
 
