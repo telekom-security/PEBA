@@ -1,4 +1,4 @@
-# PEBA (Python EWS Backend API
+# PEBA - Python EWS Backend API
 
 Small backend application to offer an API alternative for current EWS backend. 
 
