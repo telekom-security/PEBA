@@ -1,6 +1,6 @@
 flask
 pymongo
-hashlib
 xml
 elasticsearch
 gunicorn
+hashlib

@@ -21,3 +21,5 @@ misc/test-lokal-dev.sh
 misc/test-lokal.sh
 
 misc/test-remote.sh
+
+error.log
