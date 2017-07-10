@@ -13,25 +13,6 @@ from elasticsearch import Elasticsearch, ElasticsearchException
 from werkzeug.contrib.fixers import ProxyFix
 
 
-
-#################
-### Configuration
-#################
-mongoip = "127.0.0.1"
-mongoport = 27017
-mongoDBtimeout = 10         # Timeout for mongoDB connection
-
-elasticip = "127.0.0.1"
-elasticport = 9200
-elasticindex = "ews3"
-elasticTimeout = 10         # Timeout for elasticsearch connection
-
-maxAlerts = 1000            # maximum alerts to be considered in retrieveAlertsCyber
-badIpTimespan = 120         # timespan to in minutes to be considered in retrieveIPs (default: 120 min)
-
-defaultResponse = ""        # empty reponse for unsuccessful requests
-
-
 ###############
 ### Functions
 ###############
@@ -58,7 +39,7 @@ def getCreds(postdata):
 
 # Authenticate user in mongodb
 def authenticate(username, token):
-    client = MongoClient(mongoip,  mongoport, serverSelectionTimeoutMS=mongoDBtimeout)
+    client = MongoClient(app.config['MONGOIP'],  app.config['MONGOPORT'], serverSelectionTimeoutMS=app.config['MONGOTIMEOUT'])
     db = client.ews
     try:
         dbresult = db.WSUser.find_one({'peerName': username})
@@ -76,7 +57,7 @@ def authenticate(username, token):
 
 # Find country for peer in mongodb
 def getPeerCountry(peerIdent):
-    client = MongoClient(mongoip, mongoport, serverSelectionTimeoutMS=mongoDBtimeout)
+    client = MongoClient(app.config['MONGOIP'],  app.config['MONGOPORT'], serverSelectionTimeoutMS=app.config['MONGOTIMEOUT'])
     db = client.ews
     try:
         dbresult = db.peer.find_one({'ident': peerIdent})
@@ -93,9 +74,9 @@ def getPeerCountry(peerIdent):
 
 # Get IP addresses from alerts in elasticsearch
 def retrieveBadIPs(badIpTimespan):
-    es = Elasticsearch(hosts=[{'host': elasticip, 'port': elasticport}], timeout=elasticTimeout)
+    es = Elasticsearch(hosts=[{'host': app.config['ELASTICIP'], 'port': app.config['ELASTICPORT']}], timeout=app.config['ELASTICTIMEOUT'])
     try:
-        res = es.search(index=elasticindex, body={
+        res = es.search(index=app.config['ELASTICINDEX'], body={
                   "query": {
                     "range": {
                       "createTime": {
@@ -119,9 +100,9 @@ def retrieveBadIPs(badIpTimespan):
 
 # Get IP addresses from alerts in elasticsearch
 def retrieveAlerts(maxAlerts):
-    es = Elasticsearch(hosts=[{'host': elasticip, 'port': elasticport}], timeout=elasticTimeout)
+    es = Elasticsearch(hosts=[{'host': app.config['ELASTICIP'], 'port': app.config['ELASTICPORT']}], timeout=app.config['ELASTICTIMEOUT'])
     try:
-        res = es.search(index=elasticindex, body={
+        res = es.search(index=app.config['ELASTICINDEX'], body={
               "query": {
                 "match_all": {}
               },
@@ -160,7 +141,7 @@ def createBadIPxml(iplist):
         iplistxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
         return iplistxml
     else:
-        return defaultResponse
+        return app.config['DEFAULTRESPONSE']
 
 # Create XML Strucure for Alerts list
 def createAlertsXml(alertslist):
@@ -198,7 +179,7 @@ def createAlertsXml(alertslist):
         alertsxml += (ET.tostring(EWSSimpleAlertInfo, encoding="utf-8", method="xml"))
         return alertsxml
     else:
-        return defaultResponse
+        return app.config['DEFAULTRESPONSE']
 
 # Prettify the xml output
 def prettify(elem, level=0):
@@ -223,6 +204,7 @@ def prettify(elem, level=0):
 ###################
 
 app = Flask(__name__)
+app.config.from_pyfile('webservice.cfg')
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
 ###############
@@ -232,7 +214,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app)
 # Default webroot access
 @app.route("/")
 def webroot():
-    return defaultResponse
+    return app.config['DEFAULTRESPONSE']
 
 
 # Retrieve bad IPs
@@ -242,15 +224,15 @@ def retrieveIPs():
     username, password = (getCreds(request.data.decode('utf-8')))
     if username == False or password == False:
         app.logger.error('Extracting username and token from postdata failed')
-        return defaultResponse
+        return app.config['DEFAULTRESPONSE']
 
     # Check if user is in MongoDB
     if authenticate(username, password) == False:
         app.logger.error("Authentication failure for user %s", username)
-        return defaultResponse
+        return app.config['DEFAULTRESPONSE']
 
     # Retrieve IPs from ElasticSearch and return formatted XML with IPs
-    return createBadIPxml(retrieveBadIPs(badIpTimespan))
+    return createBadIPxml(retrieveBadIPs(app.config['BADIPTIMESPAN']))
 
 
 # Retrieve Alerts
@@ -260,15 +242,15 @@ def retrieveAlertsCyber():
     username, password = (getCreds(request.data.decode('utf-8')))
     if username == False or password == False:
         app.logger.error('Extracting username and token from postdata failed')
-        return defaultResponse
+        return app.config['DEFAULTRESPONSE']
 
     # Check if user is in MongoDB
     if authenticate(username, password) == False:
         app.logger.error("Authentication failure for user %s", username)
-        return defaultResponse
+        return app.config['DEFAULTRESPONSE']
 
     # Retrieve Alerts from ElasticSearch and return formatted XML with limited alert content
-    return createAlertsXml(retrieveAlerts(maxAlerts))
+    return createAlertsXml(retrieveAlerts(app.config['MAXALERTS']))
 
 
 ###############

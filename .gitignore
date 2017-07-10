@@ -23,3 +23,5 @@ misc/test-lokal.sh
 misc/test-remote.sh
 
 error.log
+
+*.pid
