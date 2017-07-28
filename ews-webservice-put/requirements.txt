@@ -1,0 +1,4 @@
+bottle
+elasticsearch
+pygeoip
+python-geoip
