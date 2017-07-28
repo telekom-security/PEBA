@@ -71,7 +71,7 @@ def handleCommunityAuth(usernameFromRequest, passwordFromRequest):
 
 
 
-def handleAlerts(tree):
+def handleAlerts(tree, tenant):
 
     counter = 0
 
@@ -94,8 +94,8 @@ def handleAlerts(tree):
             if (childName == "Target"):
                 destination = child.text
 
-        elastic.putAlarm(elasticHost, index, source, destination, createTime)
-        counter = counter + 1
+        correction = elastic.putAlarm(elasticHost, index, source, destination, createTime, tenant)
+        counter = counter + 1 - correction
 
 
     print ("Info: Added " + str(counter) + " entries")
@@ -126,7 +126,7 @@ def postSimpleMessage():
     if (handleCommunityAuth(userNameFromRequest, passwordFromRequest)):
         message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
 
-        handleAlerts(tree)
+        handleAlerts(tree, "c")
     else:
         print("Authentication failed....")
 

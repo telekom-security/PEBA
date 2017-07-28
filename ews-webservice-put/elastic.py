@@ -8,40 +8,46 @@ import hashlib
 from elasticsearch import Elasticsearch
 
 
-def putAlarm(host, index, sourceip, destinationip, createTime):
+def putAlarm(host, index, sourceip, destinationip, createTime, tenant):
 
-    gi = pygeoip.GeoIP("/var/lib/GeoIP/GeoIP.dat")
-    giASN = pygeoip.GeoIP('/var/lib/GeoIP/GeoIPASNum.dat')
+    try:
 
-    m = hashlib.md5()
-    m.update((createTime + sourceip + destinationip).encode())
+        gi = pygeoip.GeoIP("/var/lib/GeoIP/GeoIP.dat")
+        giCity = pygeoip.GeoIP("/var/lib/GeoIP/GeoCity.dat")
+        giASN = pygeoip.GeoIP('/var/lib/GeoIP/GeoIPASNum.dat')
 
-    alert = {
-              "country": gi.country_code_by_addr(sourceip),
-            "vulnid": "DUMMY",
-            "originalRequestString": "/cgi-bin/.br/style.css2/2",
-            "esid": "DUMMY",
-            "sourceEntryAS": giASN.org_by_addr(sourceip),
-            "createTime": createTime,
-            "clientDomain": "d",
-            "peerIdent": "MSTest3",
-            "locationString": "51.0, 9.0",
-            "client": "-",
-            "location": "51.0, 9.0",
-            "sourceEntryIp": sourceip,
-            "additionalData": "host: www.webe.de; sqliteid: 3688; ",
-            "peerType": "null",
-            "targetEntryIp": destinationip
-        }
+        m = hashlib.md5()
+        m.update((createTime + sourceip + destinationip).encode())
 
+        lat = giCity.record_by_addr(sourceip)['latitude']
+        long = giCity.record_by_addr(sourceip)['longitude']
 
-    es = Elasticsearch(host)
-    res = es.index(index=index, doc_type='Alert', id=m.hexdigest(), body=alert)
-
+        alert = {
+                "country": gi.country_code_by_addr(sourceip),
+                "vulnid": "-",
+                "originalRequestString": "/cgi-bin/.br/style.css2/2",
+                "sourceEntryAS": giASN.org_by_addr(sourceip),
+                "createTime": createTime,
+                "clientDomain": tenant,
+                "peerIdent": "MSTest3",
+                "client": "-",
+                "location": str(lat) + " , " + str(long),
+                "sourceEntryIp": sourceip,
+                "additionalData": "host: www.webe.de; sqliteid: 3688; ",
+                "targetEntryIp": destinationip
+            }
 
 
+        es = Elasticsearch(host)
+        res = es.index(index=index, doc_type='Alert', id=m.hexdigest(), body=alert)
+        return True
 
-    return 0
+    except:
+
+        print ("Error when persisting")
+        return False
+
+
 
 def queryAlerts(server, index, maxAlerts):
     xml = """{
