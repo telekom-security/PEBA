@@ -1,4 +1,3 @@
-import requests
 import xml.etree.ElementTree as xmlParser
 from xml.etree.ElementTree import tostring
 import pygeoip
@@ -8,44 +7,71 @@ import hashlib
 from elasticsearch import Elasticsearch
 
 
-def putAlarm(host, index, sourceip, destinationip, createTime, tenant):
+def getGeoIP(sourceip, destinationip):
+
+    gi = pygeoip.GeoIP("/var/lib/GeoIP/GeoIP.dat")
+    giCity = pygeoip.GeoIP("/var/lib/GeoIP/GeoCity.dat")
+    giASN = pygeoip.GeoIP('/var/lib/GeoIP/GeoIPASNum.dat')
+
+
+    try:
+        lat = giCity.record_by_addr(sourceip)['latitude']
+        long = giCity.record_by_addr(sourceip)['longitude']
+        country = gi.country_code_by_addr(sourceip)
+        asn = giASN.org_by_addr(sourceip)
+        asnTarget = giASN.org_by_addr(destinationip)
+        countryTarget = gi.country_code_by_addr(destinationip)
+        return (lat, long, country, asn, asnTarget, countryTarget)
+
+    except:
+
+        print ("Failure at creating GeoIP information")
+        return ("", "", "", "", "", "")
+
+
+
+def putAlarm(host, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType):
 
     try:
 
-        gi = pygeoip.GeoIP("/var/lib/GeoIP/GeoIP.dat")
-        giCity = pygeoip.GeoIP("/var/lib/GeoIP/GeoCity.dat")
-        giASN = pygeoip.GeoIP('/var/lib/GeoIP/GeoIPASNum.dat')
+
 
         m = hashlib.md5()
         m.update((createTime + sourceip + destinationip).encode())
 
-        lat = giCity.record_by_addr(sourceip)['latitude']
-        long = giCity.record_by_addr(sourceip)['longitude']
+        (lat, long, country, asn, asnTarget, countryTarget) = getGeoIP(sourceip,destinationip)
 
         alert = {
-                "country": gi.country_code_by_addr(sourceip),
+                "country": country,
                 "vulnid": "-",
-                "originalRequestString": "/cgi-bin/.br/style.css2/2",
-                "sourceEntryAS": giASN.org_by_addr(sourceip),
+                "originalRequestString": url,
+                "sourceEntryAS": asn,
                 "createTime": createTime,
                 "clientDomain": tenant,
-                "peerIdent": "MSTest3",
+                "peerIdent": analyzerID,
+                "peerType": peerType,
                 "client": "-",
                 "location": str(lat) + " , " + str(long),
                 "sourceEntryIp": sourceip,
-                "additionalData": "host: www.webe.de; sqliteid: 3688; ",
-                "targetEntryIp": destinationip
+                "additionalData": "",
+                "targetEntryIp": destinationip,
+                "targetCountry": countryTarget,
+                "targegEntryAS": asnTarget,
+                "username": "",
+                "password": "",
+                "targetport": ""
+
             }
 
 
         es = Elasticsearch(host)
         res = es.index(index=index, doc_type='Alert', id=m.hexdigest(), body=alert)
-        return True
+        return 0
 
     except:
 
         print ("Error when persisting")
-        return False
+        return 1
 
 
 
@@ -59,14 +85,6 @@ def queryAlerts(server, index, maxAlerts):
 }"""
 
     returnData = ""
-
-    url = server + ":9200/" + index + "/Alert/_search"
-
-    headers = {'Content-Type': 'application/xml'}  # set what your server accepts
-
-    response = requests.post(url, data=xml, headers=headers).text
-
-#    jsonData = response.json()
 
     es = Elasticsearch()
 

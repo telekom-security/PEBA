@@ -4,6 +4,9 @@ import xml.etree.ElementTree as xmlParser
 import elastic
 from bottle import request, response, install, run, post, get, HTTPResponse
 from datetime import datetime
+from pymongo import MongoClient, errors
+import hashlib
+
 
 
 #
@@ -11,9 +14,12 @@ from datetime import datetime
 #
 
 localServer = "localhost"
-index = "ews3"
-localPort = "10000"
+esindex = "ews3"
+localPort = "8080"
 elasticHost = "http://localhost:9200/"
+useGUnicon = False
+mongohost = "localhost"
+mongoport = "27017"
 
 #
 # default credentials for community
@@ -26,6 +32,27 @@ password = "foth{a5maiCee8fineu7"
 #
 # Function area
 #
+
+
+# Authenticate user in mongodb
+def authenticate(username, token):
+    client = MongoClient(mongohost,  mongoport)
+    db = client.ews
+    try:
+        dbresult = db.WSUser.find_one({'peerName': username})
+        if dbresult == None:
+            return False
+        else:
+            tokenhash = hashlib.sha512(token)
+            if dbresult['token'] == tokenhash.hexdigest():
+                    return True
+            else:
+                return False
+    except errors.ServerSelectionTimeoutError as err:
+        print('MongoDB cannot be reached: %s' %  err)
+        return False
+
+
 
 def logger(func):
     def wrapper(*args, **kwargs):
@@ -69,6 +96,8 @@ def handleCommunityAuth(usernameFromRequest, passwordFromRequest):
 
     return (username == usernameFromRequest) and (password == passwordFromRequest)
 
+def checkPrivateIP(ip):
+    return 0
 
 
 def handleAlerts(tree, tenant):
@@ -82,10 +111,14 @@ def handleAlerts(tree, tenant):
         source = ""
         destination = ""
         createTime = ""
+        url = ""
+        analyzerID = ""
+        peerType = ""
 
         for child in node:
 
             childName = child.tag
+
 
             if (childName == "Source"):
                 source = child.text
@@ -94,7 +127,18 @@ def handleAlerts(tree, tenant):
             if (childName == "Target"):
                 destination = child.text
 
-        correction = elastic.putAlarm(elasticHost, index, source, destination, createTime, tenant)
+            if (childName == "Request"):
+                type = child.attrib.get('type')
+
+                if (type == "url"):
+                    url = child.text
+
+            if (childName == "Analyzer"):
+                analyzerID = child.attrib.get('id')
+
+
+
+        correction = elastic.putAlarm(elasticHost, esindex, source, destination, createTime, tenant, url, analyzerID, peerType)
         counter = counter + 1 - correction
 
 
@@ -139,20 +183,30 @@ def postSimpleMessage():
 #
 # Read command line args
 #
-myopts, args = getopt.getopt(sys.argv[1:],"b:s:i:p:")
+myopts, args = getopt.getopt(sys.argv[1:],"b:s:i:p:g:mh:mp")
 
 for o, a in myopts:
     if o == '-s':
         elasticHost=a
     elif o == '-i':
-        index=a
+        esindex=a
     elif o == '-p':
         localPort = a
     elif o == '-b':
         localServer=a
-    else:
-        print("Usage: %s -b ip for the server -i index -s server -p port" % sys.argv[0])
+    elif o == '-g':
+        useGUnicon = True
+    elif o == '-mh':
+        mongohost=a
+    elif o == '-mp':
+        mongoport=a
+#
+# start server depending on parameters given from shell or config file
+#
 
+print ("Starting DTAG early warning system input handler on server " + str(localServer) + ":" + str(localPort) + " with elasticsearch host at " + str(elasticHost) + " and index " + str(esindex) + " using mongo at " + str(mongohost)+ ":" + str(mongoport))
 
-
-run(host=localServer, port=localPort, catchall=True)
+if (useGUnicon):
+    run(host=localServer, port=localPort, server='gunicorn', workers=4)
+else:
+    run(host=localServer, port=localPort, catchall=True)
