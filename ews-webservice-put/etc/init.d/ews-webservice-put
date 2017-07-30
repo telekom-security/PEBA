@@ -31,11 +31,6 @@ if [ `id -u` -ne 0 ]; then
         exit 1
 fi
 
-# Make sure tomcat is started with system locale
-if [ -r /etc/default/locale ]; then
-        . /etc/default/locale
-        export LANG
-fi
 
 . /lib/lsb/init-functions
 

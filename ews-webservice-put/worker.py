@@ -1,14 +1,9 @@
 
-import sys, getopt
 import xml.etree.ElementTree as xmlParser
-import elastic
+import elastic, auth, sys, getopt
 from bottle import request, response, install, run, post, get, HTTPResponse
 from datetime import datetime
-from pymongo import MongoClient, errors
-import hashlib
-
-
-
+from configparser import ConfigParser
 #
 # default values
 #
@@ -21,39 +16,12 @@ useGUnicon = False
 mongohost = "localhost"
 mongoport = "27017"
 createIndex = False
-
-#
-# default credentials for community
-#
-
-username = "community-01-user"
-password = "foth{a5maiCee8fineu7"
+useConfigFile = True
 
 
 #
 # Function area
 #
-
-
-# Authenticate user in mongodb
-def authenticate(username, token):
-    client = MongoClient(mongohost,  mongoport)
-    db = client.ews
-    try:
-        dbresult = db.WSUser.find_one({'peerName': username})
-        if dbresult == None:
-            return False
-        else:
-            tokenhash = hashlib.sha512(token)
-            if dbresult['token'] == tokenhash.hexdigest():
-                    return True
-            else:
-                return False
-    except errors.ServerSelectionTimeoutError as err:
-        print('MongoDB cannot be reached: %s' %  err)
-        return False
-
-
 
 def logger(func):
     def wrapper(*args, **kwargs):
@@ -67,38 +35,23 @@ def logger(func):
 
 install(logger)
 
-#
-# Extract username and password from request
-#
-def extractAuth(tree):
 
-    usernameFromRequest = ""
-    passwordFromRequest = ""
+def readconfig():
+    config = ConfigParser()
 
-    for node in tree.findall('.//Authentication'):
+    candidates = ['/etc/ewsput.cfg', '/etc/ews/ewsput.cfg', './ewsput.cfg']
 
-        for child in node:
+    config.read(candidates)
 
-            childName = child.tag
+    localServer = config.get('home', 'ip')
+    localPort = config.get('home', 'port')
 
-            if (childName == "token"):
-                passwordFromRequest = child.text
+    mongohost = config.get('mongo', 'ip')
+    mongoport = config.get('mongo', 'port')
 
-            if (childName == "username"):
-                    usernameFromRequest = child.text
+    elasticHost = config.get("elastic", "ip")
+    esindex = config.get("elastic", "index")
 
-    return usernameFromRequest, passwordFromRequest
-
-
-#
-# Check if community login
-#
-def handleCommunityAuth(usernameFromRequest, passwordFromRequest):
-
-    return (username == usernameFromRequest) and (password == passwordFromRequest)
-
-def checkPrivateIP(ip):
-    return 0
 
 
 def handleAlerts(tree, tenant):
@@ -166,12 +119,17 @@ def postSimpleMessage():
 
     tree = xmlParser.fromstring(postdata)
 
-    userNameFromRequest, passwordFromRequest = extractAuth(tree)
+    userNameFromRequest, passwordFromRequest = auth.extractAuth(tree)
 
-    if (handleCommunityAuth(userNameFromRequest, passwordFromRequest)):
+    if (auth.handleCommunityAuth(userNameFromRequest, passwordFromRequest)):
+
         message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
+        handleAlerts(tree, True)
 
-        handleAlerts(tree, "c")
+    elif auth.authenticate(userNameFromRequest, passwordFromRequest, mongohost, mongoport):
+
+        message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
+        handleAlerts(tree, False)
     else:
         print("Authentication failed....")
 
@@ -187,6 +145,8 @@ def postSimpleMessage():
 myopts, args = getopt.getopt(sys.argv[1:],"b:s:i:p:g:mh:mp:c")
 
 for o, a in myopts:
+    useConfigFile = False
+
     if o == '-s':
         elasticHost=a
     elif o == '-i':
@@ -210,6 +170,8 @@ if (createIndex):
 
 else:
 
+    if (useConfigFile):
+        readconfig()
 
     #
     # start server depending on parameters given from shell or config file

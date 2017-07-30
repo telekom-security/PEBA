@@ -46,7 +46,16 @@ def initIndex(host, index):
                     "createTime": {
                         "type": "date",
                         "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
-                    }
+                    },
+                    "sourceEntryIp": {
+                        "type": "ip"
+                    },
+                    "targetEntryIp": {
+                        "type": "ip"
+                    },
+                    "clientDomain": {
+                        "type": "boolean"
+                    },
                 }
             }
         }

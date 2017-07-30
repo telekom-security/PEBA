@@ -25,3 +25,5 @@ misc/test-remote.sh
 error.log
 
 *.pid
+
+ews-webservice-put/vagrant/.vagrant/
