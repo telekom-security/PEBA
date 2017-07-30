@@ -20,6 +20,7 @@ elasticHost = "http://localhost:9200/"
 useGUnicon = False
 mongohost = "localhost"
 mongoport = "27017"
+createIndex = False
 
 #
 # default credentials for community
@@ -183,7 +184,7 @@ def postSimpleMessage():
 #
 # Read command line args
 #
-myopts, args = getopt.getopt(sys.argv[1:],"b:s:i:p:g:mh:mp")
+myopts, args = getopt.getopt(sys.argv[1:],"b:s:i:p:g:mh:mp:c")
 
 for o, a in myopts:
     if o == '-s':
@@ -200,13 +201,23 @@ for o, a in myopts:
         mongohost=a
     elif o == '-mp':
         mongoport=a
-#
-# start server depending on parameters given from shell or config file
-#
+    elif o == '-c':
+        createIndex = True
 
-print ("Starting DTAG early warning system input handler on server " + str(localServer) + ":" + str(localPort) + " with elasticsearch host at " + str(elasticHost) + " and index " + str(esindex) + " using mongo at " + str(mongohost)+ ":" + str(mongoport))
+if (createIndex):
+    print ("Info: Just creating an index " + esindex)
+    elastic.initIndex(elasticHost, esindex)
 
-if (useGUnicon):
-    run(host=localServer, port=localPort, server='gunicorn', workers=4)
 else:
-    run(host=localServer, port=localPort, catchall=True)
+
+
+    #
+    # start server depending on parameters given from shell or config file
+    #
+
+    print ("Starting DTAG early warning system input handler on server " + str(localServer) + ":" + str(localPort) + " with elasticsearch host at " + str(elasticHost) + " and index " + str(esindex) + " using mongo at " + str(mongohost)+ ":" + str(mongoport))
+
+    if (useGUnicon):
+        run(host=localServer, port=localPort, server='gunicorn', workers=4)
+    else:
+        run(host=localServer, port=localPort, catchall=True)

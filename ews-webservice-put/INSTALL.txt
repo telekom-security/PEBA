@@ -4,5 +4,5 @@ copy files there
 
 
 export https_proxy=https://192.168.1.194:3128/
-root@ews01:~/ews-webservice-put# export http_proxy=http://192.168.1.194:3128/
+export http_proxy=http://192.168.1.194:3128/
 

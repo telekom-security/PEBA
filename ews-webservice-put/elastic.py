@@ -30,6 +30,31 @@ def getGeoIP(sourceip, destinationip):
 
 
 
+def initIndex(host, index):
+
+    es = Elasticsearch([{'host': host, 'port': "9200"}])
+
+    # index settings
+    settings = {
+        "settings": {
+            "number_of_shards": 5,
+            "number_of_replicas": 1
+        },
+        "mappings": {
+            "Alert": {
+                "properties": {
+                    "createTime": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    }
+                }
+            }
+        }
+    }
+    # create index
+    es.indices.create(index=index, ignore=400, body=settings)
+
+
 def putAlarm(host, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType):
 
     try:

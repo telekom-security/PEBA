@@ -11,7 +11,10 @@ Command line option
 -b local ip / interface to listen on
 -s ip of elasticsearch
 -i index to be used on elasticsearch server
+-mh mongohost
+-mp mongoport
 -g use gunicorn server
+-c just create the index
 
 Credits
 
