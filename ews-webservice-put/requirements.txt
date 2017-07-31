@@ -1,6 +1,0 @@
-bottle
-elasticsearch
-pygeoip
-python-geoip
-pymongo
-gunicorn
