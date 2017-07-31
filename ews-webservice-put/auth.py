@@ -45,7 +45,7 @@ def checkPrivateIP(ip):
 
 # Authenticate user in mongodb
 def authenticate(username, token, mongohost, mongoport):
-    client = MongoClient(mongohost,  mongoport)
+    client = MongoClient(mongohost,  int(mongoport))
     db = client.ews
     try:
         dbresult = db.WSUser.find_one({'peerName': username})

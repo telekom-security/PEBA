@@ -45,11 +45,11 @@ def handleAlerts(tree, tenant):
             childName = child.tag
 
             if (childName == "Source"):
-                source = child.text
+                source = child.text.replace('"', '')
             if (childName == "CreateTime"):
                 createTime = child.text
             if (childName == "Target"):
-                destination = child.text
+                destination = child.text.replace('"', '')
 
             if (childName == "Request"):
                 type = child.attrib.get('type')
