@@ -1,4 +1,6 @@
 [ews]
-ews01
-ews02
-ews03
+ews01 ansible_host=192.168.1.64
+ews02 ansible_host=192.168.1.173
+ews03 ansible_host=192.168.1.117
+
+ansible_ssh_common_args: '-o ProxyCommand="ssh -W %h:%p -q root@160.44.207.205"'

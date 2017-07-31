@@ -60,7 +60,7 @@ def handleAlerts(tree, tenant):
             if (childName == "Analyzer"):
                 analyzerID = child.attrib.get('id')
 
-        correction = elastic.putAlarm(config.elasticHost, config.esindex, source, destination, createTime, tenant, url, analyzerID, peerType)
+        correction = elastic.putAlarm(elasticHost, esindex, source, destination, createTime, tenant, url, analyzerID, peerType)
         counter = counter + 1 - correction
 
 
@@ -94,7 +94,7 @@ def postSimpleMessage():
         message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
         handleAlerts(tree, True)
 
-    elif auth.authenticate(userNameFromRequest, passwordFromRequest, config.mongohost, config.mongoport):
+    elif auth.authenticate(userNameFromRequest, passwordFromRequest, mongohost, mongoport):
 
         message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
         handleAlerts(tree, False)
