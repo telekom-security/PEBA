@@ -14,14 +14,15 @@ password = "foth{a5maiCee8fineu7"
 #
 def extractAuth(tree):
 
-    usernameFromRequest = ""
-    passwordFromRequest = ""
+    usernameFromRequest, passwordFromRequest = "", ""
+    counter = 0
 
     for node in tree.findall('.//Authentication'):
 
         for child in node:
 
             childName = child.tag
+            counter = counter + 1
 
             if (childName == "token"):
                 passwordFromRequest = child.text
@@ -29,7 +30,14 @@ def extractAuth(tree):
             if (childName == "username"):
                     usernameFromRequest = child.text
 
-    return usernameFromRequest, passwordFromRequest
+    #
+    # if we see more than one authentication structure, something is wrong
+    #
+    if (counter == 1):
+        return usernameFromRequest, passwordFromRequest
+    else:
+        return "", ""
+
 
 
 #
