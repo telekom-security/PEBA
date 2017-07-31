@@ -1,23 +1,13 @@
 
 import xml.etree.ElementTree as xmlParser
-import elastic, auth, sys, getopt
+import elastic, auth, sys, getopt, config
 from bottle import request, response, install, run, post, get, HTTPResponse
 from datetime import datetime
-from configparser import ConfigParser
-#
-# default values
-#
 
-localServer = "localhost"
-esindex = "ews3"
-localPort = "8080"
-elasticHost = "http://localhost:9200/"
-useGUnicon = False
-mongohost = "localhost"
-mongoport = "27017"
+localServer, esindex, localPort, elasticHost, mongohost, mongoport = "", "", "", "", "", ""
+
 createIndex = False
 useConfigFile = True
-
 
 #
 # Function area
@@ -36,24 +26,10 @@ def logger(func):
 install(logger)
 
 
-def readconfig():
-    config = ConfigParser()
 
-    candidates = ['/etc/ewsput.cfg', '/etc/ews/ewsput.cfg', './ewsput.cfg']
-
-    config.read(candidates)
-
-    localServer = config.get('home', 'ip')
-    localPort = config.get('home', 'port')
-
-    mongohost = config.get('mongo', 'ip')
-    mongoport = config.get('mongo', 'port')
-
-    elasticHost = config.get("elastic", "ip")
-    esindex = config.get("elastic", "index")
-
-
-
+#
+#
+#
 def handleAlerts(tree, tenant):
 
     counter = 0
@@ -62,17 +38,11 @@ def handleAlerts(tree, tenant):
 
         # now parse the node
 
-        source = ""
-        destination = ""
-        createTime = ""
-        url = ""
-        analyzerID = ""
-        peerType = ""
+        source, destination, createTime, url, analyzerID, peerType = "", "", "", "", "", ""
 
         for child in node:
 
             childName = child.tag
-
 
             if (childName == "Source"):
                 source = child.text
@@ -90,9 +60,7 @@ def handleAlerts(tree, tenant):
             if (childName == "Analyzer"):
                 analyzerID = child.attrib.get('id')
 
-
-
-        correction = elastic.putAlarm(elasticHost, esindex, source, destination, createTime, tenant, url, analyzerID, peerType)
+        correction = elastic.putAlarm(config.elasticHost, config.esindex, source, destination, createTime, tenant, url, analyzerID, peerType)
         counter = counter + 1 - correction
 
 
@@ -126,7 +94,7 @@ def postSimpleMessage():
         message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
         handleAlerts(tree, True)
 
-    elif auth.authenticate(userNameFromRequest, passwordFromRequest, mongohost, mongoport):
+    elif auth.authenticate(userNameFromRequest, passwordFromRequest, config.mongohost, config.mongoport):
 
         message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
         handleAlerts(tree, False)
@@ -139,30 +107,7 @@ def postSimpleMessage():
     raise HTTPResponse(message, status=200, headers=headers)
 
 
-#
-# Read command line args
-#
-myopts, args = getopt.getopt(sys.argv[1:],"b:s:i:p:g:mh:mp:c")
-
-for o, a in myopts:
-    useConfigFile = False
-
-    if o == '-s':
-        elasticHost=a
-    elif o == '-i':
-        esindex=a
-    elif o == '-p':
-        localPort = a
-    elif o == '-b':
-        localServer=a
-    elif o == '-g':
-        useGUnicon = True
-    elif o == '-mh':
-        mongohost=a
-    elif o == '-mp':
-        mongoport=a
-    elif o == '-c':
-        createIndex = True
+(elasticHost, esindex, localServer, localPort, mongoport, mongohost,  createIndex, useConfigFile) = config.readCommandLine(elasticHost, esindex, localServer, localPort, mongoport, mongohost, createIndex, useConfigFile)
 
 if (createIndex):
     print ("Info: Just creating an index " + esindex)
@@ -171,7 +116,8 @@ if (createIndex):
 else:
 
     if (useConfigFile):
-        readconfig()
+        print ("Info: Using configfile")
+        (elasticHost, esindex, localServer, localPort, mongoport, mongohost, createIndex) = config.readconfig(elasticHost, esindex, localServer, localPort, mongoport, mongohost)
 
     #
     # start server depending on parameters given from shell or config file
@@ -179,7 +125,5 @@ else:
 
     print ("Starting DTAG early warning system input handler on server " + str(localServer) + ":" + str(localPort) + " with elasticsearch host at " + str(elasticHost) + " and index " + str(esindex) + " using mongo at " + str(mongohost)+ ":" + str(mongoport))
 
-    if (useGUnicon):
-        run(host=localServer, port=localPort, server='gunicorn', workers=4)
-    else:
-        run(host=localServer, port=localPort, catchall=True)
+    run(host=localServer, port=localPort, server='gunicorn', workers=4)
+
