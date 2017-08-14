@@ -136,7 +136,7 @@ def retrieveAlertCount(timeframe):
     elif timeframe.isdecimal():
         span = "now-"+str(timeframe)+"m"
     else:
-        app.logger.error('Non numeric value in retrieveAlertsCount timespan. Must be decimal number (in minutes) or string "day")')
+        app.logger.error('Non numeric value in retrieveAlertsCount timespan. Must be decimal number (in minutes) or string "day"')
         return False
     try:
         res = es.count(index=app.config['ELASTICINDEX'], body={
@@ -305,7 +305,11 @@ def retrieveAlertsCount():
         return app.config['DEFAULTRESPONSE']
 
     # Retrieve Number of Alerts from ElasticSearch and return formatted XML
-    return createAlertCountXml(retrieveAlertCount(request.args.get('time')))
+    if not request.args.get('time'):
+        app.logger.error('No time GET-parameter supplied in retrieveAlertsCount. Must be decimal number (in minutes) or string "day"')
+        return app.config['DEFAULTRESPONSE']
+    else:
+        return createAlertCountXml(retrieveAlertCount(request.args.get('time')))
 
 
 
