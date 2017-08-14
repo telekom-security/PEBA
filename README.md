@@ -2,11 +2,13 @@
 
 Small backend application to offer an API alternative for current EWS backend, e.g. for the T-Pot Community backend. 
 
-**Currently implemented functions:** 
+**Currently implemented endpoints:** 
 
- - */alert/retrieveIPs* ==> returning the unique IP addresses of the last attacks in timeframe *X* minutes. 
- - */alert/retrieveAlertsCyber* ==> returning the last 1000 attacks. 
- - */alert/retrieveAlertsCount* ==> returns the number of attacks within timespan in minutes or since the beginning of the current day, e.g. */retrieveAlertsCount?time=10* or */retrieveAlertsCount?time=day* o
+ - [POST] */alert/retrieveIPs* ==> returning the unique IP addresses of the last attacks in timeframe *X* minutes. Requires authentication. 
+ - [POST] */alert/retrieveAlertsCyber* ==> returning the last 1000 attacks. Requires authentication. 
+ - [POST] */alert/retrieveAlertsCount* ==> returns the number of attacks within timespan in minutes or since the beginning of the current day e.g. */retrieveAlertsCount?time=10* or */retrieveAlertsCount?time=day*. Can further be parametrized using *out=json*. Defaults to xml. Requires authentication. 
+ - [GET] */heartbeat* ==> Returns backend status : "*me*" if *everything* is ok, *m* if only mongoDB connection is ok, *e* if only elasticsearch connection is ok. If mongodb and elasticsearch connection fail, *flatline* is returned. 
+
 
 **Install requirements:**
 

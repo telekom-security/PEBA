@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 # PEBA (Python EWS Backend API)
-# v0.2 2017-06-22 - Alpha! :)
+# v0.3 2017-08-14 - Devel / Alpha! :)
 # Author: @vorband
 
 import xml.etree.ElementTree as ET
 import hashlib
+import json
 from flask import Flask, request
 from pymongo import MongoClient, errors
 from elasticsearch import Elasticsearch, ElasticsearchException
@@ -36,6 +37,18 @@ def getCreds(postdata):
             username = root.find("./Authentication/username").text.decode('utf-8')
             password = root.find("./Authentication/token").text.decode('utf-8')
         return username, password
+
+def testMongo():
+    try:
+        client = MongoClient(app.config['MONGOIP'], app.config['MONGOPORT'], serverSelectionTimeoutMS=1000)
+        client.server_info()
+    except errors.ServerSelectionTimeoutError as err:
+        return False
+    return True
+
+def testElasticsearch():
+    es = Elasticsearch(hosts=[{'host': app.config['ELASTICIP'], 'port': app.config['ELASTICPORT']}], timeout=1)
+    return es.ping()
 
 # Authenticate user in mongodb
 def authenticate(username, token):
@@ -206,16 +219,21 @@ def createAlertsXml(alertslist):
     else:
         return app.config['DEFAULTRESPONSE']
 
-# Create XML Structure with number of Alerts in requested timespan
-def createAlertCountXml(numberofalerts):
+# Create XML / Json Structure with number of Alerts in requested timespan
+def createAlertCountResponse(numberofalerts, outformat):
     if numberofalerts is not False:
-        ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
-        alertCount = ET.SubElement(ewssimpleinfo, 'AlertCount')
-        alertCount.text = str(numberofalerts)
-        prettify(ewssimpleinfo)
-        alertcountxml = '<?xml version="1.0" encoding="UTF-8"?>'
-        alertcountxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
-        return alertcountxml
+        if outformat == "xml":
+            ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
+            alertCount = ET.SubElement(ewssimpleinfo, 'AlertCount')
+            alertCount.text = str(numberofalerts)
+            prettify(ewssimpleinfo)
+            alertcountxml = '<?xml version="1.0" encoding="UTF-8"?>'
+            alertcountxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
+            return alertcountxml
+        else:
+            jsondata = {}
+            jsondata['AlertCount'] = numberofalerts
+            return json.dumps(jsondata)
     else:
         return app.config['DEFAULTRESPONSE']
 
@@ -253,6 +271,21 @@ app.wsgi_app = ProxyFix(app.wsgi_app)
 @app.route("/")
 def webroot():
     return app.config['DEFAULTRESPONSE']
+
+# Heartbeat
+@app.route("/heartbeat", methods=['GET'])
+def heartbeat():
+    mongoAvailable = testMongo()
+    elasticsearchAvailable = testElasticsearch()
+    if mongoAvailable and elasticsearchAvailable:
+        return "me"
+    elif mongoAvailable and not elasticsearchAvailable:
+        return "m"
+    elif not mongoAvailable and elasticsearchAvailable:
+        return "e"
+    else:
+        return "flatline"
+
 
 
 # Retrieve bad IPs
@@ -304,12 +337,15 @@ def retrieveAlertsCount():
         app.logger.error("Authentication failure for user %s", username)
         return app.config['DEFAULTRESPONSE']
 
-    # Retrieve Number of Alerts from ElasticSearch and return formatted XML
+    # Retrieve Number of Alerts from ElasticSearch and return as xml / json
     if not request.args.get('time'):
         app.logger.error('No time GET-parameter supplied in retrieveAlertsCount. Must be decimal number (in minutes) or string "day"')
         return app.config['DEFAULTRESPONSE']
     else:
-        return createAlertCountXml(retrieveAlertCount(request.args.get('time')))
+        if request.args.get('out') and request.args.get('out') == "json":
+            return createAlertCountResponse(retrieveAlertCount(request.args.get('time')), "json")
+        else:
+            return createAlertCountResponse(retrieveAlertCount(request.args.get('time')), "xml")
 
 
 
