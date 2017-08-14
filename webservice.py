@@ -127,6 +127,32 @@ def retrieveAlerts(maxAlerts):
         app.logger.error('ElasticSearch error: %s' %  err)
         return False
 
+# Get number of Alerts in timeframe in elasticsearch
+def retrieveAlertCount(timeframe):
+    es = Elasticsearch(hosts=[{'host': app.config['ELASTICIP'], 'port': app.config['ELASTICPORT']}], timeout=app.config['ELASTICTIMEOUT'])
+    # check if timespan = d or number
+    if timeframe == "day":
+        span = "now/d"
+    elif timeframe.isdecimal():
+        span = "now-"+str(timeframe)+"m"
+    else:
+        app.logger.error('Non numeric value in retrieveAlertsCount timespan. Must be decimal number (in minutes) or string "day")')
+        return False
+    try:
+        res = es.count(index=app.config['ELASTICINDEX'], body={
+                  "query": {
+                    "range": {
+                      "createTime": {
+                        "gte": str(span)
+                      }
+                    }
+                  }
+                })
+        return res["count"]
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' %  err)
+        return False
+
 # Create XML Strucure for BadIP list
 def createBadIPxml(iplist):
     if iplist is not False:
@@ -153,8 +179,7 @@ def createAlertsXml(alertslist):
             alertId = ET.SubElement(alertElement, 'Id')
             alertId.text = alert['_id']
             alertDate = ET.SubElement(alertElement, 'DateCreated')
-            dateString = alert['_source']['createTime']
-            alertDate.text = dateString[0:4]+"-"+dateString[4:6]+"-"+dateString[6:8]+" "+dateString[9:11]+":"+ dateString[11:13]+":"+dateString[13:15]
+            alertDate.text = alert['_source']['createTime']
             peerElement = ET.SubElement(alertElement, 'Peer')
             peerId = ET.SubElement(peerElement, 'Id')
             peerId.text = alert['_source']['peerIdent']
@@ -178,6 +203,19 @@ def createAlertsXml(alertslist):
         alertsxml = '<?xml version="1.0" encoding="UTF-8"?>'
         alertsxml += (ET.tostring(EWSSimpleAlertInfo, encoding="utf-8", method="xml"))
         return alertsxml
+    else:
+        return app.config['DEFAULTRESPONSE']
+
+# Create XML Structure with number of Alerts in requested timespan
+def createAlertCountXml(numberofalerts):
+    if numberofalerts is not False:
+        ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
+        alertCount = ET.SubElement(ewssimpleinfo, 'AlertCount')
+        alertCount.text = str(numberofalerts)
+        prettify(ewssimpleinfo)
+        alertcountxml = '<?xml version="1.0" encoding="UTF-8"?>'
+        alertcountxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
+        return alertcountxml
     else:
         return app.config['DEFAULTRESPONSE']
 
@@ -251,6 +289,24 @@ def retrieveAlertsCyber():
 
     # Retrieve Alerts from ElasticSearch and return formatted XML with limited alert content
     return createAlertsXml(retrieveAlerts(app.config['MAXALERTS']))
+
+# Retrieve Number of Alerts in timeframe (GET-Parameter time as decimal or "day")
+@app.route("/alert/retrieveAlertsCount", methods=['POST'])
+def retrieveAlertsCount():
+    # Retrieve POST Data and extract credentials
+    username, password = (getCreds(request.data.decode('utf-8')))
+    if username == False or password == False:
+        app.logger.error('Extracting username and token from postdata failed')
+        return app.config['DEFAULTRESPONSE']
+
+    # Check if user is in MongoDB
+    if authenticate(username, password) == False:
+        app.logger.error("Authentication failure for user %s", username)
+        return app.config['DEFAULTRESPONSE']
+
+    # Retrieve Number of Alerts from ElasticSearch and return formatted XML
+    return createAlertCountXml(retrieveAlertCount(request.args.get('time')))
+
 
 
 ###############

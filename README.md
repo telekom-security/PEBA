@@ -6,7 +6,7 @@ Small backend application to offer an API alternative for current EWS backend, e
 
  - */alert/retrieveIPs* ==> returning the unique IP addresses of the last attacks in timeframe *X* minutes. 
  - */alert/retrieveAlertsCyber* ==> returning the last 1000 attacks. 
-
+ - */alert/retrieveAlertsCount* ==> returns the number of attacks within timespan in minutes or since the beginning of the current day, e.g. */retrieveAlertsCount?time=10* or */retrieveAlertsCount?time=day* o
 
 **Install requirements:**
 
