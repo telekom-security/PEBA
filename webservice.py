@@ -140,6 +140,36 @@ def retrieveAlerts(maxAlerts):
         app.logger.error('ElasticSearch error: %s' %  err)
         return False
 
+# Get IP addresses from alerts in elasticsearch
+def retrieveAlertsWithoutIP(maxAlerts):
+    es = Elasticsearch(hosts=[{'host': app.config['ELASTICIP'], 'port': app.config['ELASTICPORT']}],
+                       timeout=app.config['ELASTICTIMEOUT'])
+    try:
+        res = es.search(index=app.config['ELASTICINDEX'], body={
+            "query": {
+                "match_all": {}
+            },
+            "sort": {
+                "createTime": {
+                    "order": "desc"
+                }
+            },
+            "size": maxAlerts,
+            "_source": [
+                "createTime",
+                "peerIdent",
+                "peerType",
+                "country",
+                "originalRequestString",
+                "location",
+                "targetCountry"
+            ]
+        })
+        return res["hits"]["hits"]
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' % err)
+        return False
+
 # Get number of Alerts in timeframe in elasticsearch
 def retrieveAlertCount(timeframe):
     es = Elasticsearch(hosts=[{'host': app.config['ELASTICIP'], 'port': app.config['ELASTICPORT']}], timeout=app.config['ELASTICTIMEOUT'])
@@ -216,6 +246,29 @@ def createAlertsXml(alertslist):
         alertsxml = '<?xml version="1.0" encoding="UTF-8"?>'
         alertsxml += (ET.tostring(EWSSimpleAlertInfo, encoding="utf-8", method="xml"))
         return alertsxml
+    else:
+        return app.config['DEFAULTRESPONSE']
+
+# Create JSON Structure for Alerts list
+def createAlertsJson(alertslist):
+    if alertslist is not False:
+        jsonarray=[]
+        jsonwrapper = {}
+        jsondata = {}
+        for alert in alertslist:
+            jsondata['id'] = alert['_id']
+            jsondata['dateCreated'] = alert['_source']['createTime']
+            jsondata['country'] = alert['_source']['country']
+            jsondata['countryName'] = "COUNTRYNAME"
+            jsondata['targetCountry'] = alert['_source']['targetCountry']
+            latlong = alert['_source']['location'].split(',')
+            jsondata['lat'] = latlong[0]
+            jsondata['lng'] = latlong[1]
+            jsondata['analyzerType'] = alert['_source']['targetCountry']
+            jsondata['requestString'] = alert['_source']['originalRequestString']
+            jsonarray.append(jsondata)
+        jsonwrapper['alerts'] = jsonarray
+        return json.dumps(jsonwrapper)
     else:
         return app.config['DEFAULTRESPONSE']
 
@@ -323,20 +376,15 @@ def retrieveAlertsCyber():
     # Retrieve Alerts from ElasticSearch and return formatted XML with limited alert content
     return createAlertsXml(retrieveAlerts(app.config['MAXALERTS']))
 
+# Retrieve last x Alerts in JSON without IPs
+@app.route("/alert/retrieveAlertsJson", methods=['GET'])
+def retrieveAlertsJson():
+    # Retrieve last 5 Alerts from ElasticSearch and return JSON formatted with limited alert content
+    return createAlertsJson(retrieveAlertsWithoutIP(5))
+
 # Retrieve Number of Alerts in timeframe (GET-Parameter time as decimal or "day")
-@app.route("/alert/retrieveAlertsCount", methods=['POST'])
+@app.route("/alert/retrieveAlertsCount", methods=['GET'])
 def retrieveAlertsCount():
-    # Retrieve POST Data and extract credentials
-    username, password = (getCreds(request.data.decode('utf-8')))
-    if username == False or password == False:
-        app.logger.error('Extracting username and token from postdata failed')
-        return app.config['DEFAULTRESPONSE']
-
-    # Check if user is in MongoDB
-    if authenticate(username, password) == False:
-        app.logger.error("Authentication failure for user %s", username)
-        return app.config['DEFAULTRESPONSE']
-
     # Retrieve Number of Alerts from ElasticSearch and return as xml / json
     if not request.args.get('time'):
         app.logger.error('No time GET-parameter supplied in retrieveAlertsCount. Must be decimal number (in minutes) or string "day"')
