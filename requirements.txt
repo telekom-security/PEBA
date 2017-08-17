@@ -1,6 +1,7 @@
 flask
+flask-cors
 pymongo
 xml
 elasticsearch
 gunicorn
-hashlib
+#hashlib

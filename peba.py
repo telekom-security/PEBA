@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 # PEBA (Python EWS Backend API)
-# v0.3 2017-08-14 - Devel / Alpha! :)
+# v0.3 2017-08-17 - Devel / Alpha! :)
 # Author: @vorband
 
 import xml.etree.ElementTree as ET
 import hashlib
 import json
 from flask import Flask, request
+from flask_cors import CORS, cross_origin
 from pymongo import MongoClient, errors
 from elasticsearch import Elasticsearch, ElasticsearchException
 from werkzeug.contrib.fixers import ProxyFix
@@ -157,12 +158,12 @@ def retrieveAlertsWithoutIP(maxAlerts):
             "size": maxAlerts,
             "_source": [
                 "createTime",
-                "peerIdent",
                 "peerType",
                 "country",
                 "originalRequestString",
                 "location",
-                "targetCountry"
+                "targetCountry",
+                "countName"
             ]
         })
         return res["hits"]["hits"]
@@ -259,12 +260,12 @@ def createAlertsJson(alertslist):
             jsondata['id'] = alert['_id']
             jsondata['dateCreated'] = alert['_source']['createTime']
             jsondata['country'] = alert['_source']['country']
-            jsondata['countryName'] = "COUNTRYNAME"
+            jsondata['countryName'] = alert['_source']['countryName']
             jsondata['targetCountry'] = alert['_source']['targetCountry']
-            latlong = alert['_source']['location'].split(',')
+            latlong = alert['_source']['location'].split(' , ')
             jsondata['lat'] = latlong[0]
             jsondata['lng'] = latlong[1]
-            jsondata['analyzerType'] = alert['_source']['targetCountry']
+            jsondata['analyzerType'] = alert['_source']['peerType']
             jsondata['requestString'] = alert['_source']['originalRequestString']
             jsonarray.append(jsondata)
         jsonwrapper['alerts'] = jsonarray
@@ -313,7 +314,7 @@ def prettify(elem, level=0):
 ###################
 
 app = Flask(__name__)
-app.config.from_pyfile('webservice.cfg')
+app.config.from_pyfile('/etc/ews/peba.cfg')
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
 ###############
@@ -339,8 +340,6 @@ def heartbeat():
     else:
         return "flatline"
 
-
-
 # Retrieve bad IPs
 @app.route("/alert/retrieveIPs", methods=['POST'])
 def retrieveIPs():
@@ -357,7 +356,6 @@ def retrieveIPs():
 
     # Retrieve IPs from ElasticSearch and return formatted XML with IPs
     return createBadIPxml(retrieveBadIPs(app.config['BADIPTIMESPAN']))
-
 
 # Retrieve Alerts
 @app.route("/alert/retrieveAlertsCyber", methods=['POST'])
@@ -376,24 +374,28 @@ def retrieveAlertsCyber():
     # Retrieve Alerts from ElasticSearch and return formatted XML with limited alert content
     return createAlertsXml(retrieveAlerts(app.config['MAXALERTS']))
 
-# Retrieve last x Alerts in JSON without IPs
+# Retrieve last 5 Alerts in JSON without IPs
 @app.route("/alert/retrieveAlertsJson", methods=['GET'])
+# TODO: Change requesting domain to new sicherheitstacho for CORS
+@cross_origin(origins="sicherheitstacho.eu", methods=['GET'])
 def retrieveAlertsJson():
+
     # Retrieve last 5 Alerts from ElasticSearch and return JSON formatted with limited alert content
     return createAlertsJson(retrieveAlertsWithoutIP(5))
 
 # Retrieve Number of Alerts in timeframe (GET-Parameter time as decimal or "day")
 @app.route("/alert/retrieveAlertsCount", methods=['GET'])
+
 def retrieveAlertsCount():
     # Retrieve Number of Alerts from ElasticSearch and return as xml / json
     if not request.args.get('time'):
         app.logger.error('No time GET-parameter supplied in retrieveAlertsCount. Must be decimal number (in minutes) or string "day"')
         return app.config['DEFAULTRESPONSE']
     else:
-        if request.args.get('out') and request.args.get('out') == "json":
-            return createAlertCountResponse(retrieveAlertCount(request.args.get('time')), "json")
+        if request.args.get('out') and request.args.get('out') == 'json':
+            return createAlertCountResponse(retrieveAlertCount(request.args.get('time')), 'json')
         else:
-            return createAlertCountResponse(retrieveAlertCount(request.args.get('time')), "xml")
+            return createAlertCountResponse(retrieveAlertCount(request.args.get('time')), 'xml')
 
 
 
@@ -402,4 +404,4 @@ def retrieveAlertsCount():
 ###############
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host=app.config['LISTENIP'], port=app.config['LISTENPORT'])

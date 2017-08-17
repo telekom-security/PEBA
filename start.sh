@@ -1,18 +1,20 @@
-#/bin/bash
+#!/usr/bin/env bash
+
+[ ! -f /etc/ews/peba.cfg ] && echo "### PEBA: Config file /etc/ews/peba.cfg missing. Copy peba.cfg to /etc/ews/. Abort." && exit 1
+
+BIND=$(cat /etc/ews/peba.cfg|grep LISTENIP|cut -d "=" -f2|cut -d "\"" -f 2):$(cat /etc/ews/peba.cfg|grep LISTENPORT|cut -d "=" -f2)
+
+pip install -r requirements.txt
+
 # may be tweaked accordingly to
 # http://docs.gunicorn.org/en/stable/settings.html
 
-gunicorn webservice:app \
+gunicorn peba:app \
 	-w 4 \
-	-b 127.0.0.1 \
+	-b $BIND
 	--error-logfile error.log \
 	--log-level error \
 	--pid gunicorn.pid \
 	# --user backendapi \
 	# --group backendapi \
 	# --daemon
-
-
-# TODO: Deploy using 
-# http://docs.gunicorn.org/en/stable/deploy.html
-

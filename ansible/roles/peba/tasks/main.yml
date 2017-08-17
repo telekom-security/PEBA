@@ -1,0 +1,63 @@
+
+
+---
+- name: Make sure the relevant directories exist for deployment
+  file: path="/opt/peba" owner=root group=root mode=0755 recurse=yes state=directory
+
+- name: Create ews config dir
+  file: path="/etc/ews/" owner=root group=root mode=0755 recurse=yes state=directory
+
+
+- name: Copy scripts
+  copy: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - { src: './../../../../peba.py', dest: '/opt/peba/peba.py' }
+    - { src: './../../../../requirements.txt', dest: '/opt/peba/requirements.txt' }
+
+- name: install configuration file
+  template:
+        src=./roles/peba/templates/peba.cfg
+        dest='/etc/ews/peba.cfg'
+
+- name: Install init.d script
+  copy:
+    src: './../../../../etc/init.d/peba'
+    dest: '/etc/init.d/peba'
+    mode: 0755
+
+- name: Reload daemon
+  shell: "systemctl daemon-reload"
+
+- name: Install necessary packages.
+  apt: name={{ item }} state=present
+  with_items:
+    - nano
+    - wget
+    - curl
+    - unzip
+    - python-pip
+    - build-essential
+    - autoconf
+    - libtool
+    - pkg-config
+    - python-dev
+    - python3-dev
+
+- name: Installing virtualenv via pip
+  pip:
+    name: virtualenv
+
+- name: Create the virtualenv
+  command: virtualenv /opt/peba -p python2.7 creates="/opt/peba"
+
+- name: Install pip requirements
+  pip:
+    requirements: /opt/peba/requirements.txt
+    state: latest
+    virtualenv: /opt/peba
+
+- name: Start peba service
+  service:
+    name: peba
+    enabled: yes
+    state: restarted
