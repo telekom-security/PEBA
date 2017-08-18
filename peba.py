@@ -12,6 +12,8 @@ import json
 from flask import Flask, request, abort
 from flask_cors import CORS, cross_origin
 
+from flask.ext.elasticsearch import FlaskElasticsearch
+
 from pymongo import MongoClient, errors
 from elasticsearch import Elasticsearch, ElasticsearchException
 from werkzeug.contrib.fixers import ProxyFix
@@ -25,6 +27,10 @@ from functools import wraps
 app = Flask(__name__)
 app.config.from_pyfile('/etc/ews/peba.cfg')
 app.wsgi_app = ProxyFix(app.wsgi_app)
+
+es = FlaskElasticsearch(app, {
+    'timeout': app.config['ELASTICTIMEOUT']
+})
 
 ###############
 ### Functions
@@ -69,7 +75,6 @@ def testMongo():
     return True
 
 def testElasticsearch():
-    es = Elasticsearch(hosts=[{'host': app.config['ELASTICIP'], 'port': app.config['ELASTICPORT']}], timeout=1)
     return es.ping()
 
 # Authenticate user in mongodb
@@ -109,7 +114,6 @@ def getPeerCountry(peerIdent):
 
 # Get IP addresses from alerts in elasticsearch
 def retrieveBadIPs(badIpTimespan):
-    es = Elasticsearch(hosts=[{'host': app.config['ELASTICIP'], 'port': app.config['ELASTICPORT']}], timeout=app.config['ELASTICTIMEOUT'])
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
                   "query": {
@@ -135,7 +139,6 @@ def retrieveBadIPs(badIpTimespan):
 
 # Get IP addresses from alerts in elasticsearch
 def retrieveAlerts(maxAlerts):
-    es = Elasticsearch(hosts=[{'host': app.config['ELASTICIP'], 'port': app.config['ELASTICPORT']}], timeout=app.config['ELASTICTIMEOUT'])
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
               "query": {
@@ -164,8 +167,6 @@ def retrieveAlerts(maxAlerts):
 
 # Get IP addresses from alerts in elasticsearch
 def retrieveAlertsWithoutIP(maxAlerts):
-    es = Elasticsearch(hosts=[{'host': app.config['ELASTICIP'], 'port': app.config['ELASTICPORT']}],
-                       timeout=app.config['ELASTICTIMEOUT'])
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
             "query": {
@@ -194,7 +195,6 @@ def retrieveAlertsWithoutIP(maxAlerts):
 
 # Get number of Alerts in timeframe in elasticsearch
 def retrieveAlertCount(timeframe):
-    es = Elasticsearch(hosts=[{'host': app.config['ELASTICIP'], 'port': app.config['ELASTICPORT']}], timeout=app.config['ELASTICTIMEOUT'])
     # check if timespan = d or number
     if timeframe == "day":
         span = "now/d"

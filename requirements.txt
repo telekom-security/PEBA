@@ -1,5 +1,6 @@
 flask
 flask-cors
+flask-Elasticsearch
 pymongo
 xml
 elasticsearch
