@@ -32,6 +32,12 @@ es = FlaskElasticsearch(app, {
     'timeout': app.config['ELASTICTIMEOUT']
 })
 
+client = MongoClient(
+    app.config['MONGOIP'],
+    app.config['MONGOPORT'],
+    serverSelectionTimeoutMS=app.config['MONGOTIMEOUT']
+)
+
 ###############
 ### Functions
 ###############
@@ -68,10 +74,10 @@ def login_required(f):
 
 def testMongo():
     try:
-        client = MongoClient(app.config['MONGOIP'], app.config['MONGOPORT'], serverSelectionTimeoutMS=1000)
         client.server_info()
     except errors.ServerSelectionTimeoutError as err:
         return False
+
     return True
 
 def testElasticsearch():
@@ -79,7 +85,6 @@ def testElasticsearch():
 
 # Authenticate user in mongodb
 def authenticate(username, token):
-    client = MongoClient(app.config['MONGOIP'],  app.config['MONGOPORT'], serverSelectionTimeoutMS=app.config['MONGOTIMEOUT'])
     db = client.ews
     try:
         dbresult = db.WSUser.find_one({'peerName': username})
@@ -97,7 +102,6 @@ def authenticate(username, token):
 
 # Find country for peer in mongodb
 def getPeerCountry(peerIdent):
-    client = MongoClient(app.config['MONGOIP'],  app.config['MONGOPORT'], serverSelectionTimeoutMS=app.config['MONGOTIMEOUT'])
     db = client.ews
     try:
         dbresult = db.peer.find_one({'ident': peerIdent})
