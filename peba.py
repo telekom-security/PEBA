@@ -5,14 +5,14 @@
 # v0.3 2017-08-17 - Devel / Alpha! :)
 # Author: @vorband
 
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 import hashlib
 import json
 
 from flask import Flask, request, abort, jsonify, Response
 from flask_cors import CORS, cross_origin
 
-from flask.ext.elasticsearch import FlaskElasticsearch
+from flask_elasticsearch import FlaskElasticsearch
 
 from pymongo import MongoClient, errors
 from elasticsearch import Elasticsearch, ElasticsearchException
@@ -28,9 +28,9 @@ app = Flask(__name__)
 app.config.from_pyfile('/etc/ews/peba.cfg')
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
-es = FlaskElasticsearch(app, {
-    'timeout': app.config['ELASTICTIMEOUT']
-})
+es = FlaskElasticsearch(app,
+    timeout=app.config['ELASTICTIMEOUT']
+)
 
 client = MongoClient(
     app.config['MONGOIP'],
@@ -58,19 +58,19 @@ def login_required(f):
             user_data = root.find("./Authentication/username")
             pass_data = root.find("./Authentication/token")
 
-            if not user_data or not pass_data:
+            if user_data is not None or pass_data is not None:
                 app.logger.error('Invalid XML: token not present or empty')
                 return abort(403)
 
             username = user_data.text.decode('utf-8')
             password = pass_data.text.decode('utf-8')
-
+            print(username)
             if not authenticate(username, password):
                 app.logger.error("Authentication failure for user %s", username)
                 return abort(403)
 
             return f(*args, **kwargs)
-        return decorated_function
+    return decorated_function
 
 def testMongo():
     try:
@@ -188,7 +188,7 @@ def retrieveAlertsWithoutIP(maxAlerts):
                 "originalRequestString",
                 "location",
                 "targetCountry",
-                "countName"
+                "countryName"
                 ]
             })
         return res["hits"]["hits"]
@@ -241,7 +241,7 @@ def createBadIPxml(iplist):
         iplistxml = '<?xml version="1.0" encoding="UTF-8"?>'
         iplistxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
 
-        return iplistxml
+        return Response(iplistxml, mimetype='text/xml')
     else:
         return app.config['DEFAULTRESPONSE']
 
@@ -368,14 +368,16 @@ def heartbeat():
     else:
         return "flatline"
 
-@login_required
+
 @app.route("/alert/retrieveIPs", methods=['POST'])
+@login_required
 def retrieveIPs():
     """ Retrieve IPs from ElasticSearch and return formatted XML with IPs """
     return createBadIPxml(retrieveBadIPs(app.config['BADIPTIMESPAN']))
 
-@login_required
+
 @app.route("/alert/retrieveAlertsCyber", methods=['POST'])
+@login_required
 def retrieveAlertsCyber():
     """ Retrieve Alerts from ElasticSearch and return formatted 
         XML with limited alert content
@@ -384,7 +386,7 @@ def retrieveAlertsCyber():
 
 @app.route("/alert/retrieveAlertsJson", methods=['GET'])
 # TODO: Change requesting domain to new sicherheitstacho for CORS
-@cross_origin(origins="sicherheitstacho.eu", methods=['GET'])
+@cross_origin(origins="*", methods=['GET'])
 def retrieveAlertsJson():
     """ Retrieve last 5 Alerts in JSON without IPs """
     # Retrieve last 5 Alerts from ElasticSearch and return JSON formatted with limited alert content
@@ -409,4 +411,4 @@ def retrieveAlertsCount():
 ###############
 
 if __name__ == '__main__':
-    app.run(host=app.config['LISTENIP'], port=app.config['LISTENPORT'])
+    app.run(host=app.config['BINDHOST'].split(':')[0], port=int(app.config['BINDHOST'].split(':')[1]))

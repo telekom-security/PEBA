@@ -5,4 +5,5 @@ pymongo
 xml
 elasticsearch
 gunicorn
+defusedxml
 #hashlib

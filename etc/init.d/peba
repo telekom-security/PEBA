@@ -25,7 +25,7 @@ DAEMON=gunicorn
 PIDFILE=/var/run/gunicorn.pid
 LOGFILE=/var/log/$APPNAME.log
 WORKERS=4
-BIND=$(cat /etc/ews/peba.cfg|grep LISTENIP|cut -d "=" -f2|cut -d "\"" -f 2):$(cat /etc/ews/peba.cfg|grep LISTENPORT|cut -d "=" -f2)
+BINDHOST=$(cat /etc/ews/peba.cfg|grep BINDHOST|cut -d "\"" -f2)
 
 
 . /lib/lsb/init-functions
@@ -37,7 +37,7 @@ case "$1" in
         log_daemon_msg "Starting deferred execution scheduler" "$APPNAME"
         source $APPPATH/bin/activate
         cd $APPPATH
-        $DAEMON --daemon --bind=$BIND --pid=$PIDFILE --workers=$WORKERS --user=$USER --log-file=$LOGFILE $APPMODULE
+        $DAEMON --daemon --bind=$BINDHOST --pid=$PIDFILE --workers=$WORKERS --user=$USER --log-file=$LOGFILE $APPMODULE
         log_end_msg $?
     ;;
   stop)
