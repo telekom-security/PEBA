@@ -1,3 +1,4 @@
+
 #!/bin/bash 
 
 BIND=127.0.0.1:9922
@@ -25,7 +26,7 @@ echo ""
 sleep 3
 
 echo "***** RETRIEVEALERTCOUNT JSON  *****"
-curl http://$BIND/alert/retrieveAlertsCount?time=10&out=json
+curl "http://$BIND/alert/retrieveAlertsCount?time=10&out=json"
 sleep 3
 echo "***** END RETRIEVEALERTCOUNT  JSON *****"
 echo ""

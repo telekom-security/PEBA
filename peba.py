@@ -5,7 +5,9 @@
 # v0.3 2017-08-17 - Devel / Alpha! :)
 # Author: @vorband
 
-import defusedxml.ElementTree as ET
+import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ETdefused
+
 import hashlib
 import json
 
@@ -54,7 +56,7 @@ def login_required(f):
             app.logger.error('no xml post data in request')
             return abort(403)
         else:
-            root = ET.fromstring(postdata)
+            root = ETdefused.fromstring(postdata)
             user_data = root.find("./Authentication/username")
             pass_data = root.find("./Authentication/token")
 
