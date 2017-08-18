@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 import hashlib
 import json
 
-from flask import Flask, request, abort
+from flask import Flask, request, abort, jsonify, Response
 from flask_cors import CORS, cross_origin
 
 from flask.ext.elasticsearch import FlaskElasticsearch
@@ -281,7 +281,7 @@ def createAlertsXml(alertslist):
         prettify(EWSSimpleAlertInfo)
         alertsxml = '<?xml version="1.0" encoding="UTF-8"?>'
         alertsxml += (ET.tostring(EWSSimpleAlertInfo, encoding="utf-8", method="xml"))
-        return alertsxml
+        return Response(alertsxml, mimetype='text/xml')
     else:
         return app.config['DEFAULTRESPONSE']
 
@@ -307,7 +307,7 @@ def createAlertsJson(alertslist):
 
             jsonarray.append(jsondata)
 
-        return json.dumps({'alert': jsonarray})
+        return jsonify({'alert': jsonarray})
     else:
         return app.config['DEFAULTRESPONSE']
 
@@ -322,9 +322,9 @@ def createAlertCountResponse(numberofalerts, outformat):
             prettify(ewssimpleinfo)
             alertcountxml = '<?xml version="1.0" encoding="UTF-8"?>'
             alertcountxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
-            return alertcountxml
+            return Response(alertcountxml, mimetype='text/xml')
         else:
-            return json.dumps({'AlertCount': numberofalerts)
+            return jsonify({'AlertCount': numberofalerts)
     else:
         return app.config['DEFAULTRESPONSE']
 
