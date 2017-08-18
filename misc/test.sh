@@ -2,7 +2,7 @@
 #!/bin/bash 
 
 BIND=127.0.0.1:9922
-AUTH=request.av.xml
+AUTH=request.xml
 
 echo "***** TESTING LOCAL WEBSERVICE" 
 

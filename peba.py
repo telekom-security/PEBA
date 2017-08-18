@@ -60,13 +60,13 @@ def login_required(f):
             user_data = root.find("./Authentication/username")
             pass_data = root.find("./Authentication/token")
 
-            if user_data is not None or pass_data is not None:
+            if user_data is None or pass_data is None:
                 app.logger.error('Invalid XML: token not present or empty')
                 return abort(403)
 
             username = user_data.text.decode('utf-8')
             password = pass_data.text.decode('utf-8')
-            print(username)
+
             if not authenticate(username, password):
                 app.logger.error("Authentication failure for user %s", username)
                 return abort(403)
