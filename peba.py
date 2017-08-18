@@ -8,36 +8,57 @@
 import xml.etree.ElementTree as ET
 import hashlib
 import json
-from flask import Flask, request
+
+from flask import Flask, request, abort
 from flask_cors import CORS, cross_origin
+
 from pymongo import MongoClient, errors
 from elasticsearch import Elasticsearch, ElasticsearchException
 from werkzeug.contrib.fixers import ProxyFix
 
+from functools import wraps
+
+###################
+### Initialization
+###################
+
+app = Flask(__name__)
+app.config.from_pyfile('/etc/ews/peba.cfg')
+app.wsgi_app = ProxyFix(app.wsgi_app)
 
 ###############
 ### Functions
 ###############
 
-# Extract crendetials from request
-def getCreds(postdata):
-    # no post data given
-    if len(postdata) == 0:
-        app.logger.error('no xml post data in request')
-        return False, False
-    else:
-        # Validate credentials in XML
-        root = ET.fromstring(postdata)
-        if root.find("./Authentication/username") is None or root.findtext("./Authentication/username") == "":
-            app.logger.error('Invalid XML: username not present or empty')
-            return False, False
-        elif root.find("./Authentication/token") is None or root.findtext("./Authentication/token") == "":
-            app.logger.error('Invalid XML: token not present or empty')
-            return False, False
+def login_required(f):
+    """ This login decorator verifies that the correct username
+        and password are sent over POST in the XML format.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        postdata = request.data.decode('utf-8')
+
+        if len(postdata) == 0:
+            app.logger.error('no xml post data in request')
+            return abort(403)
         else:
-            username = root.find("./Authentication/username").text.decode('utf-8')
-            password = root.find("./Authentication/token").text.decode('utf-8')
-        return username, password
+            root = ET.fromstring(postdata)
+            user_data = root.find("./Authentication/username")
+            pass_data = root.find("./Authentication/token")
+
+            if not user_data or not pass_data:
+                app.logger.error('Invalid XML: token not present or empty')
+                return abort(403)
+
+            username = user_data.text.decode('utf-8')
+            password = pass_data.text.decode('utf-8')
+
+            if not authenticate(username, password):
+                app.logger.error("Authentication failure for user %s", username)
+                return abort(403)
+
+            return f(*args, **kwargs)
+        return decorated_function
 
 def testMongo():
     try:
@@ -309,13 +330,6 @@ def prettify(elem, level=0):
 
 
 
-###################
-### Initialization
-###################
-
-app = Flask(__name__)
-app.config.from_pyfile('/etc/ews/peba.cfg')
-app.wsgi_app = ProxyFix(app.wsgi_app)
 
 ###############
 ### App Routes
@@ -341,36 +355,16 @@ def heartbeat():
         return "flatline"
 
 # Retrieve bad IPs
+@login_required
 @app.route("/alert/retrieveIPs", methods=['POST'])
 def retrieveIPs():
-    # Retrieve POST Data and extract credentials
-    username, password = (getCreds(request.data.decode('utf-8')))
-    if username == False or password == False:
-        app.logger.error('Extracting username and token from postdata failed')
-        return app.config['DEFAULTRESPONSE']
-
-    # Check if user is in MongoDB
-    if authenticate(username, password) == False:
-        app.logger.error("Authentication failure for user %s", username)
-        return app.config['DEFAULTRESPONSE']
-
     # Retrieve IPs from ElasticSearch and return formatted XML with IPs
     return createBadIPxml(retrieveBadIPs(app.config['BADIPTIMESPAN']))
 
 # Retrieve Alerts
+@login_required
 @app.route("/alert/retrieveAlertsCyber", methods=['POST'])
 def retrieveAlertsCyber():
-    # Retrieve POST Data and extract credentials
-    username, password = (getCreds(request.data.decode('utf-8')))
-    if username == False or password == False:
-        app.logger.error('Extracting username and token from postdata failed')
-        return app.config['DEFAULTRESPONSE']
-
-    # Check if user is in MongoDB
-    if authenticate(username, password) == False:
-        app.logger.error("Authentication failure for user %s", username)
-        return app.config['DEFAULTRESPONSE']
-
     # Retrieve Alerts from ElasticSearch and return formatted XML with limited alert content
     return createAlertsXml(retrieveAlerts(app.config['MAXALERTS']))
 
@@ -385,7 +379,6 @@ def retrieveAlertsJson():
 
 # Retrieve Number of Alerts in timeframe (GET-Parameter time as decimal or "day")
 @app.route("/alert/retrieveAlertsCount", methods=['GET'])
-
 def retrieveAlertsCount():
     # Retrieve Number of Alerts from ElasticSearch and return as xml / json
     if not request.args.get('time'):
@@ -396,8 +389,6 @@ def retrieveAlertsCount():
             return createAlertCountResponse(retrieveAlertCount(request.args.get('time')), 'json')
         else:
             return createAlertCountResponse(retrieveAlertCount(request.args.get('time')), 'xml')
-
-
 
 ###############
 ### Main
