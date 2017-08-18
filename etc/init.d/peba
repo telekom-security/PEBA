@@ -18,10 +18,10 @@ fi
 APPNAME=peba
 USER=root
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
-APPPATH=/opt/peba
-ACTIVATE=bin/activate
+APPPATH=/opt/peba/
+ACTIVATE=/opt/peba/bin/activate
 APPMODULE=peba:app
-DAEMON=gunicorn
+DAEMON=/opt/peba/bin/gunicorn
 PIDFILE=/var/run/gunicorn.pid
 LOGFILE=/var/log/$APPNAME.log
 WORKERS=4
@@ -35,13 +35,14 @@ BINDHOST=$(cat /etc/ews/peba.cfg|grep BINDHOST|cut -d "\"" -f2)
 case "$1" in
   start)
         log_daemon_msg "Starting deferred execution scheduler" "$APPNAME"
-        source $APPPATH/bin/activate
+        cd $APPPATH
+        source $ACTIVATE
         cd $APPPATH
         $DAEMON --daemon --bind=$BINDHOST --pid=$PIDFILE --workers=$WORKERS --user=$USER --log-file=$LOGFILE $APPMODULE
         log_end_msg $?
     ;;
   stop)
-        log_daemon_msg "Stopping deferred execution scheduler" "APPNAME"
+        log_daemon_msg "Stopping deferred execution scheduler" "$APPNAME"
         killproc -p $PIDFILE $DAEMON
         log_end_msg $?
     ;;
