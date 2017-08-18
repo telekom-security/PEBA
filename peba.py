@@ -83,78 +83,76 @@ def testMongo():
 def testElasticsearch():
     return es.ping()
 
-# Authenticate user in mongodb
 def authenticate(username, token):
+    """ Authenticate user in mongodb """
+
     db = client.ews
     try:
         dbresult = db.WSUser.find_one({'peerName': username})
-        if dbresult == None:
-            return False
-        else:
+        if dbresult:
             tokenhash = hashlib.sha512(token)
             if dbresult['token'] == tokenhash.hexdigest():
-                    return True
-            else:
-                return False
+                return True
+
     except errors.ServerSelectionTimeoutError as err:
         app.logger.error('MongoDB cannot be reached: %s' %  err)
-        return False
 
-# Find country for peer in mongodb
+    return False
+
 def getPeerCountry(peerIdent):
+    """ Find country for peer in mongodb """
     db = client.ews
     try:
         dbresult = db.peer.find_one({'ident': peerIdent})
-        if dbresult == None:
-            return False
-        else:
+        if dbresult:
             if "country" in dbresult and dbresult['country'] != "":
                 return dbresult['country']
-            else:
-                return False
+
     except errors.ServerSelectionTimeoutError as err:
         app.logger.error('MongoDB cannot be reached: %s' % err)
-        return False
 
-# Get IP addresses from alerts in elasticsearch
+    return False
+
 def retrieveBadIPs(badIpTimespan):
+    """ Get IP addresses from alerts in elasticsearch """
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
-                  "query": {
-                    "range": {
-                      "createTime": {
-                        "gte": "now-"+str(badIpTimespan)+"m"
-                      }
-                    }
-                  },
-                  "sort": {
+            "query": {
+                "range": {
                     "createTime": {
-                      "order": "desc"
+                        "gte": "now-%sm" % badIpTimespan
+                        }
                     }
-                  },
-                  "_source": [
-                    "sourceEntryIp"
-                  ]
-                })
+                },
+            "sort": {
+                "createTime": {
+                    "order": "desc"
+                    }
+                },
+            "_source": [
+                "sourceEntryIp"
+                ]
+            })
         return set([d["_source"]["sourceEntryIp"] for d in res["hits"]["hits"]])
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
-        return False
 
-# Get IP addresses from alerts in elasticsearch
+    return False
+
 def retrieveAlerts(maxAlerts):
+    """ Get IP addresses from alerts in elasticsearch """
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
-              "query": {
+            "query": {
                 "match_all": {}
-              },
-              "sort": {
+                },
+            "sort": {
                 "createTime": {
-                  "order": "desc"
-                }
-              },
-              "size": maxAlerts,
-              "_source": [
+                    "order": "desc"
+                    }
+                },
+            "size": maxAlerts,
+            "_source": [
                 "createTime",
                 "peerIdent",
                 "peerType",
@@ -162,25 +160,26 @@ def retrieveAlerts(maxAlerts):
                 "originalRequestString",
                 "location",
                 "sourceEntryIp"
-              ]
-        })
+                ]
+            })
         return res["hits"]["hits"]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
-        return False
 
-# Get IP addresses from alerts in elasticsearch
+    return False
+
 def retrieveAlertsWithoutIP(maxAlerts):
+    """ Get IP addresses from alerts in elasticsearch """
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
             "query": {
                 "match_all": {}
-            },
+                },
             "sort": {
                 "createTime": {
                     "order": "desc"
-                }
-            },
+                    }
+                },
             "size": maxAlerts,
             "_source": [
                 "createTime",
@@ -190,59 +189,69 @@ def retrieveAlertsWithoutIP(maxAlerts):
                 "location",
                 "targetCountry",
                 "countName"
-            ]
-        })
+                ]
+            })
         return res["hits"]["hits"]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' % err)
-        return False
 
-# Get number of Alerts in timeframe in elasticsearch
+    return False
+
 def retrieveAlertCount(timeframe):
+    """ Get number of Alerts in timeframe in elasticsearch """
+
     # check if timespan = d or number
     if timeframe == "day":
         span = "now/d"
     elif timeframe.isdecimal():
-        span = "now-"+str(timeframe)+"m"
+        span = "now-%sm" % timeframe)
     else:
         app.logger.error('Non numeric value in retrieveAlertsCount timespan. Must be decimal number (in minutes) or string "day"')
         return False
+
     try:
         res = es.count(index=app.config['ELASTICINDEX'], body={
-                  "query": {
-                    "range": {
-                      "createTime": {
+            "query": {
+                "range": {
+                    "createTime": {
                         "gte": str(span)
-                      }
+                        }
                     }
-                  }
-                })
+                }
+            })
         return res["count"]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
-        return False
 
-# Create XML Strucure for BadIP list
+    return False
+
 def createBadIPxml(iplist):
-    if iplist is not False:
+    """ Create XML Strucure for BadIP list """
+
+    if iplist:
         ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
         sources = ET.SubElement(ewssimpleinfo, 'Sources')
+
         for ip in iplist:
             source = ET.SubElement(sources, 'Source')
             address = ET.SubElement(source, 'Address')
             address.text = ip
+
         prettify(ewssimpleinfo)
         iplistxml = '<?xml version="1.0" encoding="UTF-8"?>'
         iplistxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
+
         return iplistxml
     else:
         return app.config['DEFAULTRESPONSE']
 
-# Create XML Strucure for Alerts list
 def createAlertsXml(alertslist):
-    if alertslist is not False:
+    """ Create XML Strucure for Alerts list """
+
+    if alertslist:
         EWSSimpleAlertInfo = ET.Element('EWSSimpleAlertInfo')
         alertsElement = ET.SubElement(EWSSimpleAlertInfo, 'Alerts')
+
         for alert in alertslist:
             alertElement = ET.SubElement(alertsElement, 'Alert')
             alertId = ET.SubElement(alertElement, 'Id')
@@ -268,6 +277,7 @@ def createAlertsXml(alertslist):
             sourceLatitude.text = sourceCoordinates[0].strip()
             sourceLongitude = ET.SubElement(sourceElement, 'Longitude')
             sourceLongitude.text = sourceCoordinates[1].strip()
+
         prettify(EWSSimpleAlertInfo)
         alertsxml = '<?xml version="1.0" encoding="UTF-8"?>'
         alertsxml += (ET.tostring(EWSSimpleAlertInfo, encoding="utf-8", method="xml"))
@@ -275,32 +285,36 @@ def createAlertsXml(alertslist):
     else:
         return app.config['DEFAULTRESPONSE']
 
-# Create JSON Structure for Alerts list
 def createAlertsJson(alertslist):
-    if alertslist is not False:
-        jsonarray=[]
-        jsonwrapper = {}
-        jsondata = {}
+    """ Create JSON Structure for Alerts list """
+    if alertslist:
+        jsonarray = []
+
         for alert in alertslist:
-            jsondata['id'] = alert['_id']
-            jsondata['dateCreated'] = alert['_source']['createTime']
-            jsondata['country'] = alert['_source']['country']
-            jsondata['countryName'] = alert['_source']['countryName']
-            jsondata['targetCountry'] = alert['_source']['targetCountry']
             latlong = alert['_source']['location'].split(' , ')
-            jsondata['lat'] = latlong[0]
-            jsondata['lng'] = latlong[1]
-            jsondata['analyzerType'] = alert['_source']['peerType']
-            jsondata['requestString'] = alert['_source']['originalRequestString']
+
+            jsondata = {
+                'id': alert['_id'],
+                'dateCreated': alert['_source']['createTime'],
+                'country': alert['_source']['country'],
+                'countryName': alert['_source']['countryName'],
+                'targetCountry': alert['_source']['targetCountry'],
+                'lat': latlong[0],
+                'lng': latlong[1],
+                'analyzerType': alert['_source']['peerType'],
+                'requestString': alert['_source']['originalRequestString'],
+            }
+
             jsonarray.append(jsondata)
-        jsonwrapper['alerts'] = jsonarray
-        return json.dumps(jsonwrapper)
+
+        return json.dumps({'alert': jsonarray})
     else:
         return app.config['DEFAULTRESPONSE']
 
-# Create XML / Json Structure with number of Alerts in requested timespan
 def createAlertCountResponse(numberofalerts, outformat):
-    if numberofalerts is not False:
+    """ Create XML / Json Structure with number of Alerts in requested timespan """
+
+    if numberofalerts:
         if outformat == "xml":
             ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
             alertCount = ET.SubElement(ewssimpleinfo, 'AlertCount')
@@ -310,14 +324,12 @@ def createAlertCountResponse(numberofalerts, outformat):
             alertcountxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
             return alertcountxml
         else:
-            jsondata = {}
-            jsondata['AlertCount'] = numberofalerts
-            return json.dumps(jsondata)
+            return json.dumps({'AlertCount': numberofalerts)
     else:
         return app.config['DEFAULTRESPONSE']
 
-# Prettify the xml output
 def prettify(elem, level=0):
+    """ Prettify the xml output """
     i = "\n" + level*"  "
     if len(elem):
         if not elem.text or not elem.text.strip():
@@ -331,8 +343,6 @@ def prettify(elem, level=0):
     else:
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
-
-
 
 
 ###############
@@ -358,32 +368,32 @@ def heartbeat():
     else:
         return "flatline"
 
-# Retrieve bad IPs
 @login_required
 @app.route("/alert/retrieveIPs", methods=['POST'])
 def retrieveIPs():
-    # Retrieve IPs from ElasticSearch and return formatted XML with IPs
+    """ Retrieve IPs from ElasticSearch and return formatted XML with IPs """
     return createBadIPxml(retrieveBadIPs(app.config['BADIPTIMESPAN']))
 
-# Retrieve Alerts
 @login_required
 @app.route("/alert/retrieveAlertsCyber", methods=['POST'])
 def retrieveAlertsCyber():
-    # Retrieve Alerts from ElasticSearch and return formatted XML with limited alert content
+    """ Retrieve Alerts from ElasticSearch and return formatted 
+        XML with limited alert content
+    """
     return createAlertsXml(retrieveAlerts(app.config['MAXALERTS']))
 
-# Retrieve last 5 Alerts in JSON without IPs
 @app.route("/alert/retrieveAlertsJson", methods=['GET'])
 # TODO: Change requesting domain to new sicherheitstacho for CORS
 @cross_origin(origins="sicherheitstacho.eu", methods=['GET'])
 def retrieveAlertsJson():
-
+    """ Retrieve last 5 Alerts in JSON without IPs """
     # Retrieve last 5 Alerts from ElasticSearch and return JSON formatted with limited alert content
     return createAlertsJson(retrieveAlertsWithoutIP(5))
 
-# Retrieve Number of Alerts in timeframe (GET-Parameter time as decimal or "day")
 @app.route("/alert/retrieveAlertsCount", methods=['GET'])
 def retrieveAlertsCount():
+    """ Retrieve number of alerts in timeframe (GET-Parameter time as decimal or "day") """
+
     # Retrieve Number of Alerts from ElasticSearch and return as xml / json
     if not request.args.get('time'):
         app.logger.error('No time GET-parameter supplied in retrieveAlertsCount. Must be decimal number (in minutes) or string "day"')
