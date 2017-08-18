@@ -204,7 +204,7 @@ def retrieveAlertCount(timeframe):
     if timeframe == "day":
         span = "now/d"
     elif timeframe.isdecimal():
-        span = "now-%sm" % timeframe)
+        span = "now-%sm" % timeframe
     else:
         app.logger.error('Non numeric value in retrieveAlertsCount timespan. Must be decimal number (in minutes) or string "day"')
         return False
@@ -324,7 +324,7 @@ def createAlertCountResponse(numberofalerts, outformat):
             alertcountxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
             return Response(alertcountxml, mimetype='text/xml')
         else:
-            return jsonify({'AlertCount': numberofalerts)
+            return jsonify({'AlertCount': numberofalerts})
     else:
         return app.config['DEFAULTRESPONSE']
 
