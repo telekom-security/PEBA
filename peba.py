@@ -190,7 +190,8 @@ def retrieveAlertsWithoutIP(maxAlerts):
                 "originalRequestString",
                 "location",
                 "targetCountry",
-                "countryName"
+                "countryName",
+                "locationDestination"
                 ]
             })
         return res["hits"]["hits"]
@@ -373,6 +374,7 @@ def createAlertsJson(alertslist):
 
         for alert in alertslist:
             latlong = alert['_source']['location'].split(' , ')
+            destlatlong = alert['_source']['locationDestination'].split(' , ')
 
             jsondata = {
                 'id': alert['_id'],
@@ -382,13 +384,15 @@ def createAlertsJson(alertslist):
                 'targetCountry': alert['_source']['targetCountry'],
                 'sourceLat': latlong[0],
                 'sourceLng': latlong[1],
+                'destLat' : destlatlong[0],
+                'destLng' : destlatlong[1],
                 'analyzerType': alert['_source']['peerType'],
                 'requestString': alert['_source']['originalRequestString'],
             }
 
             jsonarray.append(jsondata)
 
-        return jsonify({'alert': jsonarray})
+        return jsonify({'alerts': jsonarray})
     else:
         return app.config['DEFAULTRESPONSE']
 
