@@ -230,9 +230,9 @@ def retrieveAlertCount(timeframe):
 def retrieveDatasetAlertPerMonth(days):
     # check if months is a number
     if days is None:
-        span = "now-1M"
+        span = "now-1M/d"
     elif days.isdecimal():
-        span = "now-%sd" % days
+        span = "now-%sd/d" % days
     else:
         app.logger.error('Non numeric value in datasetAlertsPerMonth timespan. Must be decimal number in days')
         return False
@@ -256,6 +256,48 @@ def retrieveDatasetAlertPerMonth(days):
               },
               "size": 0
             })
+        return res["aggregations"]["range"]
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' %  err)
+
+    return False
+
+def retrieveDatasetAlertTypePerMonth(days):
+    # check if months is a number
+    if days is None:
+        span = "now-1M/d"
+    elif days.isdecimal():
+        span = "now-%sd/d" % days
+    else:
+        app.logger.error('Non numeric value in datasetAlertsTypesPerMonth timespan. Must be decimal number in days')
+        return False
+
+    try:
+        res = es.search(index=app.config['ELASTICINDEX'], body={
+          "query": {
+            "range": {
+              "createTime": {
+                "gte": span
+              }
+            }
+          },
+          "aggs": {
+            "range": {
+              "date_histogram": {
+                "field": "createTime",
+                "interval": "day"
+              },
+              "aggs": {
+                "nested_terms_agg": {
+                  "terms": {
+                    "field": "peerType.keyword"
+                  }
+                }
+              }
+            }
+          },
+          "size": 0
+        })
         return res["aggregations"]["range"]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
@@ -377,6 +419,19 @@ def createRetrieveDatasetAlertsPerMonth(datasetAlertsPerMonth):
     else:
         return app.config['DEFAULTRESPONSE']
 
+def createDatasetAlertTypesPerMonth(datasetAlertTypePerMonth):
+    if datasetAlertTypePerMonth:
+        jsondatamonth = {}
+        for alertTypesPerMonth in datasetAlertTypePerMonth['buckets']:
+            jsondatatype = {}
+            for alertTypes in alertTypesPerMonth['nested_terms_agg']['buckets']:
+                jsondatatype[alertTypes['key']] =  alertTypes['doc_count']
+                jsondatamonth[alertTypesPerMonth['key_as_string']] = jsondatatype
+
+        return jsonify([{'datasetAlertsPerMonth': jsondatamonth}])
+    else:
+        return app.config['DEFAULTRESPONSE']
+
 
 def prettify(elem, level=0):
     """ Prettify the xml output """
@@ -474,6 +529,19 @@ def retrieveDatasetAlertsPerMonth():
         return (createRetrieveDatasetAlertsPerMonth(retrieveDatasetAlertPerMonth(None)))
     else:
         return createRetrieveDatasetAlertsPerMonth(retrieveDatasetAlertPerMonth(request.args.get('days')))
+
+@app.route("/alert/datasetAlertTypesPerMonth", methods=['GET'])
+def retrieveDatasetAlertTypesPerMonth():
+    """ Retrieve the attacks / day in the last x days from elasticsearch,
+        split by attack group
+        and return as JSON for the last x months, defaults to last month,
+        if no GET parameter days is given
+    """
+    if not request.args.get('days'):
+        # Using default : within the last month
+        return (createDatasetAlertTypesPerMonth(retrieveDatasetAlertTypePerMonth(None)))
+    else:
+        return createDatasetAlertTypesPerMonth(retrieveDatasetAlertTypePerMonth(request.args.get('days')))
 
 
 ###############
