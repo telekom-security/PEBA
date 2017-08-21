@@ -227,6 +227,43 @@ def retrieveAlertCount(timeframe):
 
     return False
 
+def retrieveDatasetAlertPerMonth(days):
+    # check if months is a number
+    if days is None:
+        span = "now-1M"
+    elif days.isdecimal():
+        span = "now-%sd" % days
+    else:
+        app.logger.error('Non numeric value in datasetAlertsPerMonth timespan. Must be decimal number in days')
+        return False
+
+    try:
+        res = es.search(index=app.config['ELASTICINDEX'], body={
+              "query": {
+                "range": {
+                  "createTime": {
+                    "gte": str(span)
+                  }
+                }
+              },
+              "aggs": {
+                "range": {
+                  "date_histogram": {
+                    "field": "createTime",
+                    "interval": "day"
+                  }
+                }
+              },
+              "size": 0
+            })
+        return res["aggregations"]["range"]
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' %  err)
+
+    return False
+
+# Formatting functions
+
 def createBadIPxml(iplist):
     """ Create XML Strucure for BadIP list """
 
@@ -330,6 +367,17 @@ def createAlertCountResponse(numberofalerts, outformat):
     else:
         return app.config['DEFAULTRESPONSE']
 
+def createRetrieveDatasetAlertsPerMonth(datasetAlertsPerMonth):
+    if datasetAlertsPerMonth:
+        jsondata = {}
+        for alertsPerMonth in datasetAlertsPerMonth['buckets']:
+                jsondata[alertsPerMonth['key_as_string']] = alertsPerMonth['doc_count']
+
+        return jsonify([{'datasetAlertsPerMonth': jsondata}])
+    else:
+        return app.config['DEFAULTRESPONSE']
+
+
 def prettify(elem, level=0):
     """ Prettify the xml output """
     i = "\n" + level*"  "
@@ -370,6 +418,7 @@ def heartbeat():
     else:
         return "flatline"
 
+# Routes with XML output
 
 @app.route("/alert/retrieveIPs", methods=['POST'])
 @login_required
@@ -386,13 +435,8 @@ def retrieveAlertsCyber():
     """
     return createAlertsXml(retrieveAlerts(app.config['MAXALERTS']))
 
-@app.route("/alert/retrieveAlertsJson", methods=['GET'])
-# TODO: Change requesting domain to new sicherheitstacho for CORS
-@cross_origin(origins="*", methods=['GET'])
-def retrieveAlertsJson():
-    """ Retrieve last 5 Alerts in JSON without IPs """
-    # Retrieve last 5 Alerts from ElasticSearch and return JSON formatted with limited alert content
-    return createAlertsJson(retrieveAlertsWithoutIP(5))
+
+# Routes with both XML and JSON output
 
 @app.route("/alert/retrieveAlertsCount", methods=['GET'])
 def retrieveAlertsCount():
@@ -407,6 +451,30 @@ def retrieveAlertsCount():
             return createAlertCountResponse(retrieveAlertCount(request.args.get('time')), 'json')
         else:
             return createAlertCountResponse(retrieveAlertCount(request.args.get('time')), 'xml')
+
+
+# Routes with JSON output
+
+@app.route("/alert/retrieveAlertsJson", methods=['GET'])
+# TODO: Change requesting domain to new sicherheitstacho for CORS
+@cross_origin(origins="*", methods=['GET'])
+def retrieveAlertsJson():
+    """ Retrieve last 5 Alerts in JSON without IPs """
+    # Retrieve last 5 Alerts from ElasticSearch and return JSON formatted with limited alert content
+    return createAlertsJson(retrieveAlertsWithoutIP(5))
+
+@app.route("/alert/datasetAlertsPerMonth", methods=['GET'])
+def retrieveDatasetAlertsPerMonth():
+    """ Retrieve the attacks / day in the last x days from elasticsearch
+        and return as JSON for the last x months, defaults to last month,
+        if no GET parameter days is given
+    """
+    if not request.args.get('days'):
+        # Using default : within the last month
+        return (createRetrieveDatasetAlertsPerMonth(retrieveDatasetAlertPerMonth(None)))
+    else:
+        return createRetrieveDatasetAlertsPerMonth(retrieveDatasetAlertPerMonth(request.args.get('days')))
+
 
 ###############
 ### Main
