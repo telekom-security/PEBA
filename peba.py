@@ -29,6 +29,7 @@ from functools import wraps
 app = Flask(__name__)
 app.config.from_pyfile('/etc/ews/peba.cfg')
 app.wsgi_app = ProxyFix(app.wsgi_app)
+cors = CORS(app, resources={r"/alert/*": {"origins": app.config['CORSDOMAIN']}})
 
 es = FlaskElasticsearch(app,
     timeout=app.config['ELASTICTIMEOUT']
@@ -305,6 +306,40 @@ def retrieveDatasetAlertTypePerMonth(days):
 
     return False
 
+def retrieveAlertStat():
+    """ Get combined statistics from elasticsearch """
+    try:
+        res = es.search(index=app.config['ELASTICINDEX'], body={
+          "aggs": {
+            "ctr": {
+              "range": {
+                "field": "createTime",
+                "ranges": [
+                  {
+                    "key": "1d",
+                    "from": "now-1440m"
+                  },
+                  {
+                    "key": "1h",
+                    "from": "now-60m"
+                  },
+                  {
+                    "key": "1m",
+                    "from": "now-1m"
+                  }
+                ]
+              }
+            }
+          },
+          "size": 0
+        })
+        return res['aggregations']['ctr']['buckets']
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' % err)
+
+    return False
+
+
 # Formatting functions
 
 def createBadIPxml(iplist):
@@ -436,6 +471,17 @@ def createDatasetAlertTypesPerMonth(datasetAlertTypePerMonth):
     else:
         return app.config['DEFAULTRESPONSE']
 
+def createRetrieveAlertStats(retrieveAlertStat):
+    if retrieveAlertStat:
+        jsondata = {
+            'AlertsLastDay': retrieveAlertStat[0]['doc_count'],
+            'AlertsLastHour': retrieveAlertStat[1]['doc_count'],
+            'AlertsLastMinute': retrieveAlertStat[2]['doc_count']
+        }
+        return jsonify(jsondata)
+    else:
+        return app.config['DEFAULTRESPONSE']
+
 
 def prettify(elem, level=0):
     """ Prettify the xml output """
@@ -515,8 +561,6 @@ def retrieveAlertsCount():
 # Routes with JSON output
 
 @app.route("/alert/retrieveAlertsJson", methods=['GET'])
-# TODO: Change requesting domain to new sicherheitstacho for CORS
-@cross_origin(origins="*", methods=['GET'])
 def retrieveAlertsJson():
     """ Retrieve last 5 Alerts in JSON without IPs """
     # Retrieve last 5 Alerts from ElasticSearch and return JSON formatted with limited alert content
