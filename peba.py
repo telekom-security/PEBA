@@ -360,7 +360,7 @@ def retrieveTopCountryAttacks(monthOffset, topX):
         topx = topX
     else:
         app.logger.error(
-            'Non numeric value in retrieveTopCountryAttacks topX. Must be decimal number.')
+            'Non numeric value in /retrieveTopCountryAttacks topX. Must be decimal number.')
         return False
 
 
@@ -432,12 +432,77 @@ def retrieveTopCountryAttacks(monthOffset, topX):
                     }
                 }
             },
-            "size": 1,
+            "size": 0,
             "_source": [
                 "createTime"
             ]
         })
         return [ res["aggregations"]["countries"]["buckets"], monthOffset,res["hits"]["hits"][0]["_source"]["createTime"], res2["aggregations"]["countries"]["buckets"] ]
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' % err)
+
+    return False
+
+def retrieveLatLonAttack(direction, topX, dayoffset):
+    # use default: Lat long of source
+    if direction is None:
+        locationString = "location"
+    elif direction == "src":
+        locationString = "location"
+    elif direction == "dst":
+        locationString = "locationDestination"
+    else:
+        app.logger.error('Invalid value in /retrieveLatLonAttacks direction. Must be "src" or "dest"')
+        return False
+
+    # use top10 default
+    if topX is None:
+        topx = 10
+        # check if months is a number
+    elif topX.isdecimal():
+        topx = topX
+    else:
+        app.logger.error(
+            'Non numeric value in /retrieveLatLonAttacks topX. Must be decimal number.')
+        return False
+
+    # statistics for 24 hours
+    if dayoffset is None:
+        span = "now-24h"
+    # check if days is a number
+    elif dayoffset.isdecimal():
+        span = "now-%dd" % int(dayoffset)
+    else:
+        app.logger.error(
+            'Non numeric value in /retrieveLatLonAttacks day offset. Must be decimal number.')
+        return False
+
+
+    # Get location strings
+    try:
+        res = es.search(index=app.config['ELASTICINDEX'], body={
+          "query": {
+            "range": {
+              "createTime": {
+                "gte": dayoffset
+              }
+            }
+          },
+          "size": 1,
+          "_source": [
+            "location",
+            "createTime"
+          ],
+          "aggs": {
+            "topLocations": {
+              "terms": {
+                "field": "%s.keyword" % locationString,
+                "size": str(topx)
+              }
+            }
+          }
+        })
+        return [ res["aggregations"]["topLocations"]["buckets"],res["hits"]["hits"][0]["_source"]["createTime"]]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' % err)
 
@@ -644,6 +709,36 @@ def createTopCountryAttacks(retrieveTopCountryAttacksArr):
 
     return app.config['DEFAULTRESPONSE']
 
+def createLatLonAttacks(retrieveLatLonAttacksArr):
+    if retrieveLatLonAttacksArr:
+        retrieveLatLonAttacks = retrieveLatLonAttacksArr[0]
+        monthdate = retrieveLatLonAttacksArr[1]
+
+
+    if retrieveLatLonAttacks:
+
+        jsonarray_location = []
+
+        for attackLocation in retrieveLatLonAttacks:
+            latLonArr = attackLocation['key'].split(" , ")
+            jsondata_location = {
+                'lat': latLonArr[0],
+                'lng' : latLonArr[1],
+                'count': attackLocation['doc_count']
+            }
+            jsonarray_location.append(jsondata_location)
+
+
+        LatLonStats = {
+                     'statsSince': datetime.datetime.strptime(monthdate, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d'),
+                     'latLonAttacks': jsonarray_location
+                         }
+
+
+        return jsonify([LatLonStats])
+
+    return app.config['DEFAULTRESPONSE']
+
 
 
 ###############
@@ -762,7 +857,34 @@ def retrieveTopCountriesAttacks():
         topx = request.args.get('topx')
     return createTopCountryAttacks(retrieveTopCountryAttacks(offset, topx))
 
+@app.route("/alert/retrieveLatLonAttacks", methods=['GET'])
+def retrieveLatLonAttacks():
+    """ Retrieve statistics on Latitude and Longitude of the attack sources / destinations.
+        offset in days
+        topX determines how many
+        direction src = src lat lng
+        direction dst = dest lat lng
+    """
+    if not request.args.get('direction'):
+        # Using default : lat and long of attack sources
+        direction = None
+    else:
+        # using attack destinations
+        direction = request.args.get('direction')
 
+    if not request.args.get('topx'):
+        # Using default top 10
+        topx = None
+    else:
+        topx = request.args.get('topx')
+
+    if not request.args.get('offset'):
+        # Using default 24h
+        offset = None
+    else:
+        offset = request.args.get('offset')
+
+    return createLatLonAttacks(retrieveLatLonAttack(direction, topx, offset))
 
 ###############
 ### Main

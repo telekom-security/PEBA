@@ -64,8 +64,14 @@ echo ""
 sleep 3
 
 echo "***** RETRIEVETOPCOUNTRIES  *****"
-curl http://$BIND/alert/topCountriesAttacks
+curl http://$BIND/alert/topCountriesAttacks?offset=1&topx=4
 echo "***** END RETRIEVETOPCOUNTRIES *****"
+echo ""
+sleep 3
+
+echo "***** RETRIEVELATLONG  *****"
+curl http://$BIND/alert/retrieveLatLonAttacks?offset=3&topx=4&direction=src
+echo "***** END RETRIEVELATLONG *****"
 echo ""
 
 echo "***** END TESTING LOCAL WEBSERVICE"
