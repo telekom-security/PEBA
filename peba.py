@@ -380,8 +380,8 @@ def createAlertsJson(alertslist):
                 'country': alert['_source']['country'],
                 'countryName': alert['_source']['countryName'],
                 'targetCountry': alert['_source']['targetCountry'],
-                'lat': latlong[0],
-                'lng': latlong[1],
+                'sourceLat': latlong[0],
+                'sourceLng': latlong[1],
                 'analyzerType': alert['_source']['peerType'],
                 'requestString': alert['_source']['originalRequestString'],
             }
@@ -521,7 +521,7 @@ def retrieveAlertsJson():
 @app.route("/alert/datasetAlertsPerMonth", methods=['GET'])
 def retrieveDatasetAlertsPerMonth():
     """ Retrieve the attacks / day in the last x days from elasticsearch
-        and return as JSON for the last x months, defaults to last month,
+        and return as JSON for the last months, defaults to last month,
         if no GET parameter days is given
     """
     if not request.args.get('days'):

@@ -44,11 +44,15 @@ curl http://$BIND/alert/retrieveAlertsJson
 echo "***** END RETRIEVEALERTJSON  *****"
 echo "" 
 
-echo "***** RETRIEVEALERTTSPERMONTH  *****"
+echo "***** RETRIEVEALERTSPERMONTH  *****"
 curl http://$BIND/alert/datasetAlertsPerMonth
-echo "***** END RETRIEVEALERTJSON  *****"
+echo "***** END RETRIEVEALERTSPERMONTH  *****"
 echo ""
 
+echo "***** RETRIEVEALERTTYPESSPERMONTH  *****"
+curl http://$BIND/alert/datasetAlertTypesPerMonth
+echo "***** END RETRIEVEALERTYPESPERMONTH  *****"
+echo ""
 
 
 echo "***** END TESTING LOCAL WEBSERVICE"
