@@ -591,6 +591,14 @@ def retrieveDatasetAlertTypesPerMonth():
     else:
         return createDatasetAlertTypesPerMonth(retrieveDatasetAlertTypePerMonth(request.args.get('days')))
 
+@app.route("/alert/retrieveAlertStats", methods=['GET'])
+def retrieveAlertStats():
+    """ Retrieve combined statistics
+        AlertsLastMinute, AlertsLastHour,  AlertsLast24Hours
+    """
+    return createRetrieveAlertStats(retrieveAlertStat())
+
+
 
 ###############
 ### Main
