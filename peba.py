@@ -340,7 +340,7 @@ def retrieveAlertStat():
 
     return False
 
-def retrieveTopCountryAttacks(monthOffset):
+def retrieveTopCountryAttacks(monthOffset, topX):
     # use THIS month
     if monthOffset is None:
         span = "now/M"
@@ -351,6 +351,19 @@ def retrieveTopCountryAttacks(monthOffset):
     else:
         app.logger.error('Non numeric value in retrieveTopCountryAttacks monthOffset. Must be decimal number in months')
         return False
+
+    # use top10 default
+    if topX is None:
+        topx = 10
+    # check if months is a number
+    elif topX.isdecimal():
+        topx = topX
+    else:
+        app.logger.error(
+            'Non numeric value in retrieveTopCountryAttacks topX. Must be decimal number.')
+        return False
+
+
     # Get top 10 attacker countries
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
@@ -364,7 +377,8 @@ def retrieveTopCountryAttacks(monthOffset):
           "aggs": {
             "countries": {
               "terms": {
-                "field": "country.keyword"
+                "field": "country.keyword",
+                "size" : str(topx)
               },
               "aggs": {
                 "country": {
@@ -401,7 +415,8 @@ def retrieveTopCountryAttacks(monthOffset):
             "aggs": {
                 "countries": {
                     "terms": {
-                        "field": "targetCountry.keyword"
+                        "field": "targetCountry.keyword",
+                        "size": str(topx)
                     },
                     "aggs": {
                         "country": {
@@ -736,9 +751,16 @@ def retrieveTopCountriesAttacks():
     """
     if not request.args.get('monthOffset'):
         # Using default : within the last month
-        return createTopCountryAttacks(retrieveTopCountryAttacks(None))
+        offset = None
     else:
-        return createTopCountryAttacks(retrieveTopCountryAttacks(request.args.get('monthOffset')))
+        offset = request.args.get('monthOffset')
+
+    if not request.args.get('topx'):
+        # Using default top 10
+        topx = None
+    else:
+        topx = request.args.get('topx')
+    return createTopCountryAttacks(retrieveTopCountryAttacks(offset, topx))
 
 
 
