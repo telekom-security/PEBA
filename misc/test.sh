@@ -43,17 +43,30 @@ echo "***** RETRIEVEALERTJSON  *****"
 curl http://$BIND/alert/retrieveAlertsJson
 echo "***** END RETRIEVEALERTJSON  *****"
 echo "" 
+sleep 3
 
 echo "***** RETRIEVEALERTSPERMONTH  *****"
 curl http://$BIND/alert/datasetAlertsPerMonth
 echo "***** END RETRIEVEALERTSPERMONTH  *****"
 echo ""
+sleep 3 
 
 echo "***** RETRIEVEALERTTYPESSPERMONTH  *****"
 curl http://$BIND/alert/datasetAlertTypesPerMonth
 echo "***** END RETRIEVEALERTYPESPERMONTH  *****"
 echo ""
+sleep 3
 
+echo "***** RETRIEVEALERTSTATS  *****"
+curl http://$BIND/alert/retrieveAlertStats
+echo "***** END RETRIEVEALERTSTATS  *****"
+echo ""
+sleep 3
+
+echo "***** RETRIEVETOPCOUNTRIES  *****"
+curl http://$BIND/alert/topCountriesAttacks
+echo "***** END RETRIEVETOPCOUNTRIES *****"
+echo ""
 
 echo "***** END TESTING LOCAL WEBSERVICE"
 

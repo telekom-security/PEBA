@@ -10,6 +10,7 @@ import defusedxml.ElementTree as ETdefused
 
 import hashlib
 import json
+import datetime
 
 from flask import Flask, request, abort, jsonify, Response
 from flask_cors import CORS, cross_origin
@@ -265,7 +266,7 @@ def retrieveDatasetAlertPerMonth(days):
     return False
 
 def retrieveDatasetAlertTypePerMonth(days):
-    # check if months is a number
+    # check if days is a number
     if days is None:
         span = "now-1M/d"
     elif days.isdecimal():
@@ -339,8 +340,111 @@ def retrieveAlertStat():
 
     return False
 
+def retrieveTopCountryAttacks(monthOffset):
+    # use THIS month
+    if monthOffset is None:
+        span = "now/M"
+        monthOffset = 0
+    # check if months is a number
+    elif monthOffset.isdecimal():
+        span = "now-%sM/M" % monthOffset
+    else:
+        app.logger.error('Non numeric value in retrieveTopCountryAttacks monthOffset. Must be decimal number in months')
+        return False
+    # Get top 10 attacker countries
+    try:
+        res = es.search(index=app.config['ELASTICINDEX'], body={
+          "query": {
+            "range": {
+              "createTime": {
+                "gte": span
+              }
+            }
+          },
+          "aggs": {
+            "countries": {
+              "terms": {
+                "field": "country.keyword"
+              },
+              "aggs": {
+                "country": {
+                  "top_hits": {
+                    "size": 1,
+                    "_source": {
+                      "include": [
+                        "countryName"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "size": 1,
+          "_source": [
+                "createTime"
+              ]
+        })
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' % err)
+
+    # Get top 10 attacked countries
+    try:
+        res2 = es.search(index=app.config['ELASTICINDEX'], body={
+            "query": {
+                "range": {
+                    "createTime": {
+                        "gte": span
+                    }
+                }
+            },
+            "aggs": {
+                "countries": {
+                    "terms": {
+                        "field": "targetCountry.keyword"
+                    },
+                    "aggs": {
+                        "country": {
+                            "top_hits": {
+                                "size": 1,
+                                "_source": {
+                                    "include": [
+                                        "targetCountryName"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "size": 1,
+            "_source": [
+                "createTime"
+            ]
+        })
+        return [ res["aggregations"]["countries"]["buckets"], monthOffset,res["hits"]["hits"][0]["_source"]["createTime"], res2["aggregations"]["countries"]["buckets"] ]
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' % err)
+
+    return False
 
 # Formatting functions
+
+def prettify(elem, level=0):
+    """ Prettify the xml output """
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            prettify(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
 def createBadIPxml(iplist):
     """ Create XML Strucure for BadIP list """
@@ -482,22 +586,49 @@ def createRetrieveAlertStats(retrieveAlertStat):
     else:
         return app.config['DEFAULTRESPONSE']
 
+def createTopCountryAttacks(retrieveTopCountryAttacksArr):
+    if retrieveTopCountryAttacksArr:
+        retrieveTopCountryAttacker = retrieveTopCountryAttacksArr[0]
+        monthOffset = retrieveTopCountryAttacksArr[1]
+        monthdate = retrieveTopCountryAttacksArr[2]
+        retrieveTopCountryAttacked = retrieveTopCountryAttacksArr[3]
 
-def prettify(elem, level=0):
-    """ Prettify the xml output """
-    i = "\n" + level*"  "
-    if len(elem):
-        if not elem.text or not elem.text.strip():
-            elem.text = i + "  "
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
-        for elem in elem:
-            prettify(elem, level+1)
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
     else:
-        if level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
+        return app.config['DEFAULTRESPONSE']
+
+    # Create json structure for ATTACKER and ATTACKED countries
+    if retrieveTopCountryAttacker and retrieveTopCountryAttacked:
+        jsonarray_attacker = []
+        jsonarray_attacked = []
+
+        # attacker
+        for topCountry in retrieveTopCountryAttacker:
+            jsondata_attacker = {
+                'code': topCountry['key'],
+                'country': topCountry['country']['hits']['hits'][0]['_source']['countryName'],
+                'count': topCountry['doc_count']
+            }
+            jsonarray_attacker.append(jsondata_attacker)
+
+        # attacked
+        for topCountry in retrieveTopCountryAttacked:
+            jsondata_attacked = {
+                'code': topCountry['key'],
+                'country': topCountry['country']['hits']['hits'][0]['_source']['targetCountryName'],
+                'count': topCountry['doc_count']
+            }
+            jsonarray_attacked.append(jsondata_attacked)
+
+        countryStats = { 'id' :  monthOffset,
+                     'date': datetime.datetime.strptime(monthdate, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m'),
+                     'attacksPerCountry': jsonarray_attacker,
+                     'attacksToTargetCountry': jsonarray_attacked
+                         }
+
+        return jsonify([countryStats])
+
+    return app.config['DEFAULTRESPONSE']
+
 
 
 ###############
@@ -522,6 +653,7 @@ def heartbeat():
         return "e"
     else:
         return "flatline"
+
 
 # Routes with XML output
 
@@ -597,6 +729,16 @@ def retrieveAlertStats():
         AlertsLastMinute, AlertsLastHour,  AlertsLast24Hours
     """
     return createRetrieveAlertStats(retrieveAlertStat())
+
+@app.route("/alert/topCountriesAttacks", methods=['GET'])
+def retrieveTopCountriesAttacks():
+    """ Retrieve the Top X countries and their attacks within month
+    """
+    if not request.args.get('monthOffset'):
+        # Using default : within the last month
+        return createTopCountryAttacks(retrieveTopCountryAttacks(None))
+    else:
+        return createTopCountryAttacks(retrieveTopCountryAttacks(request.args.get('monthOffset')))
 
 
 
