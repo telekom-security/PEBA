@@ -474,7 +474,7 @@ def createDatasetAlertTypesPerMonth(datasetAlertTypePerMonth):
 def createRetrieveAlertStats(retrieveAlertStat):
     if retrieveAlertStat:
         jsondata = {
-            'AlertsLastDay': retrieveAlertStat[0]['doc_count'],
+            'AlertsLast24Hours': retrieveAlertStat[0]['doc_count'],
             'AlertsLastHour': retrieveAlertStat[1]['doc_count'],
             'AlertsLastMinute': retrieveAlertStat[2]['doc_count']
         }
