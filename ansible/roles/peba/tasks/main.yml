@@ -43,6 +43,15 @@
     - python-dev
     - python3-dev
 
+- name: Add user peba.
+  user:
+    name: peba
+    shell: /bin/nologin
+    home: /nonexistent
+    createhome: no
+    system: yes
+    comment: user for peba backend service
+
 - name: Installing virtualenv via pip
   pip:
     name: virtualenv

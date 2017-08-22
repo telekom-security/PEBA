@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 ### BEGIN INIT INFO
 # Provides:          peba
@@ -16,7 +16,7 @@ if [ `id -u` -ne 0 ]; then
 fi
 
 APPNAME=peba
-USER=root
+USER=peba
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
 APPPATH=/opt/peba/
 ACTIVATE=/opt/peba/bin/activate
