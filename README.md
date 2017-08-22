@@ -1,6 +1,6 @@
 # PEBA - Python EWS Backend API
 
-Small backend application to offer an API alternative for current EWS backend, e.g. for the T-Pot Community backend. 
+Lightweight backend application to offer an API alternative for current EWS backend, e.g. for the T-Pot Community backend. Requires python 2.7.
 
 **Currently implemented endpoints:** 
 
@@ -15,21 +15,34 @@ Small backend application to offer an API alternative for current EWS backend, e
  - [GET] */alert/topCountriesAttacks* ==> Returns information on the Top 10 attacker countries and top 10 attacked countries. use GET parameter "offset" and "topx" to determine the offset from this month (default: this month) and how many results shall be returned (default: top10)
  - [GET] */alert/retrieveLatLonAttacks* ==> Returns top X count on Lat and Lng. use GET parameter "offset" and "topx" to determine the offset from now in days (default: last 24h) and how many results shall be returned (default: top10). Use parameter "direction" to determine if source or destination location is given.
 
+
+
 **Install requirements:**
 
-	easy_install hashlib
+	easy_install hashlib # might not be necessary, depending on operating system
     pip install -r requirements.txt 
 
 
 **Run Application:**
 
+Run the application (for testing) via:
+
    	./start.sh
-
-
-The webapplication runs on port 8000. It needs a [reverse proxy](http://flask.pocoo.org/docs/0.12/deploying/wsgi-standalone/#proxy-setups)  for SSL termination. 
+   	
+The webapplication runs on port 9922. It needs a [reverse proxy](http://flask.pocoo.org/docs/0.12/deploying/wsgi-standalone/#proxy-setups)  for SSL termination.
 Currently logs errors to `./error.log` - no access log.
 
-The application can be tested using `./misc/test.sh` which will send the appropriate request to retrieve data. 
+**Deploy Application:**
 
+The application can be deployed via ansible on a debian (tested: Stretch) / ubuntu (tested 16.04) system and started using an init script. Adjust ./ansible/hosts with the correct paramters (hostname and following operational values). Then deploy via:
+
+    ./ansible/deploy.sh <prod|test>
+
+
+**Functional Tests:**
+
+The application can be tested using `./misc/test.sh` which will send appropriate requests to retrieve data. Again, prod and test instance can be tested, change the config section in script according to your environment.
+
+    ./misc/test.sh <prod|test>
 
 You need corresponding WSUser username & token to access the API. Replace them in `./misc/request.xml`
