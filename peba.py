@@ -230,6 +230,46 @@ def retrieveAlertCount(timeframe):
 
     return False
 
+def retrieveAlertCountWithType(timeframe):
+    """ Get number of Alerts in timeframe in elasticsearch """
+
+    # check if timespan = d or number
+    if timeframe == "day":
+        span = "now/d"
+    elif timeframe.isdecimal():
+        span = "now-%sm" % timeframe
+    else:
+        app.logger.error('Non numeric value in retrieveAlertCountWithType timespan. Must be decimal number (in minutes) or string "day"')
+        return False
+
+    try:
+        res = es.search(index=app.config['ELASTICINDEX'], body={
+              "query": {
+                "range": {
+                  "createTime": {
+                    "gte": str(span)
+
+                  }
+                }
+              },
+              "aggs": {
+                    "honeypotTypes": {
+                      "terms": {
+                        "field": "peerType.keyword"
+
+
+                  }
+                }
+              },
+              "size": 0
+            })
+        return res
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' %  err)
+
+    return False
+
+
 def retrieveDatasetAlertPerMonth(days):
     # check if months is a number
     if days is None:
@@ -632,6 +672,20 @@ def createAlertCountResponse(numberofalerts, outformat):
     else:
         return app.config['DEFAULTRESPONSE']
 
+def createAlertCountResponseWithType(numberofalerts):
+    if numberofalerts:
+        jsondata1 = {}
+        for alertTypes in numberofalerts['aggregations']['honeypotTypes']['buckets']:
+            jsondata1[alertTypes['key']] = alertTypes['doc_count']
+
+        jsondata2 = {
+                "AlertCountTotal" : numberofalerts['hits']['total'],
+                "AlertCountPerType" : jsondata1
+        }
+        return jsonify(jsondata2)
+    else:
+        return app.config['DEFAULTRESPONSE']
+
 def createRetrieveDatasetAlertsPerMonth(datasetAlertsPerMonth):
     if datasetAlertsPerMonth:
         jsondata = {}
@@ -801,6 +855,17 @@ def retrieveAlertsCount():
 
 
 # Routes with JSON output
+
+@app.route("/alert/retrieveAlertsCountWithType", methods=['GET'])
+def retrieveAlertsCountWithType():
+    """ Retrieve number of alerts in timeframe (GET-Parameter time as decimal or "day") and divide into honypot types"""
+
+    # Retrieve Number of Alerts from ElasticSearch and return as xml / json
+    if not request.args.get('time'):
+        app.logger.error('No time GET-parameter supplied in retrieveAlertsCountWithType. Must be decimal number (in minutes) or string "day"')
+        return app.config['DEFAULTRESPONSE']
+    else:
+        return createAlertCountResponseWithType(retrieveAlertCountWithType(request.args.get('time')))
 
 @app.route("/alert/retrieveAlertsJson", methods=['GET'])
 def retrieveAlertsJson():

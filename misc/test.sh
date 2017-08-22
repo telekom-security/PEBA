@@ -99,6 +99,12 @@ echo "***** END RETRIEVELATLONG *****"
 echo ""
 sleep 3
 
+echo "***** RETRIEVEALERTCOUNTWITHTYPE  *****"
+curl $BIND/alert/retrieveAlertsCountWithType?time=10
+echo "***** END RETRIEVEALERTCOUNTWITHTYPE *****"
+echo ""
+sleep 3
+
 
 echo "***** END TESTING LOCAL WEBSERVICE"
 exit 0
