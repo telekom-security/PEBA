@@ -23,8 +23,9 @@ case "$1" in
         echo "Testing with Prod-Server $BIND"
       ;;
     *)
-        BIND=$PROD
-      ;;
+       echo "invoke: $0 <test|prod>"
+       exit 1      
+	;;
 esac
 
 

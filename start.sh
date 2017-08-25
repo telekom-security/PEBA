@@ -5,12 +5,12 @@
 BIND=$(cat /etc/ews/peba.cfg|grep BINDHOST|cut -d "\"" -f2)
 
 
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 # may be tweaked accordingly to
 # http://docs.gunicorn.org/en/stable/settings.html
 
-gunicorn peba:app \
+python3 /usr/local/bin/gunicorn peba:app \
 	-w 4 \
 	-b $BIND
 	--error-logfile error.log \

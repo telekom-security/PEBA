@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # PEBA (Python EWS Backend API)
-# v0.4 2017-08-22 - Beta :)
+# v0.5 2017-08-25 - Beta :)
 # Author: @vorband
 
 import xml.etree.ElementTree as ET
@@ -10,6 +10,8 @@ import defusedxml.ElementTree as ETdefused
 
 import hashlib
 import json
+import urllib.request, urllib.parse, urllib.error
+import html
 import datetime
 
 from flask import Flask, request, abort, jsonify, Response
@@ -66,8 +68,8 @@ def login_required(f):
                 app.logger.error('Invalid XML: token not present or empty')
                 return abort(403)
 
-            username = user_data.text.decode('utf-8')
-            password = pass_data.text.decode('utf-8')
+            username = user_data.text
+            password = pass_data.text
 
             if not authenticate(username, password):
                 app.logger.error("Authentication failure for user %s", username)
@@ -94,7 +96,7 @@ def authenticate(username, token):
     try:
         dbresult = db.WSUser.find_one({'peerName': username})
         if dbresult:
-            tokenhash = hashlib.sha512(token)
+            tokenhash = hashlib.sha512(token.encode('utf-8'))
             if dbresult['token'] == tokenhash.hexdigest():
                 return True
 
@@ -580,7 +582,7 @@ def createBadIPxml(iplist):
 
         prettify(ewssimpleinfo)
         iplistxml = '<?xml version="1.0" encoding="UTF-8"?>'
-        iplistxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
+        iplistxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml")).decode('utf-8')
 
         return Response(iplistxml, mimetype='text/xml')
     else:
@@ -621,7 +623,7 @@ def createAlertsXml(alertslist):
 
         prettify(EWSSimpleAlertInfo)
         alertsxml = '<?xml version="1.0" encoding="UTF-8"?>'
-        alertsxml += (ET.tostring(EWSSimpleAlertInfo, encoding="utf-8", method="xml"))
+        alertsxml += (ET.tostring(EWSSimpleAlertInfo, encoding="utf-8", method="xml")).decode('utf-8')
         return Response(alertsxml, mimetype='text/xml')
     else:
         return app.config['DEFAULTRESPONSE']
@@ -646,7 +648,7 @@ def createAlertsJson(alertslist):
                 'destLat' : destlatlong[0],
                 'destLng' : destlatlong[1],
                 'analyzerType': alert['_source']['peerType'],
-                'requestString': alert['_source']['originalRequestString'],
+                'requestString': html.escape(alert['_source']['originalRequestString']),
             }
 
             jsonarray.append(jsondata)
@@ -665,7 +667,7 @@ def createAlertCountResponse(numberofalerts, outformat):
             alertCount.text = str(numberofalerts)
             prettify(ewssimpleinfo)
             alertcountxml = '<?xml version="1.0" encoding="UTF-8"?>'
-            alertcountxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml"))
+            alertcountxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml")).decode('utf-8')
             return Response(alertcountxml, mimetype='text/xml')
         else:
             return jsonify({'AlertCount': numberofalerts})

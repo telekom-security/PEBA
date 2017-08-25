@@ -1,10 +1,8 @@
-flask
-flask-cors
-flask-Elasticsearch
-flask_elasticsearch
+Flask
+Flask-cors
+Flask-Elasticsearch
+Flask_elasticsearch
 pymongo
-xml
 elasticsearch
 gunicorn
 defusedxml
-#hashlib

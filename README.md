@@ -1,6 +1,6 @@
 # PEBA - Python EWS Backend API
 
-Lightweight backend application to offer an API alternative for current EWS backend, e.g. for the T-Pot Community backend. Requires python 2.7.
+Lightweight python3 backend application to offer an API alternative for current EWS backend, e.g. for the T-Pot Community backend.
 
 **Currently implemented endpoints:** 
 
@@ -20,8 +20,8 @@ Lightweight backend application to offer an API alternative for current EWS back
 
 **Install requirements:**
 
-	easy_install hashlib # might not be necessary, depending on operating system
-    pip install -r requirements.txt 
+    apt-get install python3 python3-dev python3-pip
+    pip3 install -r requirements.txt
 
 
 **Run Application:**

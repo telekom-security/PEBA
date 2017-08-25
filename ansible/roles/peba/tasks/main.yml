@@ -42,6 +42,9 @@
     - pkg-config
     - python-dev
     - python3-dev
+    - python3-pip
+    - python3-venv
+
 
 - name: Add user peba.
   user:
@@ -55,15 +58,15 @@
 - name: Installing virtualenv via pip
   pip:
     name: virtualenv
-
-- name: Create the virtualenv
-  command: virtualenv /opt/peba -p python2.7 creates="/opt/peba"
+    executable: pip3
 
 - name: Install pip requirements
   pip:
     requirements: /opt/peba/requirements.txt
     state: latest
-    virtualenv: /opt/peba
+    virtualenv_command: pyvenv
+    virtualenv: /opt/peba/
+
 
 - name: Start peba service
   service:
