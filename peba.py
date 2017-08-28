@@ -182,7 +182,7 @@ def retrieveAlertsWithoutIP(maxAlerts):
                 "match_all": {}
                 },
             "sort": {
-                "createTime": {
+                "recievedTime": {
                     "order": "desc"
                     }
                 },
@@ -196,7 +196,10 @@ def retrieveAlertsWithoutIP(maxAlerts):
                 "targetCountry",
                 "countryName",
                 "locationDestination",
-                "recievedTime"
+                "recievedTime",
+                "username",
+                "password",
+                "login"
                 ]
             })
         return res["hits"]["hits"]
@@ -635,15 +638,31 @@ def createAlertsJson(alertslist):
         jsonarray = []
 
         for alert in alertslist:
-
             if datetime.datetime.strptime(alert['_source']['createTime'], "%Y-%m-%d %H:%M:%S") > datetime.datetime.utcnow():
                 returnDate = alert['_source']['recievedTime']
                 app.logger.debug('createAlertsJson: createTime > now, returning recievedTime, honeypot timezone probably manually set to eastern timezone')
             else:
-                returnDate = alert['_source']['createTime']
+                returnDate = alert['_source']['recievedTime']
 
             latlong = alert['_source']['location'].split(' , ')
             destlatlong = alert['_source']['locationDestination'].split(' , ')
+
+            # kippo attack details
+            if alert['_source']['originalRequestString'] is not " " and alert['_source']['peerType'] == "SSH/console(cowrie)":
+                requestString =  ""
+                if alert['_source']['username'] is not None:
+                    requestString+= "Username: \"" + str(urllib.parse.unquote(alert['_source']['username'])) + "\""
+                else:
+                    requestString += "Username: <none>"
+                if alert['_source']['password'] is not None:
+                    requestString+= " | Password: \"" + str(urllib.parse.unquote(alert['_source']['password'])) + "\""
+                else:
+                    requestString += " | Password: <none>"
+                if alert['_source']['login'] is not None:
+                    requestString+= " | Status: "+ str(alert['_source']['login'])
+                requestStringOut = html.escape(requestString)
+            else:
+                requestStringOut = html.escape(urllib.parse.unquote(alert['_source']['originalRequestString']))
 
             jsondata = {
                 'id': alert['_id'],
@@ -656,7 +675,7 @@ def createAlertsJson(alertslist):
                 'destLat' : destlatlong[0],
                 'destLng' : destlatlong[1],
                 'analyzerType': alert['_source']['peerType'],
-                'requestString': html.escape(alert['_source']['originalRequestString']),
+                'requestString': '%s' % requestStringOut
             }
 
             jsonarray.append(jsondata)
