@@ -636,7 +636,7 @@ def createAlertsJson(alertslist):
 
         for alert in alertslist:
 
-            if datetime.datetime.strptime(alert['_source']['createTime'], "%Y-%m-%d %H:%M:%S") > datetime.datetime.now():
+            if datetime.datetime.strptime(alert['_source']['createTime'], "%Y-%m-%d %H:%M:%S") > datetime.datetime.utcnow():
                 returnDate = alert['_source']['recievedTime']
                 app.logger.debug('createAlertsJson: createTime > now, returning recievedTime, honeypot timezone probably manually set to eastern timezone')
             else:
