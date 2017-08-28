@@ -195,7 +195,8 @@ def retrieveAlertsWithoutIP(maxAlerts):
                 "location",
                 "targetCountry",
                 "countryName",
-                "locationDestination"
+                "locationDestination",
+                "recievedTime"
                 ]
             })
         return res["hits"]["hits"]
@@ -634,12 +635,19 @@ def createAlertsJson(alertslist):
         jsonarray = []
 
         for alert in alertslist:
+
+            if datetime.datetime.strptime(alert['_source']['createTime'], "%Y-%m-%d %H:%M:%S") > datetime.datetime.now():
+                returnDate = alert['_source']['recievedTime']
+                app.logger.debug('createAlertsJson: createTime > now, returning recievedTime, honeypot timezone probably manually set to eastern timezone')
+            else:
+                returnDate = alert['_source']['createTime']
+
             latlong = alert['_source']['location'].split(' , ')
             destlatlong = alert['_source']['locationDestination'].split(' , ')
 
             jsondata = {
                 'id': alert['_id'],
-                'dateCreated': alert['_source']['createTime'],
+                'dateCreated': "%s" % returnDate,
                 'country': alert['_source']['country'],
                 'countryName': alert['_source']['countryName'],
                 'targetCountry': alert['_source']['targetCountry'],
