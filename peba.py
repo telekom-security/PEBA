@@ -123,23 +123,33 @@ def retrieveBadIPs(badIpTimespan):
     """ Get IP addresses from alerts in elasticsearch """
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
-            "query": {
-                "range": {
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "range": {
                     "createTime": {
                         "gte": "now-%sm" % badIpTimespan
-                        }
                     }
+                  }
                 },
-            "sort": {
-                "createTime": {
-                    "order": "desc"
-                    }
-                },
-            "_source": [
-                "sourceEntryIp"
-                ]
-            })
-        return set([d["_source"]["sourceEntryIp"] for d in res["hits"]["hits"]])
+                {
+                  "match_all": {}
+                }
+              ]
+            }
+          },
+          "aggs": {
+            "ips": {
+              "terms": {
+                "field": "sourceEntryIp",
+                "size": 1000000
+              }
+            }
+          },
+          "size": 0
+        })
+        return res["aggregations"]["ips"]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
 
@@ -579,10 +589,13 @@ def createBadIPxml(iplist):
         ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
         sources = ET.SubElement(ewssimpleinfo, 'Sources')
 
-        for ip in iplist:
+        for ip in iplist['buckets']:
             source = ET.SubElement(sources, 'Source')
             address = ET.SubElement(source, 'Address')
-            address.text = ip
+            address.text = ip['key']
+            counter = ET.SubElement(source, 'Count')
+            counter.text = str(ip['doc_count'])
+
 
         prettify(ewssimpleinfo)
         iplistxml = '<?xml version="1.0" encoding="UTF-8"?>'
