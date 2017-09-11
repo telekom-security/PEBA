@@ -6,3 +6,4 @@ pymongo
 elasticsearch
 gunicorn
 defusedxml
+python-dateutil

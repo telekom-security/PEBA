@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # PEBA (Python EWS Backend API)
-# v0.5 2017-08-25 - Beta :)
+# v0.6 2017-09-11 - Beta :)
 # Author: @vorband
 
 import xml.etree.ElementTree as ET
@@ -13,11 +13,12 @@ import json
 import urllib.request, urllib.parse, urllib.error
 import html
 import datetime
+from dateutil.relativedelta import relativedelta
 
 from flask import Flask, request, abort, jsonify, Response
 from flask_cors import CORS, cross_origin
-
 from flask_elasticsearch import FlaskElasticsearch
+
 
 from pymongo import MongoClient, errors
 from elasticsearch import Elasticsearch, ElasticsearchException
@@ -119,7 +120,15 @@ def getPeerCountry(peerIdent):
 
     return False
 
-def retrieveBadIPs(badIpTimespan):
+def checkCommunityIndex(request):
+    """check if request is agains community index or production index"""
+    if not request.args.get('ci'):
+        return True
+    elif request.args.get('ci') == "0":
+        return False
+    return True
+
+def queryBadIPs(badIpTimespan, clientDomain):
     """ Get IP addresses from alerts in elasticsearch """
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
@@ -134,7 +143,9 @@ def retrieveBadIPs(badIpTimespan):
                   }
                 },
                 {
-                  "match_all": {}
+                  "match": {
+                      "clientDomain": clientDomain
+                    }
                 }
               ]
             }
@@ -155,13 +166,15 @@ def retrieveBadIPs(badIpTimespan):
 
     return False
 
-def retrieveAlerts(maxAlerts):
+def queryAlerts(maxAlerts, clientDomain):
     """ Get IP addresses from alerts in elasticsearch """
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
             "query": {
-                "match_all": {}
-                },
+                "match": {
+                    "clientDomain": clientDomain
+                }
+            },
             "sort": {
                 "createTime": {
                     "order": "desc"
@@ -178,19 +191,22 @@ def retrieveAlerts(maxAlerts):
                 "sourceEntryIp"
                 ]
             })
+        print(res)
         return res["hits"]["hits"]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
 
     return False
 
-def retrieveAlertsWithoutIP(maxAlerts):
+def queryAlertsWithoutIP(maxAlerts, clientDomain):
     """ Get IP addresses from alerts in elasticsearch """
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
             "query": {
-                "match_all": {}
-                },
+                "match": {
+                    "clientDomain": clientDomain
+                }
+            },
             "sort": {
                 "recievedTime": {
                     "order": "desc"
@@ -218,7 +234,7 @@ def retrieveAlertsWithoutIP(maxAlerts):
 
     return False
 
-def retrieveAlertCount(timeframe):
+def queryAlertsCount(timeframe, clientDomain):
     """ Get number of Alerts in timeframe in elasticsearch """
 
     # check if timespan = d or number
@@ -231,22 +247,36 @@ def retrieveAlertCount(timeframe):
         return False
 
     try:
-        res = es.count(index=app.config['ELASTICINDEX'], body={
-            "query": {
-                "range": {
+        res = es.search(index=app.config['ELASTICINDEX'], body={
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "match": {
+                    "clientDomain": clientDomain
+                  }
+                }
+              ],
+              "filter": [
+                {
+                  "range": {
                     "createTime": {
                         "gte": str(span)
-                        }
                     }
+                  }
                 }
-            })
-        return res["count"]
+              ]
+            }
+          },
+          "size": 0
+        })
+        return res['hits']['total']
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
 
     return False
 
-def retrieveAlertCountWithType(timeframe):
+def queryAlertsCountWithType(timeframe, clientDomain):
     """ Get number of Alerts in timeframe in elasticsearch """
 
     # check if timespan = d or number
@@ -255,38 +285,43 @@ def retrieveAlertCountWithType(timeframe):
     elif timeframe.isdecimal():
         span = "now-%sm" % timeframe
     else:
-        app.logger.error('Non numeric value in retrieveAlertCountWithType timespan. Must be decimal number (in minutes) or string "day"')
+        app.logger.error('Non numeric value in retrieveAlertsCountWithType timespan. Must be decimal number (in minutes) or string "day"')
         return False
 
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
-              "query": {
-                "range": {
-                  "createTime": {
-                    "gte": str(span)
-
-                  }
+          "query": {
+            "range": {
+              "createTime": {
+                  "gte": str(span)
+              }
+            }
+          },
+          "aggs": {
+            "communityfilter": {
+              "filter": {
+                "term": {
+                  "clientDomain": clientDomain
                 }
               },
               "aggs": {
-                    "honeypotTypes": {
-                      "terms": {
-                        "field": "peerType.keyword"
-
-
+                "honeypotTypes": {
+                  "terms": {
+                    "field": "peerType.keyword"
                   }
                 }
-              },
-              "size": 0
-            })
+              }
+            }
+          },
+          "size": 0
+        })
         return res
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
 
     return False
 
-
-def retrieveDatasetAlertPerMonth(days):
+def queryDatasetAlertsPerMonth(days, clientDomain):
     # check if months is a number
     if days is None:
         span = "now-1M/d"
@@ -305,23 +340,32 @@ def retrieveDatasetAlertPerMonth(days):
                   }
                 }
               },
-              "aggs": {
+            "aggs": {
+                "communityfilter": {
+                    "filter": {
+                        "term": {
+                            "clientDomain": clientDomain
+                        }
+                    },
+            "aggs": {
                 "range": {
                   "date_histogram": {
                     "field": "createTime",
                     "interval": "day"
-                  }
+                            }
+                        }
+                    }
                 }
               },
               "size": 0
-            })
-        return res["aggregations"]["range"]
+                })
+        return res["aggregations"]["communityfilter"]["range"]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
 
     return False
 
-def retrieveDatasetAlertTypePerMonth(days):
+def queryDatasetAlertTypesPerMonth(days, clientDomain):
     # check if days is a number
     if days is None:
         span = "now-1M/d"
@@ -340,6 +384,13 @@ def retrieveDatasetAlertTypePerMonth(days):
               }
             }
           },
+         "aggs": {
+                "communityfilter": {
+                    "filter": {
+                        "term": {
+                            "clientDomain": clientDomain
+                        }
+            },
           "aggs": {
             "range": {
               "date_histogram": {
@@ -350,24 +401,31 @@ def retrieveDatasetAlertTypePerMonth(days):
                 "nested_terms_agg": {
                   "terms": {
                     "field": "peerType.keyword"
-                  }
+                  }}}
                 }
               }
             }
           },
           "size": 0
         })
-        return res["aggregations"]["range"]
+        return res["aggregations"]["communityfilter"]["range"]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
 
     return False
 
-def retrieveAlertStat():
+def queryAlertStats(clientDomain):
     """ Get combined statistics from elasticsearch """
     try:
         res = es.search(index=app.config['ELASTICINDEX'], body={
-          "aggs": {
+            "aggs": {
+                "communityfilter": {
+                    "filter": {
+                        "term": {
+                            "clientDomain": clientDomain
+                        }
+                    },
+            "aggs": {
             "ctr": {
               "range": {
                 "field": "createTime",
@@ -386,27 +444,30 @@ def retrieveAlertStat():
                   }
                 ]
               }
-            }
+            }}}
           },
           "size": 0
         })
-        return res['aggregations']['ctr']['buckets']
+        return res['aggregations']['communityfilter']['ctr']['buckets']
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' % err)
 
     return False
 
-def retrieveTopCountryAttacks(monthOffset, topX):
+def queryTopCountriesAttacks(monthOffset, topX, clientDomain):
     # use THIS month
-    if monthOffset is None:
+    if monthOffset is None or monthOffset == "0" :
         span = "now/M"
         monthOffset = 0
+        span2 = "now"
     # check if months is a number
     elif monthOffset.isdecimal():
-        span = "now-%sM/M" % monthOffset
+        span = "now-%dM/M" % int(monthOffset)
+        span2 = "now-%dM/M" % (int(monthOffset)-1)
     else:
-        app.logger.error('Non numeric value in retrieveTopCountryAttacks monthOffset. Must be decimal number in months')
+        app.logger.error('Non numeric value in topCountriesAttacks monthOffset. Must be decimal number in months')
         return False
+    print("span/span2: " + span+" " +span2)
 
     # use top10 default
     if topX is None:
@@ -416,7 +477,7 @@ def retrieveTopCountryAttacks(monthOffset, topX):
         topx = topX
     else:
         app.logger.error(
-            'Non numeric value in /retrieveTopCountryAttacks topX. Must be decimal number.')
+            'Non numeric value in topCountriesAttacks topX. Must be decimal number.')
         return False
 
 
@@ -425,12 +486,20 @@ def retrieveTopCountryAttacks(monthOffset, topX):
         res = es.search(index=app.config['ELASTICINDEX'], body={
           "query": {
             "range": {
-              "createTime": {
-                "gte": span
+              "recievedTime": {
+                "gte": span,
+                "lte": span2
               }
             }
           },
-          "aggs": {
+            "aggs": {
+                "communityfilter": {
+                    "filter": {
+                        "term": {
+                            "clientDomain": clientDomain
+                        }
+                    },
+                    "aggs": {
             "countries": {
               "terms": {
                 "field": "country.keyword",
@@ -446,14 +515,11 @@ def retrieveTopCountryAttacks(monthOffset, topX):
                       ]
                     }
                   }
-                }
+                }}}
               }
             }
           },
-          "size": 1,
-          "_source": [
-                "createTime"
-              ]
+          "size": 0
         })
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' % err)
@@ -463,12 +529,21 @@ def retrieveTopCountryAttacks(monthOffset, topX):
         res2 = es.search(index=app.config['ELASTICINDEX'], body={
             "query": {
                 "range": {
-                    "createTime": {
-                        "gte": span
+                    "recievedTime": {
+                        "gte": span,
+                        "lte": span2
                     }
                 }
             },
             "aggs": {
+                "communityfilter": {
+                    "filter": {
+                        "term": {
+                            "clientDomain": clientDomain
+                        }
+                    },
+
+                    "aggs": {
                 "countries": {
                     "terms": {
                         "field": "targetCountry.keyword",
@@ -483,7 +558,7 @@ def retrieveTopCountryAttacks(monthOffset, topX):
                                         "targetCountryName"
                                     ]
                                 }
-                            }
+                            }}}
                         }
                     }
                 }
@@ -493,13 +568,15 @@ def retrieveTopCountryAttacks(monthOffset, topX):
                 "createTime"
             ]
         })
-        return [ res["aggregations"]["countries"]["buckets"], monthOffset,res["hits"]["hits"][0]["_source"]["createTime"], res2["aggregations"]["countries"]["buckets"] ]
+
+        monthData = (datetime.date.today()+ relativedelta(months=-(int(monthOffset)))).strftime('%Y-%m')
+        return [ res["aggregations"]["communityfilter"]["countries"]["buckets"], monthOffset, monthData, res2["aggregations"]["communityfilter"]["countries"]["buckets"] ]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' % err)
 
     return False
 
-def retrieveLatLonAttack(direction, topX, dayoffset):
+def queryLatLonAttacks(direction, topX, dayoffset, clientDomain):
     # use default: Lat long of source
     if direction is None:
         locationString = "location"
@@ -523,11 +600,14 @@ def retrieveLatLonAttack(direction, topX, dayoffset):
         return False
 
     # statistics for 24 hours
-    if dayoffset is None:
+    if dayoffset is None or dayoffset == "0":
         span = "now-24h"
+        span2 = "now"
+        dayoffset = 0
     # check if days is a number
     elif dayoffset.isdecimal():
-        span = "now-%dd" % int(dayoffset)
+        span = "now-%dd/d" % int(dayoffset)
+        span2 = "now-%dd/d" % (int(dayoffset)-1)
     else:
         app.logger.error(
             'Non numeric value in /retrieveLatLonAttacks day offset. Must be decimal number.')
@@ -540,29 +620,40 @@ def retrieveLatLonAttack(direction, topX, dayoffset):
           "query": {
             "range": {
               "createTime": {
-                "gte": dayoffset
+                "gte": span,
+                "lte": span2
               }
             }
           },
-          "size": 1,
           "_source": [
             "location",
             "createTime"
           ],
+          "size": 1,
+            "aggs": {
+                "communityfilter": {
+                    "filter": {
+                        "term": {
+                            "clientDomain": clientDomain
+                        }
+                    },
           "aggs": {
             "topLocations": {
               "terms": {
                 "field": "%s.keyword" % locationString,
                 "size": str(topx)
               }
-            }
+            }}}
           }
         })
-        return [ res["aggregations"]["topLocations"]["buckets"],res["hits"]["hits"][0]["_source"]["createTime"]]
+
+        dayData = (datetime.date.today()+ relativedelta(days=-(int(dayoffset))))
+        return [ res["aggregations"]["communityfilter"]["topLocations"]["buckets"], dayData.strftime('%Y-%m-%d') ]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' % err)
 
     return False
+
 
 # Formatting functions
 
@@ -582,7 +673,7 @@ def prettify(elem, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
-def createBadIPxml(iplist):
+def formatBadIPxml(iplist):
     """ Create XML Strucure for BadIP list """
 
     if iplist:
@@ -605,13 +696,13 @@ def createBadIPxml(iplist):
     else:
         return app.config['DEFAULTRESPONSE']
 
-def createAlertsXml(alertslist):
+def formatAlertsXml(alertslist):
     """ Create XML Strucure for Alerts list """
 
-    if alertslist:
-        EWSSimpleAlertInfo = ET.Element('EWSSimpleAlertInfo')
-        alertsElement = ET.SubElement(EWSSimpleAlertInfo, 'Alerts')
+    EWSSimpleAlertInfo = ET.Element('EWSSimpleAlertInfo')
+    alertsElement = ET.SubElement(EWSSimpleAlertInfo, 'Alerts')
 
+    if alertslist:
         for alert in alertslist:
             alertElement = ET.SubElement(alertsElement, 'Alert')
             alertId = ET.SubElement(alertElement, 'Id')
@@ -638,22 +729,22 @@ def createAlertsXml(alertslist):
             sourceLongitude = ET.SubElement(sourceElement, 'Longitude')
             sourceLongitude.text = sourceCoordinates[1].strip()
 
-        prettify(EWSSimpleAlertInfo)
-        alertsxml = '<?xml version="1.0" encoding="UTF-8"?>'
-        alertsxml += (ET.tostring(EWSSimpleAlertInfo, encoding="utf-8", method="xml")).decode('utf-8')
-        return Response(alertsxml, mimetype='text/xml')
-    else:
-        return app.config['DEFAULTRESPONSE']
+    prettify(EWSSimpleAlertInfo)
+    alertsxml = '<?xml version="1.0" encoding="UTF-8"?>'
+    alertsxml += (ET.tostring(EWSSimpleAlertInfo, encoding="utf-8", method="xml")).decode('utf-8')
 
-def createAlertsJson(alertslist):
+    return Response(alertsxml, mimetype='text/xml')
+
+def formatAlertsJson(alertslist):
     """ Create JSON Structure for Alerts list """
+    jsonarray = []
+
     if alertslist:
-        jsonarray = []
 
         for alert in alertslist:
             if datetime.datetime.strptime(alert['_source']['createTime'], "%Y-%m-%d %H:%M:%S") > datetime.datetime.utcnow():
                 returnDate = alert['_source']['recievedTime']
-                app.logger.debug('createAlertsJson: createTime > now, returning recievedTime, honeypot timezone probably manually set to eastern timezone')
+                app.logger.debug('formatAlertsJson: createTime > now, returning recievedTime, honeypot timezone probably manually set to eastern timezone')
             else:
                 returnDate = alert['_source']['recievedTime']
 
@@ -693,42 +784,40 @@ def createAlertsJson(alertslist):
 
             jsonarray.append(jsondata)
 
-        return jsonify({'alerts': jsonarray})
-    else:
-        return app.config['DEFAULTRESPONSE']
+    return jsonify({'alerts': jsonarray})
 
-def createAlertCountResponse(numberofalerts, outformat):
+def formatAlertsCount(numberofalerts, outformat):
     """ Create XML / Json Structure with number of Alerts in requested timespan """
 
-    if numberofalerts:
-        if outformat == "xml":
-            ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
-            alertCount = ET.SubElement(ewssimpleinfo, 'AlertCount')
+    if outformat == "xml":
+        ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
+        alertCount = ET.SubElement(ewssimpleinfo, 'AlertCount')
+        if numberofalerts:
             alertCount.text = str(numberofalerts)
-            prettify(ewssimpleinfo)
-            alertcountxml = '<?xml version="1.0" encoding="UTF-8"?>'
-            alertcountxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml")).decode('utf-8')
-            return Response(alertcountxml, mimetype='text/xml')
         else:
-            return jsonify({'AlertCount': numberofalerts})
+            alertCount.text = str(0)
+        prettify(ewssimpleinfo)
+        alertcountxml = '<?xml version="1.0" encoding="UTF-8"?>'
+        alertcountxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml")).decode('utf-8')
+        return Response(alertcountxml, mimetype='text/xml')
     else:
-        return app.config['DEFAULTRESPONSE']
+        return jsonify({'AlertCount': numberofalerts})
 
-def createAlertCountResponseWithType(numberofalerts):
+def formatAlertsCountWithType(numberofalerts):
     if numberofalerts:
         jsondata1 = {}
-        for alertTypes in numberofalerts['aggregations']['honeypotTypes']['buckets']:
+        for alertTypes in numberofalerts['aggregations']['communityfilter']['honeypotTypes']['buckets']:
             jsondata1[alertTypes['key']] = alertTypes['doc_count']
 
         jsondata2 = {
-                "AlertCountTotal" : numberofalerts['hits']['total'],
+                "AlertCountTotal" : numberofalerts['aggregations']['communityfilter']['doc_count'],
                 "AlertCountPerType" : jsondata1
         }
         return jsonify(jsondata2)
     else:
         return app.config['DEFAULTRESPONSE']
 
-def createRetrieveDatasetAlertsPerMonth(datasetAlertsPerMonth):
+def formatDatasetAlertsPerMonth(datasetAlertsPerMonth):
     if datasetAlertsPerMonth:
         jsondata = {}
         for alertsPerMonth in datasetAlertsPerMonth['buckets']:
@@ -738,7 +827,7 @@ def createRetrieveDatasetAlertsPerMonth(datasetAlertsPerMonth):
     else:
         return app.config['DEFAULTRESPONSE']
 
-def createDatasetAlertTypesPerMonth(datasetAlertTypePerMonth):
+def formatDatasetAlertTypesPerMonth(datasetAlertTypePerMonth):
     if datasetAlertTypePerMonth:
         jsondatamonth = {}
         for alertTypesPerMonth in datasetAlertTypePerMonth['buckets']:
@@ -751,7 +840,7 @@ def createDatasetAlertTypesPerMonth(datasetAlertTypePerMonth):
     else:
         return app.config['DEFAULTRESPONSE']
 
-def createRetrieveAlertStats(retrieveAlertStat):
+def formatAlertStats(retrieveAlertStat):
     if retrieveAlertStat:
         jsondata = {
             'AlertsLast24Hours': retrieveAlertStat[0]['doc_count'],
@@ -762,7 +851,7 @@ def createRetrieveAlertStats(retrieveAlertStat):
     else:
         return app.config['DEFAULTRESPONSE']
 
-def createTopCountryAttacks(retrieveTopCountryAttacksArr):
+def formatTopCountriesAttacks(retrieveTopCountryAttacksArr):
     if retrieveTopCountryAttacksArr:
         retrieveTopCountryAttacker = retrieveTopCountryAttacksArr[0]
         monthOffset = retrieveTopCountryAttacksArr[1]
@@ -773,9 +862,10 @@ def createTopCountryAttacks(retrieveTopCountryAttacksArr):
         return app.config['DEFAULTRESPONSE']
 
     # Create json structure for ATTACKER and ATTACKED countries
+    jsonarray_attacker = []
+    jsonarray_attacked = []
+
     if retrieveTopCountryAttacker and retrieveTopCountryAttacked:
-        jsonarray_attacker = []
-        jsonarray_attacked = []
 
         # attacker
         for topCountry in retrieveTopCountryAttacker:
@@ -795,26 +885,21 @@ def createTopCountryAttacks(retrieveTopCountryAttacksArr):
             }
             jsonarray_attacked.append(jsondata_attacked)
 
-        countryStats = { 'id' :  monthOffset,
-                     'date': datetime.datetime.strptime(monthdate, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m'),
-                     'attacksPerCountry': jsonarray_attacker,
-                     'attacksToTargetCountry': jsonarray_attacked
-                         }
+    countryStats = { 'id' :  monthOffset,
+                 'date': monthdate,
+                 'attacksPerCountry': jsonarray_attacker,
+                 'attacksToTargetCountry': jsonarray_attacked
+                     }
+    return jsonify([countryStats])
 
-        return jsonify([countryStats])
-
-    return app.config['DEFAULTRESPONSE']
-
-def createLatLonAttacks(retrieveLatLonAttacksArr):
+def formatLatLonAttacks(retrieveLatLonAttacksArr):
     if retrieveLatLonAttacksArr:
         retrieveLatLonAttacks = retrieveLatLonAttacksArr[0]
-        monthdate = retrieveLatLonAttacksArr[1]
+        daydata = retrieveLatLonAttacksArr[1]
+    jsonarray_location = []
 
 
     if retrieveLatLonAttacks:
-
-        jsonarray_location = []
-
         for attackLocation in retrieveLatLonAttacks:
             latLonArr = attackLocation['key'].split(" , ")
             jsondata_location = {
@@ -825,16 +910,13 @@ def createLatLonAttacks(retrieveLatLonAttacksArr):
             jsonarray_location.append(jsondata_location)
 
 
-        LatLonStats = {
-                     'statsSince': datetime.datetime.strptime(monthdate, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d'),
-                     'latLonAttacks': jsonarray_location
-                         }
+    LatLonStats = {
+                 'statsSince': daydata,
+                 'latLonAttacks': jsonarray_location
+                     }
 
 
-        return jsonify([LatLonStats])
-
-    return app.config['DEFAULTRESPONSE']
-
+    return jsonify([LatLonStats])
 
 
 ###############
@@ -858,7 +940,7 @@ def heartbeat():
     elif not mongoAvailable and elasticsearchAvailable:
         return "e"
     else:
-        return "flatline"
+        return "_____flatline_____"
 
 
 # Routes with XML output
@@ -867,7 +949,7 @@ def heartbeat():
 @login_required
 def retrieveIPs():
     """ Retrieve IPs from ElasticSearch and return formatted XML with IPs """
-    return createBadIPxml(retrieveBadIPs(app.config['BADIPTIMESPAN']))
+    return formatBadIPxml(queryBadIPs(app.config['BADIPTIMESPAN'], checkCommunityIndex(request)))
 
 
 @app.route("/alert/retrieveAlertsCyber", methods=['POST'])
@@ -876,7 +958,7 @@ def retrieveAlertsCyber():
     """ Retrieve Alerts from ElasticSearch and return formatted 
         XML with limited alert content
     """
-    return createAlertsXml(retrieveAlerts(app.config['MAXALERTS']))
+    return formatAlertsXml(queryAlerts(app.config['MAXALERTS'], checkCommunityIndex(request)))
 
 
 # Routes with both XML and JSON output
@@ -891,9 +973,9 @@ def retrieveAlertsCount():
         return app.config['DEFAULTRESPONSE']
     else:
         if request.args.get('out') and request.args.get('out') == 'json':
-            return createAlertCountResponse(retrieveAlertCount(request.args.get('time')), 'json')
+            return formatAlertsCount(queryAlertsCount(request.args.get('time'), checkCommunityIndex(request)), 'json')
         else:
-            return createAlertCountResponse(retrieveAlertCount(request.args.get('time')), 'xml')
+            return formatAlertsCount(queryAlertsCount(request.args.get('time'), checkCommunityIndex(request)), 'xml')
 
 
 # Routes with JSON output
@@ -907,13 +989,14 @@ def retrieveAlertsCountWithType():
         app.logger.error('No time GET-parameter supplied in retrieveAlertsCountWithType. Must be decimal number (in minutes) or string "day"')
         return app.config['DEFAULTRESPONSE']
     else:
-        return createAlertCountResponseWithType(retrieveAlertCountWithType(request.args.get('time')))
+        return formatAlertsCountWithType(queryAlertsCountWithType(request.args.get('time'), checkCommunityIndex(request)))
 
 @app.route("/alert/retrieveAlertsJson", methods=['GET'])
 def retrieveAlertsJson():
     """ Retrieve last 5 Alerts in JSON without IPs """
+
     # Retrieve last 5 Alerts from ElasticSearch and return JSON formatted with limited alert content
-    return createAlertsJson(retrieveAlertsWithoutIP(5))
+    return formatAlertsJson(queryAlertsWithoutIP(5, checkCommunityIndex(request)))
 
 @app.route("/alert/datasetAlertsPerMonth", methods=['GET'])
 def retrieveDatasetAlertsPerMonth():
@@ -921,11 +1004,12 @@ def retrieveDatasetAlertsPerMonth():
         and return as JSON for the last months, defaults to last month,
         if no GET parameter days is given
     """
+
     if not request.args.get('days'):
         # Using default : within the last month
-        return (createRetrieveDatasetAlertsPerMonth(retrieveDatasetAlertPerMonth(None)))
+        return formatDatasetAlertsPerMonth(queryDatasetAlertsPerMonth(None, checkCommunityIndex(request)))
     else:
-        return createRetrieveDatasetAlertsPerMonth(retrieveDatasetAlertPerMonth(request.args.get('days')))
+        return formatDatasetAlertsPerMonth(queryDatasetAlertsPerMonth(request.args.get('days'), checkCommunityIndex(request)))
 
 @app.route("/alert/datasetAlertTypesPerMonth", methods=['GET'])
 def retrieveDatasetAlertTypesPerMonth():
@@ -936,16 +1020,17 @@ def retrieveDatasetAlertTypesPerMonth():
     """
     if not request.args.get('days'):
         # Using default : within the last month
-        return (createDatasetAlertTypesPerMonth(retrieveDatasetAlertTypePerMonth(None)))
+        return formatDatasetAlertTypesPerMonth(queryDatasetAlertTypesPerMonth(None, checkCommunityIndex(request)))
     else:
-        return createDatasetAlertTypesPerMonth(retrieveDatasetAlertTypePerMonth(request.args.get('days')))
+        return formatDatasetAlertTypesPerMonth(queryDatasetAlertTypesPerMonth(request.args.get('days'), checkCommunityIndex(request)))
 
 @app.route("/alert/retrieveAlertStats", methods=['GET'])
 def retrieveAlertStats():
     """ Retrieve combined statistics
         AlertsLastMinute, AlertsLastHour,  AlertsLast24Hours
     """
-    return createRetrieveAlertStats(retrieveAlertStat())
+    return formatAlertStats(queryAlertStats(checkCommunityIndex(request)
+                                            ))
 
 @app.route("/alert/topCountriesAttacks", methods=['GET'])
 def retrieveTopCountriesAttacks():
@@ -962,7 +1047,7 @@ def retrieveTopCountriesAttacks():
         topx = None
     else:
         topx = request.args.get('topx')
-    return createTopCountryAttacks(retrieveTopCountryAttacks(offset, topx))
+    return formatTopCountriesAttacks(queryTopCountriesAttacks(offset, topx, checkCommunityIndex(request)))
 
 @app.route("/alert/retrieveLatLonAttacks", methods=['GET'])
 def retrieveLatLonAttacks():
@@ -991,7 +1076,7 @@ def retrieveLatLonAttacks():
     else:
         offset = request.args.get('offset')
 
-    return createLatLonAttacks(retrieveLatLonAttack(direction, topx, offset))
+    return formatLatLonAttacks(queryLatLonAttacks(direction, topx, offset, checkCommunityIndex(request)))
 
 ###############
 ### Main

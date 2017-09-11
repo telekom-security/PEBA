@@ -4,8 +4,13 @@ Lightweight python3 backend application to offer an API alternative for current 
 
 **Currently implemented endpoints:** 
 
+*Private endpoints* using authentication:
+
  - [POST] */alert/retrieveIPs* ==> returning the unique IP addresses of the last attacks in timeframe *X* minutes. Requires authentication. 
- - [POST] */alert/retrieveAlertsCyber* ==> returning the last 1000 attacks. Requires authentication. 
+ - [POST] */alert/retrieveAlertsCyber* ==> returning the last 1000 attacks. Requires authentication.
+
+*Public endpoints* for Sicherheitstacho:
+ 
  - [GET] */alert/retrieveAlertsCount* ==> returns the number of attacks within timespan in minutes or since the beginning of the current day e.g. */retrieveAlertsCount?time=10* or */retrieveAlertsCount?time=day*. Can further be parametrized using *out=json*. Defaults to xml.  
  - [GET] */alert/heartbeat* ==> Returns backend status : "*me*" if *everything* is ok, *m* if only mongoDB connection is ok, *e* if only elasticsearch connection is ok. If mongodb and elasticsearch connection fail, *flatline* is returned.
  - [GET] */alert/retrieveAlertsJson* ==> Returns last 5 Alerts in json for usage in sicherheitstacho
@@ -15,7 +20,10 @@ Lightweight python3 backend application to offer an API alternative for current 
  - [GET] */alert/topCountriesAttacks* ==> Returns information on the Top 10 attacker countries and top 10 attacked countries. use GET parameter "offset" and "topx" to determine the offset from this month (default: this month) and how many results shall be returned (default: top10)
  - [GET] */alert/retrieveLatLonAttacks* ==> Returns top X count on Lat and Lng. use GET parameter "offset" and "topx" to determine the offset from now in days (default: last 24h) and how many results shall be returned (default: top10). Use parameter "direction" to determine if source or destination location is given.
  - [GET] */alert/retrieveAlertsCountWithType* ==> returns the number of attacks within timespan in minutes or since the beginning of the current day, grouped by Tyoe, e.g. */retrieveAlertsCountWithType?time=10* or */retrieveAlertsCountWithType?time=day*. Returns json.
+ 
+***Data domain:***
 
+By default, queriying the above endpoints, data from the **community honeypots** is returned. To retrieve data from the **DTAG honeypots**, add a GET parameter *ci=0*. Example:  */alert/retrieveAlertsJson?****ci=0*** to retrieve the DTAG json data feed. This works both on the public and private endpoints.
 
 
 **Install requirements:**
