@@ -50,8 +50,8 @@ The application can be deployed via ansible on a debian (tested: Stretch) / ubun
 
 **Functional Tests:**
 
-The application can be tested using `./misc/test.sh` which will send appropriate requests to retrieve data. Again, prod and test instance can be tested, change the config section in script according to your environment.
+The application can be tested using `./misc/test.sh` which will send appropriate requests to retrieve data. Again, prod and test instance can be tested, further community data or private (dtag honeypots) data can be retrieved. Change the config section in script according to your environment.
 
-    ./misc/test.sh <prod|test>
+    ./misc/test.sh <prod|test> <private|community>
 
 You need corresponding WSUser username & token to access the API. Replace them in `./misc/request.xml`
