@@ -25,13 +25,15 @@ from elasticsearch import Elasticsearch, ElasticsearchException
 from werkzeug.contrib.fixers import ProxyFix
 
 from functools import wraps
+import putservice
+
 
 ###################
 ### Initialization
 ###################
 
 app = Flask(__name__)
-app.config.from_pyfile('/etc/ews/peba.cfg')
+app.config.from_pyfile('./etc/ews/peba.cfg')
 app.wsgi_app = ProxyFix(app.wsgi_app)
 cors = CORS(app, resources={r"/alert/*": {"origins": app.config['CORSDOMAIN']}})
 
@@ -45,11 +47,12 @@ client = MongoClient(
     serverSelectionTimeoutMS=app.config['MONGOTIMEOUT']
 )
 
+
 ###############
 ### Functions
 ###############
 
-def login_required(f):
+def authentication_required(f):
     """ This login decorator verifies that the correct username
         and password are sent over POST in the XML format.
     """
@@ -106,6 +109,35 @@ def authenticate(username, token):
 
     return False
 
+def checkCommunityUser():
+    """ Checks if community credentials are used
+    """
+    postdata = request.data.decode('utf-8')
+
+    if len(postdata) == 0:
+        app.logger.error('no xml post data in request')
+        return abort(403)
+    else:
+        root = ETdefused.fromstring(postdata)
+        user_data = root.find("./Authentication/username")
+        pass_data = root.find("./Authentication/token")
+
+        if user_data is None or pass_data is None:
+            app.logger.error('Invalid XML: token not present or empty')
+            return abort(403)
+
+        username = user_data.text
+        password = pass_data.text
+
+        if username == app.config['COMMUNITYUSER'] and password == app.config['COMMUNITYTOKEN']:
+            return True
+
+        if not authenticate(username, password):
+            app.logger.error("simplePostMessage-Authentication failure for user %s", username)
+            return abort(403)
+
+        return False
+
 def getPeerCountry(peerIdent):
     """ Find country for peer in mongodb """
     db = client.ews
@@ -127,6 +159,8 @@ def checkCommunityIndex(request):
     elif request.args.get('ci') == "0":
         return False
     return True
+
+# GET functions
 
 def queryBadIPs(badIpTimespan, clientDomain):
     """ Get IP addresses from alerts in elasticsearch """
@@ -946,14 +980,14 @@ def heartbeat():
 # Routes with XML output
 
 @app.route("/alert/retrieveIPs", methods=['POST'])
-@login_required
+@authentication_required
 def retrieveIPs():
     """ Retrieve IPs from ElasticSearch and return formatted XML with IPs """
     return formatBadIPxml(queryBadIPs(app.config['BADIPTIMESPAN'], checkCommunityIndex(request)))
 
 
 @app.route("/alert/retrieveAlertsCyber", methods=['POST'])
-@login_required
+@authentication_required
 def retrieveAlertsCyber():
     """ Retrieve Alerts from ElasticSearch and return formatted 
         XML with limited alert content
@@ -1077,6 +1111,16 @@ def retrieveLatLonAttacks():
         offset = request.args.get('offset')
 
     return formatLatLonAttacks(queryLatLonAttacks(direction, topx, offset, checkCommunityIndex(request)))
+
+
+# PUT Service
+
+@app.route("/ews-0.1/alert/postSimpleMessage", methods=['POST'])
+def postSimpleMessage():
+    tree = ETdefused.fromstring(request.data.decode('utf-8'))
+    putservice.handleAlerts(tree,checkCommunityUser())
+    message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
+    return message
 
 ###############
 ### Main
