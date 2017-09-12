@@ -4,7 +4,7 @@
 # CONFIG:
 TEST=http://127.0.0.1:9922
 PROD=https://community.sicherheitstacho.eu:9443
-AUTH=request.xml
+AUTH=./get-requests/request.xml
 
 
 
@@ -45,7 +45,7 @@ esac
 
 
 
-echo "***** TESTING LOCAL WEBSERVICE" 
+echo "***** TESTING GET WEBSERVICE"
 
 echo "***** RETRIEVEALERTCYBER *****"
 curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/alert/retrieveAlertsCyber?$DOM
@@ -123,5 +123,5 @@ echo ""
 sleep 3
 
 
-echo "***** END TESTING LOCAL WEBSERVICE"
+echo "***** END TESTING GET WEBSERVICE"
 exit 0

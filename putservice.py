@@ -1,4 +1,16 @@
-# PUT functions
+import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ETdefused
+from flask import Flask, request, abort, jsonify, Response
+from flask import current_app as app
+from flask_cors import CORS, cross_origin
+from flask_elasticsearch import FlaskElasticsearch
+import urllib.request, urllib.parse, urllib.error
+import elastic, communication
+
+################
+# PUT Variables
+################
+
 
 peerIdents = ["WebHoneypot", "Webpage",
               "Dionaea", "Network(Dionaea)",
@@ -10,9 +22,22 @@ peerIdents = ["WebHoneypot", "Webpage",
               ".kip", "SSH/console",
               "", ""]
 
+################
+# PUT functions
+################
+
+def checkPostData(postrequest):
+    """check if postdata is XML"""
+    postdata = postrequest.decode('utf-8')
+    try:
+        return ETdefused.fromstring(postdata)
+    except ETdefused.ParseError:
+        app.logger.error('Invalid XML in post request')
+        return False
+
 def getPeerType(id):
     """
-        parse through the data tables
+        get the peerType from peerIdent
     """
     for i in range (0,len(peerIdents) - 2, 2):
          honeypot = peerIdents[i]
@@ -23,7 +48,6 @@ def getPeerType(id):
 
     return "Unclassified"
 
-
 def fixUrl(destinationPort, url, peerType):
     """
         fixes the URL (original request string)
@@ -33,9 +57,9 @@ def fixUrl(destinationPort, url, peerType):
 
     return url
 
-def handleAlerts(tree, tenant):
+def handleAlerts(tree, tenant, es):
     """
-        handle the Alerts
+        parse the xml, handle the Alerts and send to es
     """
     counter = 0
     for node in tree.findall('.//Alert'):
@@ -109,24 +133,24 @@ def handleAlerts(tree, tenant):
         # persist CVE
         #
         if (len(str(vulnid)) > 2):
-            elastic.putVuln(vulnid, elasticHost, esindex, createTime, source, debug)
+            elastic.putVuln(vulnid, app.config['ELASTICINDEX'], createTime, source, app.config['DEBUG'], es )
 
         #
         # store attack itself
         #
-        correction = elastic.putAlarm(vulnid, elasticHost, esindex, source, destination, createTime, tenant, url,
+        correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
                                       analyzerID, peerType, username, password, loginStatus, version, starttime,
-                                      endtime, sourcePort, destinationPort, debug)
+                                      endtime, sourcePort, destinationPort, app.config['DEBUG'], es)
         counter = counter + 1 - correction
 
         #
         # slack wanted
         #
-        if ("yes" in slackuse):
-            if len(str(slacktoken)) > 10:
+        if (app.config['USESLACK']):
+            if len(str(app.config['SLACKTOKEN'])) > 10:
                 if len(str(vulnid)) > 4:
-                    if (elastic.cveExisting(vulnid, elasticHost, esindex)):
-                        communication.sendSlack("cve", slacktoken, "CVE (" + vulnid + ") found.")
+                    if (elastic.cveExisting(vulnid, app.config['ELASTICINDEX'], es, app.config['DEBUG'])):
+                        communication.sendSlack("cve", app.config['SLACKTOKEN'], "CVE (" + vulnid + ") found.", app.config['DEBUG'])
 
-    print ("Info: Added " + str(counter) + " entries")
+    app.logger.debug("Info: Added " + str(counter) + " entries")
     return True
