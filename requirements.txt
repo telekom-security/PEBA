@@ -7,3 +7,5 @@ elasticsearch
 gunicorn
 defusedxml
 python-dateutil
+slackclient
+pygeoip

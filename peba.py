@@ -225,7 +225,6 @@ def queryAlerts(maxAlerts, clientDomain):
                 "sourceEntryIp"
                 ]
             })
-        print(res)
         return res["hits"]["hits"]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
@@ -501,7 +500,6 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain):
     else:
         app.logger.error('Non numeric value in topCountriesAttacks monthOffset. Must be decimal number in months')
         return False
-    print("span/span2: " + span+" " +span2)
 
     # use top10 default
     if topX is None:
@@ -1117,10 +1115,13 @@ def retrieveLatLonAttacks():
 
 @app.route("/ews-0.1/alert/postSimpleMessage", methods=['POST'])
 def postSimpleMessage():
-    tree = ETdefused.fromstring(request.data.decode('utf-8'))
-    putservice.handleAlerts(tree,checkCommunityUser())
-    message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
-    return message
+    if request.data:
+        tree = putservice.checkPostData(request.data)
+        if tree:
+            putservice.handleAlerts(tree, checkCommunityUser(), es)
+            message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
+            return Response(message, mimetype='text/xml')
+    return app.config['DEFAULTRESPONSE']
 
 ###############
 ### Main
