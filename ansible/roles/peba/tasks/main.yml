@@ -12,12 +12,26 @@
   copy: src={{ item.src }} dest={{ item.dest }}
   with_items:
     - { src: './../../../../peba.py', dest: '/opt/peba/peba.py' }
+    - { src: './../../../../putservice.py', dest: '/opt/peba/putservice.py' }
+    - { src: './../../../../elastic.py', dest: '/opt/peba/elastic.py' }
+    - { src: './../../../../communication.py', dest: '/opt/peba/communication.py' }
     - { src: './../../../../requirements.txt', dest: '/opt/peba/requirements.txt' }
 
 - name: install configuration file
   template:
         src=./roles/peba/templates/peba.cfg
         dest='/etc/ews/peba.cfg'
+
+- name: Create maxmind geoip directory
+  file: path="/var/lib/GeoIP" owner=root group=root mode=0755 recurse=yes state=directory
+
+- name: copy software from maxmind
+  copy: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - { src: './../../../../var/lib/GeoIP/GeoLiteCity.dat', dest: '/var/lib/GeoIP/GeoLiteCity.dat' }
+    - { src: './../../../../var/lib/GeoIP/GeoIP.dat', dest: '/var/lib/GeoIP/GeoIP.dat' }
+    - { src: './../../../../var/lib/GeoIP/GeoIPASNum.dat', dest: '/var/lib/GeoIP/GeoIPASNum.dat' }
+
 
 - name: Install init.d script
   copy:
