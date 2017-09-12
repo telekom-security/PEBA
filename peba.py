@@ -33,7 +33,7 @@ import putservice
 ###################
 
 app = Flask(__name__)
-app.config.from_pyfile('./etc/ews/peba.cfg')
+app.config.from_pyfile('/etc/ews/peba.cfg')
 app.wsgi_app = ProxyFix(app.wsgi_app)
 cors = CORS(app, resources={r"/alert/*": {"origins": app.config['CORSDOMAIN']}})
 
