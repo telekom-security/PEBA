@@ -1,0 +1,60 @@
+<EWS-SimpleMessage version="3.0">
+  <Authentication>
+    <username>community-01-user</username>
+    <token>foth{a5maiCee8fineu7</token>
+  </Authentication>
+  <Alert>
+    <Analyzer id="suricata-community-01"/>
+    <CreateTime tz="+0200">2017-08-22 03:29:27</CreateTime>
+    <Source category="ipv4" port="1900" protocol="tcp">172.20.254.144</Source>
+    <Target category="ipv4" port="51903" protocol="tcp">84.131.179.222</Target>
+    <Request type="request"></Request>
+    <Request type="description">Suricata CVE Attack</Request>
+    <AdditionalData meaning="cve_id" type="string">CVE-2012-5959%20CVE-2012-5958</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="suricata-community-01"/>
+    <CreateTime tz="+0200">2017-08-22 03:29:27</CreateTime>
+    <Source category="ipv4" port="1900" protocol="tcp">172.20.254.144</Source>
+    <Target category="ipv4" port="51903" protocol="tcp">84.131.179.222</Target>
+    <Request type="request"></Request>
+    <Request type="description">Suricata CVE Attack</Request>
+    <AdditionalData meaning="cve_id" type="string">CVE-2012-5959%20CVE-2012-5958</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="suricata-community-01"/>
+    <CreateTime tz="+0200">2017-08-22 03:29:32</CreateTime>
+    <Source category="ipv4" port="56620" protocol="tcp">37.9.113.206</Source>
+    <Target category="ipv4" port="80" protocol="tcp">84.131.179.222</Target>
+    <Request type="request">%7Bu%27status%27%3A%20200%2C%20u%27http_user_agent%27%3A%20u%27Mozilla/5.0%20%28compatible%3B%20YandexBot/3.0%3B%20%2Bhttp%3A//yandex.com/bots%29%27%2C%20u%27protocol%27%3A%20u%27HTTP/1.1%27%2C%20u%27url%27%3A%20u%27/modules/vwar/admin/classes/adodbt/global.inc%27%2C%20u%27hostname%27%3A%20u%27thebullocks.dynvpn.de%27%2C%20u%27length%27%3A%200%2C%20u%27http_method%27%3A%20u%27GET%27%2C%20u%27http_content_type%27%3A%20u%27text/html%27%7D</Request>
+    <Request type="description">Suricata CVE Attack</Request>
+    <AdditionalData meaning="cve_id" type="string">CVE-2002-0614</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="suricata-community-01"/>
+    <CreateTime tz="+0200">2017-08-22 03:30:18</CreateTime>
+    <Source category="ipv4" port="46334" protocol="tcp">95.108.213.16</Source>
+    <Target category="ipv4" port="80" protocol="tcp">84.131.179.222</Target>
+    <Request type="request">%7Bu%27status%27%3A%20200%2C%20u%27http_user_agent%27%3A%20u%27Mozilla/5.0%20%28compatible%3B%20YandexBot/3.0%3B%20%2Bhttp%3A//yandex.com/bots%29%27%2C%20u%27protocol%27%3A%20u%27HTTP/1.1%27%2C%20u%27url%27%3A%20u%27/b2-tools/.br/printer/search/axis-cgi/Citrix/MetaFrame/default/authors.pwd%27%2C%20u%27hostname%27%3A%20u%27thebullocks.dynvpn.de%27%2C%20u%27length%27%3A%200%2C%20u%27http_method%27%3A%20u%27GET%27%2C%20u%27http_content_type%27%3A%20u%27text/html%27%7D</Request>
+    <Request type="description">Suricata CVE Attack</Request>
+    <AdditionalData meaning="cve_id" type="string">CVE-1999-0386</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="suricata-community-01"/>
+    <CreateTime tz="+0200">2017-08-22 03:30:29</CreateTime>
+    <Source category="ipv4" port="1900" protocol="tcp">172.20.254.144</Source>
+    <Target category="ipv4" port="51903" protocol="tcp">84.131.179.222</Target>
+    <Request type="request"></Request>
+    <Request type="description">Suricata CVE Attack</Request>
+    <AdditionalData meaning="cve_id" type="string">CVE-2012-5959%20CVE-2012-5958</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="suricata-community-01"/>
+    <CreateTime tz="+0200">2017-08-22 03:30:29</CreateTime>
+    <Source category="ipv4" port="1900" protocol="tcp">84.131.179.222</Source>
+    <Target category="ipv4" port="51903" protocol="tcp">122.20.254.144</Target>
+    <Request type="request"></Request>
+    <Request type="description">Suricata CVE Attack</Request>
+    <AdditionalData meaning="cve_id" type="string">CVE-2012-5959%20CVE-2012-5958</AdditionalData>
+  </Alert>
+</EWS-SimpleMessage>

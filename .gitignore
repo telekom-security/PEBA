@@ -27,3 +27,10 @@ error.log
 *.pid
 
 ews-webservice-put/vagrant/.vagrant/
+var/lib/GeoIP/GeoIP.dat
+
+var/lib/GeoIP/GeoIPASNum.dat
+
+var/lib/GeoIP/GeoLiteCity.dat
+
+misc/get-requests/request.av.xml

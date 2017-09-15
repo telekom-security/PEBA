@@ -1,0 +1,24 @@
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "wildcard": {
+            "peerIdent.keyword": "*cowrie*"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "exists": {
+            "field": "originalRequestString.keyword"
+          }
+        }
+      ]
+    }
+  },
+  "size": 1000,
+  "_source": [
+    "originalRequestString"
+  ]
+}
