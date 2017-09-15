@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 # PEBA (Python EWS Backend API)
-# v0.6 2017-09-11 - Beta :)
-# Author: @vorband
+# v0.7 2017-09-15 - Beta :)
+# Author: @vorband @schmalle
 
 import xml.etree.ElementTree as ET
 import defusedxml.ElementTree as ETdefused
