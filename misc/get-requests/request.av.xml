@@ -1,0 +1,7 @@
+<EWS-SimpleMessage version="2.0">
+    <Authentication>
+        <username>intelsec</username>
+        <token>__intelsec!6</token>
+    </Authentication>
+</EWS-SimpleMessage>
+
