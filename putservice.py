@@ -13,12 +13,13 @@ import elastic, communication
 
 
 peerIdents = ["WebHoneypot", "Webpage",
-              "Dionaea", "Network(Dionaea)",
+              "dionaea", "Network(Dionaea)",
               "honeytrap", "Network(honeytrap)",
               "kippo", "SSH/console(cowrie)",
               "cowrie", "SSH/console(cowrie)",
-              "glastopf", "Webpage", ".gt3",
-              "Webpage",".dio", "Network",
+              "glastopf", "Webpage",
+              ".gt3",  "Webpage",
+              ".dio", "Network",
               ".kip", "SSH/console",
               "", ""]
 
@@ -64,30 +65,48 @@ def handleAlerts(tree, tenant, es):
     counter = 0
     for node in tree.findall('.//Alert'):
         # default values
-        peerType, vulnid, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime = "Unclassified", "", "", "", "", "-", "", "", "", "", "", "", "", ""
+        parsingError = ""
+        skip = False
+        peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime = "Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", ""
         for child in node:
             childName = child.tag
 
             if (childName == "Analyzer"):
-                id = child.attrib.get('id')
-                peerType = getPeerType(id)
+                if child.attrib.get('id') is not "":
+                    analyzerID = child.attrib.get('id')
+                else:
+                    parsingError += "analyzerID = '' "
+                if analyzerID is not "":
+                    peerType = getPeerType(analyzerID)
 
             if (childName == "Source"):
-                source = child.text.replace('"', '')
+                if child.text is not None:
+                    source = child.text.replace('"', '')
+                else:
+                    parsingError += "| source = NONE "
                 sourcePort = child.attrib.get('port')
 
             if (childName == "CreateTime"):
-                createTime = child.text
+                if child.text is not None:
+                    createTime = child.text
+                else:
+                    parsingError += "| CreateTime = NONE "
 
             if (childName == "Target"):
-                destination = child.text.replace('"', '')
+                if child.text is not None:
+                    destination = child.text.replace('"', '')
+                else:
+                    parsingError += "| destination = NONE "
                 destinationPort = child.attrib.get('port')
 
             if (childName == "Request"):
                 type = child.attrib.get('type')
 
                 if (type == "url"):
-                    url = urllib.parse.unquote(child.text)
+                    if child.text is not None:
+                        url = urllib.parse.unquote(child.text)
+                    else:
+                        parsingError += "| url = NONE "
 
                 # if peertype could not be identified by the identifier of the honeypot, try to use the
                 # description field
@@ -110,47 +129,58 @@ def handleAlerts(tree, tenant, es):
                     version = child.text
 
                 if (meaning == "starttime"):
-                    if (child.text) is not None:
+                    if child.text is not None:
                         starttime = urllib.parse.unquote(child.text)
+                    else:
+                        parsingError += "| starttime = NONE "
 
                 if (meaning == "endtime"):
-                    if (child.text) is not None:
+                    if child.text is not None:
                         endtime = urllib.parse.unquote(child.text)
+                    else:
+                        parsingError += "| endtime = NONE "
 
                 if (meaning == "cve_id"):
-                    vulnid = urllib.parse.unquote(child.text)
+                    if child.text is not None:
+                        vulnid = urllib.parse.unquote(child.text)
+                    else:
+                        parsingError += "| cve_id = NONE "
 
                 if (meaning == "input"):
-                    if (child.text) is not None:
+                    if child.text is not None:
                         url = urllib.parse.unquote(child.text).replace('\n', '; ')[2:]
+                    else:
+                        parsingError += "| input = NONE "
 
-            if (childName == "Analyzer"):
-                analyzerID = child.attrib.get('id')
+                if parsingError is not "":
+                    app.logger.debug("Skipping incomplete ews xml alert element : " + parsingError)
+                    skip = True
 
-        url = fixUrl(destinationPort, url, peerType)
+        if not skip:
+            url = fixUrl(destinationPort, url, peerType)
 
-        #
-        # persist CVE
-        #
-        if (len(str(vulnid)) > 2):
-            elastic.putVuln(vulnid, app.config['ELASTICINDEX'], createTime, source, app.config['DEBUG'], es )
+            #
+            # persist CVE
+            #
+            if (len(str(vulnid)) > 2):
+                elastic.putVuln(vulnid, app.config['ELASTICINDEX'], createTime, source, app.config['DEBUG'], es )
 
-        #
-        # store attack itself
-        #
-        correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
-                                      analyzerID, peerType, username, password, loginStatus, version, starttime,
-                                      endtime, sourcePort, destinationPort, app.config['DEBUG'], es)
-        counter = counter + 1 - correction
+            #
+            # store attack itself
+            #
+            correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
+                                          analyzerID, peerType, username, password, loginStatus, version, starttime,
+                                          endtime, sourcePort, destinationPort, app.config['DEBUG'], es)
+            counter = counter + 1 - correction
 
-        #
-        # slack wanted
-        #
-        if (app.config['USESLACK']):
-            if len(str(app.config['SLACKTOKEN'])) > 10:
-                if len(str(vulnid)) > 4:
-                    if (elastic.cveExisting(vulnid, app.config['ELASTICINDEX'], es, app.config['DEBUG'])):
-                        communication.sendSlack("cve", app.config['SLACKTOKEN'], "CVE (" + vulnid + ") found.", app.config['DEBUG'])
+            #
+            # slack wanted
+            #
+            if (app.config['USESLACK']):
+                if len(str(app.config['SLACKTOKEN'])) > 10:
+                    if len(str(vulnid)) > 4:
+                        if (elastic.cveExisting(vulnid, app.config['ELASTICINDEX'], es, app.config['DEBUG'])):
+                            communication.sendSlack("cve", app.config['SLACKTOKEN'], "CVE (" + vulnid + ") found.", app.config['DEBUG'])
 
     app.logger.debug("Info: Added " + str(counter) + " entries")
     return True

@@ -1,0 +1,20 @@
+[Unit]
+Description=Peba
+After=syslog.target
+
+[Service]
+Type=simple
+User=peba
+Group=peba
+WorkingDirectory=/opt/peba
+ExecStart=/usr/bin/python3 /usr/local/bin/gunicorn peba:app --workers=5 --bind=0.0.0.0:9922 --log-file=/var/log/peba/peba.log --error-logfile=/var/log/peba/peba_error.log --log-level error --pid=/var/run/peba/gunicorn.pid
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+SyslogIdentifier=peba
+StandardOutput=syslog
+StandardError=syslog
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
