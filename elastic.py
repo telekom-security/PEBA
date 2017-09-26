@@ -53,7 +53,7 @@ def getGeoIP(sourceip, destinationip):
         return (lat, long, country, asn, asnTarget, countryTarget, countryName, countryTargetName, latDest, longDest)
 
     except:
-        app.logger.debug("Failure at creating GeoIP information:: Returning dummy information to keep sicherheitstacho UI happy")
+        app.logger.debug("Failure at creating GeoIP information: Returning dummy information to keep UI happy")
         return ("0.0", "0.0", "-", "-", "-", "-", "-", "-", "0.0", "0.0")
 
 def initIndex(index, es):
