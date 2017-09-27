@@ -7,6 +7,47 @@
 - name: Create ews config dir
   file: path="/etc/ews/" owner=root group=root mode=0755 recurse=yes state=directory
 
+- name: Add user peba.
+  user:
+    name: peba
+    shell: /bin/nologin
+    home: /nonexistent
+    createhome: no
+    system: yes
+    comment: user for PEBA Backend
+
+- name: Create Log Dir for Peba
+  file:
+     path: '/var/log/peba'
+     owner: peba
+     group: peba
+     mode: 0755
+     state: directory
+
+- name: Create log file
+  file:
+    path: '/var/log/peba/peba.log'
+    state: touch
+    owner: peba
+    group: peba
+    mode: 0755
+
+- name: Create error log file
+  file:
+    path: '/var/log/peba/peba_error.log'
+    state: touch
+    owner: peba
+    group: peba
+    mode: 0755
+
+
+- name: Create Run Dir for Peba
+  file:
+     path: '/var/run/peba'
+     owner: peba
+     group: peba
+     mode: 0755
+     state: directory
 
 - name: Copy scripts
   copy: src={{ item.src }} dest={{ item.dest }}
@@ -19,8 +60,11 @@
 
 - name: install configuration file
   template:
-        src=./roles/peba/templates/peba.cfg
-        dest='/etc/ews/peba.cfg'
+      src: ./roles/peba/templates/peba.cfg
+      dest: '/etc/ews/peba.cfg'
+      owner: root
+      group: root
+      mode: 0644
 
 - name: Create maxmind geoip directory
   file: path="/var/lib/GeoIP" owner=root group=root mode=0755 recurse=yes state=directory
@@ -33,11 +77,14 @@
     - { src: './../../../../var/lib/GeoIP/GeoIPASNum.dat', dest: '/var/lib/GeoIP/GeoIPASNum.dat' }
 
 
-- name: Install init.d script
-  copy:
-    src: './../../../../etc/init.d/peba'
-    dest: '/etc/init.d/peba'
-    mode: 0755
+- name: Install peba.service Unitfile
+  template:
+     src: './../../../../etc/systemd/system/peba.service'
+     dest: '/etc/systemd/system/peba.service'
+     owner: root
+     group: root
+     mode: 0644
+
 
 - name: Reload daemon
   shell: "systemctl daemon-reload"
@@ -59,16 +106,6 @@
     - python3-pip
     - python3-venv
 
-
-- name: Add user peba.
-  user:
-    name: peba
-    shell: /bin/nologin
-    home: /nonexistent
-    createhome: no
-    system: yes
-    comment: user for peba backend service
-
 - name: Installing virtualenv via pip
   pip:
     name: virtualenv
@@ -78,12 +115,22 @@
   pip:
     requirements: /opt/peba/requirements.txt
     state: latest
-    virtualenv_command: pyvenv
-    virtualenv: /opt/peba/
+    executable: pip3
+    #virtualenv_command: pyvenv
+    #virtualenv: /opt/peba/
 
+- name: Change Ownership to Peba
+  file:
+     path: /opt/peba
+     owner: peba
+     group: peba
+     recurse: yes
 
 - name: Start peba service
-  service:
-    name: peba
-    enabled: yes
-    state: restarted
+  systemd:
+     name: peba.service
+     enabled: yes
+     state: restarted
+     masked: no
+     daemon_reload: yes
+

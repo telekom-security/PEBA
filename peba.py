@@ -61,7 +61,7 @@ def authentication_required(f):
         postdata = request.data.decode('utf-8')
 
         if len(postdata) == 0:
-            app.logger.error('no xml post data in request')
+            app.logger.error('Authentication: No xml post data in request')
             return abort(403)
         else:
             root = ETdefused.fromstring(postdata)
@@ -69,7 +69,7 @@ def authentication_required(f):
             pass_data = root.find("./Authentication/token")
 
             if user_data is None or pass_data is None:
-                app.logger.error('Invalid XML: token not present or empty')
+                app.logger.error('Authentication: Invalid XML, token not present or empty')
                 return abort(403)
 
             username = user_data.text
@@ -966,13 +966,13 @@ def heartbeat():
     mongoAvailable = testMongo()
     elasticsearchAvailable = testElasticsearch()
     if mongoAvailable and elasticsearchAvailable:
-        return "me"
+        return "I'm alive"
     elif mongoAvailable and not elasticsearchAvailable:
-        return "m"
+        abort(401)
     elif not mongoAvailable and elasticsearchAvailable:
-        return "e"
+        abort(401)
     else:
-        return "_____flatline_____"
+        abort(401)
 
 
 # Routes with XML output
