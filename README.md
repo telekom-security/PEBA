@@ -57,7 +57,7 @@ The application can be deployed via ansible on a debian (tested: Stretch) / ubun
 The application consists of two part, a GET and a PUT Service. It can be tested using `./misc/test-getService.sh` respectively `./misc/test-putService.sh` which will send appropriate requests to retrieve or store data. Again, prod and test instance can be tested, further community data or private (dtag honeypots) data can be retrieved (only GET). Change the config section in script according to your environment.
 
     ./misc/test-getService.sh <prod|test> <private|community>
-    ./misc/test-putService.sh <prod|test> 
+    ./misc/test-putService.sh <prod|test>
 
 You need corresponding WSUser username & token to access the API. Replace them in `./misc/request.xml`
 
@@ -67,8 +67,8 @@ You need corresponding WSUser username & token to access the API. Replace them i
 Code by André Vorbach (vorband) and Markus Schmall (schmalle).
 
 Overall help, friendly extensions / comments / suggestions by Markus Schroer and Robin Verton.
-Valuable discussions with Aydin Kocas, Markus Schroer, Marco Ochse, Robibn Verton and Rainer Schmidt.
+Valuable discussions with Aydin Kocas, Markus Schroer, Marco Ochse, Robin Verton and Rainer Schmidt.
 
 Used frameworks / tools:
 
-Maxmind GeoIP (https://dev.maxmind.com/geoip/legacy/geolite/) Gunicorn Bottle Elasticsearch Mongo
+Maxmind GeoIP (https://dev.maxmind.com/geoip/legacy/geolite/) Gunicorn Flask Elasticsearch
