@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # PEBA (Python EWS Backend API)
-# v0.7.1 2017-09-26 - Beta :)
+# v0.7.2 2017-10-04 - Beta :)
 # Authors: @vorband & @schmalle
 
 import xml.etree.ElementTree as ET
@@ -19,8 +19,6 @@ from flask import Flask, request, abort, jsonify, Response
 from flask_cors import CORS, cross_origin
 from flask_elasticsearch import FlaskElasticsearch
 
-
-from pymongo import MongoClient, errors
 from elasticsearch import Elasticsearch, ElasticsearchException
 from werkzeug.contrib.fixers import ProxyFix
 
@@ -39,12 +37,6 @@ cors = CORS(app, resources={r"/alert/*": {"origins": app.config['CORSDOMAIN']}})
 
 es = FlaskElasticsearch(app,
     timeout=app.config['ELASTICTIMEOUT']
-)
-
-client = MongoClient(
-    app.config['MONGOIP'],
-    app.config['MONGOPORT'],
-    serverSelectionTimeoutMS=app.config['MONGOTIMEOUT']
 )
 
 
@@ -82,32 +74,44 @@ def authentication_required(f):
             return f(*args, **kwargs)
     return decorated_function
 
-def testMongo():
-    try:
-        client.server_info()
-    except errors.ServerSelectionTimeoutError as err:
-        return False
-
-    return True
-
 def testElasticsearch():
     return es.ping()
 
 def authenticate(username, token):
-    """ Authenticate user in mongodb """
+    """ Authenticate user in ES """
 
-    db = client.ews
     try:
-        dbresult = db.WSUser.find_one({'peerName': username})
-        if dbresult:
-            tokenhash = hashlib.sha512(token.encode('utf-8'))
-            if dbresult['token'] == tokenhash.hexdigest():
-                return True
+        res = es.search(index=app.config['WSUSERINDEX'], body={
+              "query": {
+                "term": {
+                  "peerName.keyword": username
+                }
+              }
+            })
 
-    except errors.ServerSelectionTimeoutError as err:
-        app.logger.error('MongoDB cannot be reached: %s' %  err)
+        if res["hits"]["total"] > 1:
+            app.logger.error('authenticate(): More than one user "%s" in ES index "users" found!' % username)
+        elif res["hits"]["total"] < 1:
+            app.logger.error('authenticate(): No user "%s" in ES index "users" found!' % username)
+        elif res["hits"]["total"] == 1:
+            authtoken = res["hits"]["hits"][0]["_source"]["token"]
+
+            if len(authtoken) == 128:
+                tokenhash = hashlib.sha512(token.encode('utf-8')).hexdigest()
+                if authtoken == tokenhash:
+                    return True
+            elif len(authtoken) == 32:
+                tokenhash = hashlib.md5(token.encode('utf-8')).hexdigest()
+                if authtoken == tokenhash:
+                    return True
+            else:
+                app.logger.error('authenticate(): Hash "{0}" for user "{1}" is not matching md5 or sha512 length! Needs to be checked in index!'.format(token, username))
+
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' %  err)
 
     return False
+
 
 def checkCommunityUser():
     """ Checks if community credentials are used
@@ -137,20 +141,6 @@ def checkCommunityUser():
             return abort(403)
 
         return False
-
-def getPeerCountry(peerIdent):
-    """ Find country for peer in mongodb """
-    db = client.ews
-    try:
-        dbresult = db.peer.find_one({'ident': peerIdent})
-        if dbresult:
-            if "country" in dbresult and dbresult['country'] != "":
-                return dbresult['country']
-
-    except errors.ServerSelectionTimeoutError as err:
-        app.logger.error('MongoDB cannot be reached: %s' % err)
-
-    return False
 
 def checkCommunityIndex(request):
     """check if request is agains community index or production index"""
@@ -220,6 +210,7 @@ def queryAlerts(maxAlerts, clientDomain):
                 "peerIdent",
                 "peerType",
                 "country",
+                "targetCountry",
                 "originalRequestString",
                 "location",
                 "sourceEntryIp"
@@ -747,7 +738,7 @@ def formatAlertsXml(alertslist):
             peerType = ET.SubElement(peerElement, 'Type')
             peerType.text = alert['_source']['peerType']
             peerCountry = ET.SubElement(peerElement, 'Country')
-            peerCountry.text = getPeerCountry(alert['_source']['peerIdent'])
+            peerCountry.text = alert['_source']['targetCountry']
             requestElement = ET.SubElement(alertElement, 'Request')
             requestElement.text = alert['_source']['originalRequestString']
             sourceElement = ET.SubElement(alertElement, 'Source')
@@ -963,14 +954,8 @@ def webroot():
 # Heartbeat
 @app.route("/heartbeat", methods=['GET'])
 def heartbeat():
-    mongoAvailable = testMongo()
-    elasticsearchAvailable = testElasticsearch()
-    if mongoAvailable and elasticsearchAvailable:
+    if testElasticsearch():
         return "I'm alive"
-    elif mongoAvailable and not elasticsearchAvailable:
-        abort(401)
-    elif not mongoAvailable and elasticsearchAvailable:
-        abort(401)
     else:
         abort(401)
 
