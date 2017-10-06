@@ -35,8 +35,7 @@ for indexpos, user in enumerate(wsUser.find({}, {"peerName": 1, "token": 1})):
    metadata = {
        "index": {
            "_index": index,
-           "_type": "wsUser",
-           "_id": indexpos
+           "_type": "wsUser"
        }
    }
    bulk_data.append(metadata)
