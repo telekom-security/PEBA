@@ -511,7 +511,7 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain):
             "range": {
               "recievedTime": {
                 "gte": span,
-                "lte": span2
+                "lt": span2
               }
             }
           },
@@ -554,7 +554,7 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain):
                 "range": {
                     "recievedTime": {
                         "gte": span,
-                        "lte": span2
+                        "lt": span2
                     }
                 }
             },
@@ -644,7 +644,7 @@ def queryLatLonAttacks(direction, topX, dayoffset, clientDomain):
             "range": {
               "createTime": {
                 "gte": span,
-                "lte": span2
+                "lt": span2
               }
             }
           },
