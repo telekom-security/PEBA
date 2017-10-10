@@ -1069,8 +1069,17 @@ def retrieveAlertsJson():
 
     # query ES
     else:
-        # Retrieve last 5 Alerts from ElasticSearch and return JSON formatted with limited alert content
-        returnResult =  formatAlertsJson(queryAlertsWithoutIP(5, checkCommunityIndex(request)))
+        if not request.args.get('topx'):
+            numAlerts = 5
+        else:
+            topx = request.args.get('topx')
+            if topx.isdecimal() and int(topx) >= 5 and int(topx) <= 50:
+                numAlerts = topx
+            else:
+                numAlerts = 5
+
+        # Retrieve last X Alerts from ElasticSearch and return JSON formatted with limited alert content
+        returnResult =  formatAlertsJson(queryAlertsWithoutIP(numAlerts, checkCommunityIndex(request)))
         setCache(request.url, returnResult, 1)
         return returnResult
 
