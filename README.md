@@ -1,8 +1,8 @@
 # PEBA - Python EWS Backend API
 
-Lightweight python3 backend application to offer an API alternative for current EWS backend, e.g. for the T-Pot Community backend.
+PEBA is a lightweight python3 backend application which offers an API alternative for current EWS backend. The API receives honeypot event data from [ewsposter](https://github.com/armedpot/ewsposter), e.g. from one or more [T-Pot](https://github.com/dtag-dev-sec/tpotce) installations, processes it and stores it in Elasticsearch. The data stored can be queried via the APIs below.
 
-**Currently implemented endpoints:** 
+**Currently implemented API endpoints:** 
 
 *Private GET endpoints* using authentication:
 
@@ -32,7 +32,7 @@ By default, queriying the above endpoints, data from the **community honeypots**
 
 **Install requirements:**
 
-    apt-get install python3 python3-dev python3-pip
+    apt-get install python3 python3-dev python3-pip 
     pip3 install -r requirements.txt
 
 
@@ -43,13 +43,18 @@ Run the application (for testing) via:
    	./start.sh
    	
 The webapplication runs on port 9922. It needs a [reverse proxy](http://flask.pocoo.org/docs/0.12/deploying/wsgi-standalone/#proxy-setups)  for SSL termination.
-Currently logs errors to `./error.log` - no access log. 
+Running as shown above, it logs errors to `./error.log`.
 
 **Deploy Application:**
 
-The application can be deployed via ansible on a debian (tested: Stretch) / ubuntu (tested 16.04) system and started using an init script. Adjust ./ansible/hosts with the correct paramters (hostname and following operational values). Then deploy via:
+The application can be deployed via ansible on a debian (tested: Stretch) / ubuntu (tested 16.04) system and started using a systemd script. PEBA further relies on an elasticsearch and memcache installation which needs to be configured separately. Adjust ./ansible/hosts with the correct paramters (hostname and following operational values). Then deploy via:
 
     ./ansible/deploy.sh <prod|test>
+
+
+** Adding users: **
+
+In order to add users to the authentication pool, the script `./misc/add-user.py` can be used. 
 
 
 **Functional Tests:**
@@ -59,7 +64,7 @@ The application consists of two part, a GET and a PUT Service. It can be tested 
     ./misc/test-getService.sh <prod|test> <private|community>
     ./misc/test-putService.sh <prod|test>
 
-You need corresponding WSUser username & token to access the API. Replace them in `./misc/request.xml`
+For some of the above requests, you need a username & password in order to access the API. Use the script `./misc/add-user.py` to add new users and replace the file username and token in `./misc/request.xml`. 
 
 
 **Credits**

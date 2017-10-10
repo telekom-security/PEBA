@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # PEBA (Python EWS Backend API)
-# v0.7.2 2017-10-04 - Beta :)
+# v0.7.3 2017-10-10 - Beta :)
 # Authors: @vorband & @schmalle
 
 import xml.etree.ElementTree as ET
@@ -24,6 +24,7 @@ from werkzeug.contrib.fixers import ProxyFix
 
 from functools import wraps
 import putservice
+from werkzeug.contrib.cache import MemcachedCache
 
 
 ###################
@@ -39,6 +40,7 @@ es = FlaskElasticsearch(app,
     timeout=app.config['ELASTICTIMEOUT']
 )
 
+cache = MemcachedCache([app.config['MEMCACHE']])
 
 ###############
 ### Functions
@@ -77,6 +79,15 @@ def authentication_required(f):
 def testElasticsearch():
     return es.ping()
 
+def getCache(cacheItem):
+    rv = cache.get(cacheItem)
+    if rv is None:
+        return False
+    return rv
+
+def setCache(cacheItem, cacheValue, cacheTimeout):
+    cache.set(cacheItem, cacheValue, timeout=cacheTimeout)
+
 def authenticate(username, token):
     """ Authenticate user in ES """
 
@@ -95,6 +106,8 @@ def authenticate(username, token):
             app.logger.error('authenticate(): No user "%s" in ES index "users" found!' % username)
         elif res["hits"]["total"] == 1:
             authtoken = res["hits"]["hits"][0]["_source"]["token"]
+            getOnly = res["hits"]["hits"][0]["_source"]["getOnly"]
+            communityOnly = res["hits"]["hits"][0]["_source"]["community"]
 
             if len(authtoken) == 128:
                 tokenhash = hashlib.sha512(token.encode('utf-8')).hexdigest()
@@ -966,8 +979,17 @@ def heartbeat():
 @authentication_required
 def retrieveIPs():
     """ Retrieve IPs from ElasticSearch and return formatted XML with IPs """
-    return formatBadIPxml(queryBadIPs(app.config['BADIPTIMESPAN'], checkCommunityIndex(request)))
 
+    # get result from cache
+    getCacheResult = getCache(request.url)
+    if getCacheResult is not False:
+        return getCacheResult
+
+    # query ES
+    else:
+        returnResult = formatBadIPxml(queryBadIPs(app.config['BADIPTIMESPAN'], checkCommunityIndex(request)))
+        setCache(request.url, returnResult, 60)
+        return returnResult
 
 @app.route("/alert/retrieveAlertsCyber", methods=['POST'])
 @authentication_required
@@ -975,7 +997,17 @@ def retrieveAlertsCyber():
     """ Retrieve Alerts from ElasticSearch and return formatted 
         XML with limited alert content
     """
-    return formatAlertsXml(queryAlerts(app.config['MAXALERTS'], checkCommunityIndex(request)))
+
+    # get result from cache
+    getCacheResult = getCache(request.url)
+    if getCacheResult is not False:
+        return getCacheResult
+
+    # query ES
+    else:
+        returnResult = formatAlertsXml(queryAlerts(app.config['MAXALERTS'], checkCommunityIndex(request)))
+        setCache(request.url, returnResult, 60)
+        return returnResult
 
 
 # Routes with both XML and JSON output
@@ -984,16 +1016,24 @@ def retrieveAlertsCyber():
 def retrieveAlertsCount():
     """ Retrieve number of alerts in timeframe (GET-Parameter time as decimal or "day") """
 
-    # Retrieve Number of Alerts from ElasticSearch and return as xml / json
-    if not request.args.get('time'):
-        app.logger.error('No time GET-parameter supplied in retrieveAlertsCount. Must be decimal number (in minutes) or string "day"')
-        return app.config['DEFAULTRESPONSE']
-    else:
-        if request.args.get('out') and request.args.get('out') == 'json':
-            return formatAlertsCount(queryAlertsCount(request.args.get('time'), checkCommunityIndex(request)), 'json')
-        else:
-            return formatAlertsCount(queryAlertsCount(request.args.get('time'), checkCommunityIndex(request)), 'xml')
+    # get result from cache
+    getCacheResult = getCache(request.url)
+    if getCacheResult is not False:
+        return getCacheResult
 
+    # query ES
+    else:
+        # Retrieve Number of Alerts from ElasticSearch and return as xml / json
+        if not request.args.get('time'):
+            app.logger.error('No time GET-parameter supplied in retrieveAlertsCount. Must be decimal number (in minutes) or string "day"')
+            return app.config['DEFAULTRESPONSE']
+        else:
+            if request.args.get('out') and request.args.get('out') == 'json':
+                returnResult = formatAlertsCount(queryAlertsCount(request.args.get('time'), checkCommunityIndex(request)), 'json')
+            else:
+                returnResult = formatAlertsCount(queryAlertsCount(request.args.get('time'), checkCommunityIndex(request)), 'xml')
+            setCache(request.url, returnResult, 60)
+            return returnResult
 
 # Routes with JSON output
 
@@ -1001,19 +1041,39 @@ def retrieveAlertsCount():
 def retrieveAlertsCountWithType():
     """ Retrieve number of alerts in timeframe (GET-Parameter time as decimal or "day") and divide into honypot types"""
 
-    # Retrieve Number of Alerts from ElasticSearch and return as xml / json
-    if not request.args.get('time'):
-        app.logger.error('No time GET-parameter supplied in retrieveAlertsCountWithType. Must be decimal number (in minutes) or string "day"')
-        return app.config['DEFAULTRESPONSE']
+    # get result from cache
+    getCacheResult = getCache(request.url)
+    if getCacheResult is not False:
+        return getCacheResult
+
+    # query ES
     else:
-        return formatAlertsCountWithType(queryAlertsCountWithType(request.args.get('time'), checkCommunityIndex(request)))
+        # Retrieve Number of Alerts from ElasticSearch and return as xml / json
+        if not request.args.get('time'):
+            app.logger.error('No time GET-parameter supplied in retrieveAlertsCountWithType. Must be decimal number (in minutes) or string "day"')
+            return app.config['DEFAULTRESPONSE']
+        else:
+            returnResult = formatAlertsCountWithType(queryAlertsCountWithType(request.args.get('time'), checkCommunityIndex(request)))
+            setCache(request.url, returnResult, 60)
+            return returnResult
+
 
 @app.route("/alert/retrieveAlertsJson", methods=['GET'])
 def retrieveAlertsJson():
     """ Retrieve last 5 Alerts in JSON without IPs """
 
-    # Retrieve last 5 Alerts from ElasticSearch and return JSON formatted with limited alert content
-    return formatAlertsJson(queryAlertsWithoutIP(5, checkCommunityIndex(request)))
+    # get result from cache
+    getCacheResult = getCache(request.url)
+    if getCacheResult is not False:
+        return getCacheResult
+
+    # query ES
+    else:
+        # Retrieve last 5 Alerts from ElasticSearch and return JSON formatted with limited alert content
+        returnResult =  formatAlertsJson(queryAlertsWithoutIP(5, checkCommunityIndex(request)))
+        setCache(request.url, returnResult, 1)
+        return returnResult
+
 
 @app.route("/alert/datasetAlertsPerMonth", methods=['GET'])
 def retrieveDatasetAlertsPerMonth():
@@ -1022,11 +1082,20 @@ def retrieveDatasetAlertsPerMonth():
         if no GET parameter days is given
     """
 
-    if not request.args.get('days'):
-        # Using default : within the last month
-        return formatDatasetAlertsPerMonth(queryDatasetAlertsPerMonth(None, checkCommunityIndex(request)))
+    # get result from cache
+    getCacheResult = getCache(request.url)
+    if getCacheResult is not False:
+        return getCacheResult
+
+    # query ES
     else:
-        return formatDatasetAlertsPerMonth(queryDatasetAlertsPerMonth(request.args.get('days'), checkCommunityIndex(request)))
+        if not request.args.get('days'):
+            # Using default : within the last month
+            returnResult = formatDatasetAlertsPerMonth(queryDatasetAlertsPerMonth(None, checkCommunityIndex(request)))
+        else:
+            returnResult = formatDatasetAlertsPerMonth(queryDatasetAlertsPerMonth(request.args.get('days'), checkCommunityIndex(request)))
+        setCache(request.url, returnResult, 600)
+        return returnResult
 
 @app.route("/alert/datasetAlertTypesPerMonth", methods=['GET'])
 def retrieveDatasetAlertTypesPerMonth():
@@ -1035,36 +1104,65 @@ def retrieveDatasetAlertTypesPerMonth():
         and return as JSON for the last x months, defaults to last month,
         if no GET parameter days is given
     """
-    if not request.args.get('days'):
-        # Using default : within the last month
-        return formatDatasetAlertTypesPerMonth(queryDatasetAlertTypesPerMonth(None, checkCommunityIndex(request)))
+
+    # get result from cache
+    getCacheResult = getCache(request.url)
+    if getCacheResult is not False:
+        return getCacheResult
+
+    # query ES
     else:
-        return formatDatasetAlertTypesPerMonth(queryDatasetAlertTypesPerMonth(request.args.get('days'), checkCommunityIndex(request)))
+        if not request.args.get('days'):
+            # Using default : within the last month
+            returnResult = formatDatasetAlertTypesPerMonth(queryDatasetAlertTypesPerMonth(None, checkCommunityIndex(request)))
+        else:
+            returnResult = formatDatasetAlertTypesPerMonth(queryDatasetAlertTypesPerMonth(request.args.get('days'), checkCommunityIndex(request)))
+        setCache(request.url, returnResult, 3600)
+        return returnResult
 
 @app.route("/alert/retrieveAlertStats", methods=['GET'])
 def retrieveAlertStats():
     """ Retrieve combined statistics
         AlertsLastMinute, AlertsLastHour,  AlertsLast24Hours
     """
-    return formatAlertStats(queryAlertStats(checkCommunityIndex(request)
-                                            ))
+
+    # get result from cache
+    getCacheResult = getCache(request.url)
+    if getCacheResult is not False:
+        return getCacheResult
+
+    # query ES
+    else:
+        returnResult = formatAlertStats(queryAlertStats(checkCommunityIndex(request)))
+        setCache(request.url, returnResult, 60)
+        return returnResult
 
 @app.route("/alert/topCountriesAttacks", methods=['GET'])
 def retrieveTopCountriesAttacks():
     """ Retrieve the Top X countries and their attacks within month
     """
-    if not request.args.get('monthOffset'):
-        # Using default : within the last month
-        offset = None
-    else:
-        offset = request.args.get('monthOffset')
 
-    if not request.args.get('topx'):
-        # Using default top 10
-        topx = None
+    # get result from cache
+    getCacheResult = getCache(request.url)
+    if getCacheResult is not False:
+        return getCacheResult
+
+    # query ES
     else:
-        topx = request.args.get('topx')
-    return formatTopCountriesAttacks(queryTopCountriesAttacks(offset, topx, checkCommunityIndex(request)))
+        if not request.args.get('monthOffset'):
+            # Using default : within the last month
+            offset = None
+        else:
+            offset = request.args.get('monthOffset')
+
+        if not request.args.get('topx'):
+            # Using default top 10
+            topx = None
+        else:
+            topx = request.args.get('topx')
+        returnResult = formatTopCountriesAttacks(queryTopCountriesAttacks(offset, topx, checkCommunityIndex(request)))
+        setCache(request.url, returnResult, 3600)
+        return returnResult
 
 @app.route("/alert/retrieveLatLonAttacks", methods=['GET'])
 def retrieveLatLonAttacks():
@@ -1074,29 +1172,42 @@ def retrieveLatLonAttacks():
         direction src = src lat lng
         direction dst = dest lat lng
     """
-    if not request.args.get('direction'):
-        # Using default : lat and long of attack sources
-        direction = None
+
+    # get result from cache
+    getCacheResult = getCache(request.url)
+    if getCacheResult is not False:
+        return getCacheResult
+
+    # query ES
     else:
-        # using attack destinations
-        direction = request.args.get('direction')
+        if not request.args.get('direction'):
+            # Using default : lat and long of attack sources
+            direction = None
+        else:
+            # using attack destinations
+            direction = request.args.get('direction')
 
-    if not request.args.get('topx'):
-        # Using default top 10
-        topx = None
-    else:
-        topx = request.args.get('topx')
+        if not request.args.get('topx'):
+            # Using default top 10
+            topx = None
+        else:
+            topx = request.args.get('topx')
 
-    if not request.args.get('offset'):
-        # Using default 24h
-        offset = None
-    else:
-        offset = request.args.get('offset')
+        if not request.args.get('offset'):
+            # Using default 24h
+            offset = None
+        else:
+            offset = request.args.get('offset')
 
-    return formatLatLonAttacks(queryLatLonAttacks(direction, topx, offset, checkCommunityIndex(request)))
-
+        returnResult=formatLatLonAttacks(queryLatLonAttacks(direction, topx, offset, checkCommunityIndex(request)))
+        setCache(request.url, returnResult, 60)
+        return returnResult
 
 # PUT Service
+
+@app.route("/ews-0.1/alert/postSimpleMessage", methods=['GET'])
+def getSimpleMessage():
+    return Response("POST is required for this action.", mimetype='text/html', status=500)
 
 @app.route("/ews-0.1/alert/postSimpleMessage", methods=['POST'])
 def postSimpleMessage():
@@ -1107,6 +1218,7 @@ def postSimpleMessage():
             message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
             return Response(message, mimetype='text/xml')
     return app.config['DEFAULTRESPONSE']
+
 
 ###############
 ### Main
