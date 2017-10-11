@@ -10,7 +10,7 @@ pip3 install -r requirements.txt
 # may be tweaked accordingly to
 # http://docs.gunicorn.org/en/stable/settings.html
 
-python3 /usr/local/bin/gunicorn peba:app \
+python3 $(which gunicorn) peba:app \
 	-w 4 \
 	-b $BIND
 	--error-logfile error.log \
