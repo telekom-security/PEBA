@@ -26,7 +26,6 @@ from functools import wraps
 import putservice
 from werkzeug.contrib.cache import MemcachedCache
 
-
 ###################
 ### Initialization
 ###################
@@ -89,39 +88,58 @@ def setCache(cacheItem, cacheValue, cacheTimeout):
     cache.set(cacheItem, cacheValue, timeout=cacheTimeout)
 
 def authenticate(username, token):
-    """ Authenticate user in ES """
+    """ Authenticate user from cache or in ES """
 
-    try:
-        res = es.search(index=app.config['WSUSERINDEX'], body={
-              "query": {
-                "term": {
-                  "peerName.keyword": username
-                }
-              }
-            })
+    # check for user in cache
+    authtoken = getCache(username)
+    if authtoken is not False:
+        if len(authtoken) == 128:
+            tokenhash = hashlib.sha512(token.encode('utf-8')).hexdigest()
+            if authtoken == tokenhash:
+                return True
+        elif len(authtoken) == 32:
+            tokenhash = hashlib.md5(token.encode('utf-8')).hexdigest()
+            if authtoken == tokenhash:
+                return True
+        else:
+            app.logger.error('authenticate(): Hash "{0}" for user "{1}" is not matching md5 or sha512 length! Needs to be checked in memcache!'.format(authtoken, username))
 
-        if res["hits"]["total"] > 1:
-            app.logger.error('authenticate(): More than one user "%s" in ES index "users" found!' % username)
-        elif res["hits"]["total"] < 1:
-            app.logger.error('authenticate(): No user "%s" in ES index "users" found!' % username)
-        elif res["hits"]["total"] == 1:
-            authtoken = res["hits"]["hits"][0]["_source"]["token"]
-            getOnly = res["hits"]["hits"][0]["_source"]["getOnly"]
-            communityOnly = res["hits"]["hits"][0]["_source"]["community"]
+    # query ES
+    else:
+        try:
+            res = es.search(index=app.config['WSUSERINDEX'], body={
+                  "query": {
+                    "term": {
+                      "peerName.keyword": username
+                    }
+                  }
+                })
 
-            if len(authtoken) == 128:
-                tokenhash = hashlib.sha512(token.encode('utf-8')).hexdigest()
-                if authtoken == tokenhash:
-                    return True
-            elif len(authtoken) == 32:
-                tokenhash = hashlib.md5(token.encode('utf-8')).hexdigest()
-                if authtoken == tokenhash:
-                    return True
-            else:
-                app.logger.error('authenticate(): Hash "{0}" for user "{1}" is not matching md5 or sha512 length! Needs to be checked in index!'.format(token, username))
+            if res["hits"]["total"] > 1:
+                app.logger.error('authenticate(): More than one user "%s" in ES index "users" found!' % username)
+            elif res["hits"]["total"] < 1:
+                app.logger.error('authenticate(): No user "%s" in ES index "users" found!' % username)
+            elif res["hits"]["total"] == 1:
+                authtoken = res["hits"]["hits"][0]["_source"]["token"]
+                getOnly = res["hits"]["hits"][0]["_source"]["getOnly"]
+                communityOnly = res["hits"]["hits"][0]["_source"]["community"]
 
-    except ElasticsearchException as err:
-        app.logger.error('ElasticSearch error: %s' %  err)
+                # add user and token to cache for 24h
+                setCache(username, authtoken, (60*60*24))
+
+                if len(authtoken) == 128:
+                    tokenhash = hashlib.sha512(token.encode('utf-8')).hexdigest()
+                    if authtoken == tokenhash:
+                        return True
+                elif len(authtoken) == 32:
+                    tokenhash = hashlib.md5(token.encode('utf-8')).hexdigest()
+                    if authtoken == tokenhash:
+                        return True
+                else:
+                    app.logger.error('authenticate(): Hash "{0}" for user "{1}" is not matching md5 or sha512 length! Needs to be checked in ES index!'.format(authtoken, username))
+
+        except ElasticsearchException as err:
+            app.logger.error('ElasticSearch error: %s' %  err)
 
     return False
 
@@ -1057,7 +1075,6 @@ def retrieveAlertsCountWithType():
             setCache(request.url, returnResult, 60)
             return returnResult
 
-
 @app.route("/alert/retrieveAlertsJson", methods=['GET'])
 def retrieveAlertsJson():
     """ Retrieve last 5 Alerts in JSON without IPs """
@@ -1082,7 +1099,6 @@ def retrieveAlertsJson():
         returnResult =  formatAlertsJson(queryAlertsWithoutIP(numAlerts, checkCommunityIndex(request)))
         setCache(request.url, returnResult, 1)
         return returnResult
-
 
 @app.route("/alert/datasetAlertsPerMonth", methods=['GET'])
 def retrieveDatasetAlertsPerMonth():
