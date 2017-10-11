@@ -1238,7 +1238,7 @@ def postSimpleMessage():
     if request.data:
         tree = putservice.checkPostData(request.data)
         if tree:
-            putservice.handleAlerts(tree, checkCommunityUser(), es)
+            putservice.handleAlerts(tree, checkCommunityUser(), es, cache)
             message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
             return Response(message, mimetype='text/xml')
     return app.config['DEFAULTRESPONSE']
