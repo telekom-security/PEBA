@@ -1,6 +1,6 @@
 # PEBA - Python EWS Backend API
 
-PEBA is a lightweight python3 backend application that offers an API alternative for current EWS backend.
+PEBA is a lightweight python3 backend application that offers an API alternative for current DTAG EWS backend.
 
 The API consists of two functional parts: A "PUT-Service" to store data and a "GET-Service" to retrieve data.
 
@@ -12,19 +12,22 @@ The data stored can then be queried via distinct APIs, the GET-APIs. The results
 
 `Consumer, e.g. Sicherheitstacho.eu --> PEBA [Elasticsearch, memcache]`
 
+It is crucial to understand that in PEBA honeypot data is devided in (1) *public community data* (everyone can contribute using T-Pot, submit and query data) and (2) data from *private domain honeypots* (e.g. those from DTAG) which can only be submitted and queried using distinct credentials. 
+
 **Implemented API endpoints:** 
 
-*Private PUT endpoint* using authentication to deliver honeypot events using ewsposter. 
+*Public/Private PUT endpoint* using authentication to deliver honeypot events using ewsposter. 
 
- - [POST] */ews-0.1/alert/postSimpleMessage* ==> takes the ews xml posted by ewsposter, processes and stores honeypot alerts in elasticsearch, flagged with domain (see below)
+ - [POST] */ews-0.1/alert/postSimpleMessage* ==> takes the ews xml posted by ewsposter, processes and stores honeypot alerts in elasticsearch, flagged with domain
 
-The authentication can be done using either T-Pot community credentials (1) or distinct EWS user for a private domain (2). The username & token is stored in ewsposter's ews.cfg. Depending on the credentials, the data is flagged as community data or private domain data (2). 
+The authentication can be done using either T-Pot community credentials (1) or distinct EWS user for the private domain (2). The username & token is stored in ewsposter's ews.cfg residing on T-Pot. Depending on the credentials, the data is flagged as community data (1) or private domain data (2).
 
 *Private GET endpoints* using authentication:
 
  - [POST] */alert/retrieveIPs* ==> returning the unique IP addresses of the last attacks in timeframe *X* minutes.
  - [POST] */alert/retrieveAlertsCyber* ==> returning the last 1000 attacks, including IPs. 
 
+The above private endpoints cannot be queried using the community credentials (1), only by users of the private domain (2).
 
 *Public GET endpoints* for Sicherheitstacho:
  
