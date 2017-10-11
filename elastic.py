@@ -1,7 +1,5 @@
-import defusedxml.ElementTree as xmlParser
-from xml.etree.ElementTree import tostring
 from flask import current_app as app
-import pygeoip, urllib, datetime
+import pygeoip, datetime
 import hashlib
 
 from flask_elasticsearch import FlaskElasticsearch
@@ -19,6 +17,15 @@ countries = ["AD","Andorra","AE","United Arab Emirates","AG","Antigua and Barbud
 # ES PUT functions
 ##################
 
+def getCache(cacheItem, cache):
+    rv = cache.get(cacheItem)
+    if rv is None:
+        return False
+    return rv
+
+def setCache(cacheItem, cacheValue, cacheTimeout, cache):
+    cache.set(cacheItem, cacheValue, timeout=cacheTimeout)
+
 
 def getCountries(id):
     """return the country name for country code"""
@@ -31,30 +38,68 @@ def getCountries(id):
 
     return ""
 
-def getGeoIP(sourceip, destinationip):
+
+
+def getGeoIPNative(sourceip, cache):
+
     """ get geoip and ASN information from IP """
     gi = pygeoip.GeoIP("/var/lib/GeoIP/GeoIP.dat")
     giCity = pygeoip.GeoIP("/var/lib/GeoIP/GeoLiteCity.dat")
     giASN = pygeoip.GeoIP('/var/lib/GeoIP/GeoIPASNum.dat')
 
-
     try:
-        lat = giCity.record_by_addr(sourceip)['latitude']
-        long = giCity.record_by_addr(sourceip)['longitude']
-        latDest = giCity.record_by_addr(destinationip)['latitude']
-        longDest = giCity.record_by_addr(destinationip)['longitude']
+
+        asn = giASN.org_by_addr(sourceip)
+        if (asn is None):
+            setCache(sourceip, "0.0" + "|" + "0.0" + "|" + "-" + "|" + "-" + "|" + "-", 60 * 60 * 24, cache)
+            return ("0.0", "0.0", "-", "-", "-")
+
         country = gi.country_code_by_addr(sourceip)
+        if (country == ""):
+            setCache(sourceip, "0.0" + "|" + "0.0" + "|" + "-" + "|" + "-" + "|" + "-", 60 * 60 * 24, cache)
+            return ("0.0", "0.0", "-", "-", "-")
+
+
+        long = giCity.record_by_addr(sourceip)['longitude']
+        lat = giCity.record_by_addr(sourceip)['latitude']
         countryName = getCountries(country)
         asn = giASN.org_by_addr(sourceip)
-        asnTarget = giASN.org_by_addr(destinationip)
-        countryTarget = gi.country_code_by_addr(destinationip)
-        countryTargetName = getCountries(countryTarget)
 
-        return (lat, long, country, asn, asnTarget, countryTarget, countryName, countryTargetName, latDest, longDest)
+        # store data in memcache
+        setCache(sourceip, str(lat) + "|" + str(long) + "|" + country + "|"+ asn  + "|" + countryName, 60*60*24, cache)
+
+        return (lat, long, country, asn, countryName)
 
     except:
-        app.logger.debug("Failure at creating GeoIP information: Returning dummy information to keep UI happy")
-        return ("0.0", "0.0", "-", "-", "-", "-", "-", "-", "0.0", "0.0")
+
+        setCache(sourceip, "0.0" + "|" + "0.0" + "|" + "-" + "|" + "-" + "|" + "-", 60 * 60 * 24, cache)
+        return ("0.0", "0.0", "-", "-", "-")
+
+
+def getGeoIPCache(ip, cache):
+
+
+    # get result from cache
+    getCacheResult = getCache(ip, cache)
+    if getCacheResult is False:
+        return getGeoIPNative(ip, cache)
+
+    data = getCacheResult.split("|");
+
+    return (data[0], data[1], data[2], data[3], data[4])
+
+
+
+
+def getGeoIP(sourceip, destinationip, cache):
+    """ get geoip and ASN information from IP """
+
+    (lat, long, country, asn, countryName) = getGeoIPCache(sourceip, cache)
+    (latDest, longDest, countryTarget, asnTarget, countryTargetName) = getGeoIPCache(destinationip, cache)
+
+    return (lat, long, country, asn, countryName, latDest, longDest, countryTarget, asnTarget, countryTargetName)
+
+
 
 def initIndex(index, es):
     """ initialize the index and mappings """
@@ -197,13 +242,13 @@ def putVuln(vulnid, esindex, createTime, ip, debug, es):
         app.logger.error("Error when persisting vulnid: " + str(vulnid))
         return 1
 
-def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, debug, es):
+def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, debug, es, cache):
     """stores an alarm in the index"""
     m = hashlib.md5()
     m.update((createTime + sourceip + destinationip + url + analyzerID).encode())
 
-    (lat, long, country, asn, asnTarget, countryTarget, countryName, countryTargetName, latDest, longDest) = getGeoIP(
-        sourceip, destinationip)
+    (lat, long, country, asn, countryName, latDest, longDest, countryTarget, asnTarget, countryTargetName) = getGeoIP(
+        sourceip, destinationip, cache)
 
     currentTime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -269,3 +314,6 @@ def cveExisting(cve, index, es, debug):
         return True
 
     return False
+
+
+

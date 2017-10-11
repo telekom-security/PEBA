@@ -7,6 +7,7 @@ from flask_elasticsearch import FlaskElasticsearch
 import urllib.request, urllib.parse, urllib.error
 import elastic, communication
 
+
 ################
 # PUT Variables
 ################
@@ -26,6 +27,9 @@ peerIdents = ["WebHoneypot", "Webpage",
 ################
 # PUT functions
 ################
+
+
+
 
 def checkPostData(postrequest):
     """check if postdata is XML"""
@@ -58,7 +62,7 @@ def fixUrl(destinationPort, url, peerType):
 
     return url
 
-def handleAlerts(tree, tenant, es):
+def handleAlerts(tree, tenant, es, cache):
     """
         parse the xml, handle the Alerts and send to es
     """
@@ -170,7 +174,7 @@ def handleAlerts(tree, tenant, es):
             #
             correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
                                           analyzerID, peerType, username, password, loginStatus, version, starttime,
-                                          endtime, sourcePort, destinationPort, app.config['DEBUG'], es)
+                                          endtime, sourcePort, destinationPort, app.config['DEBUG'], es, cache)
             counter = counter + 1 - correction
 
             #
