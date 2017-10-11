@@ -9,4 +9,3 @@ defusedxml
 python-dateutil
 slackclient
 pygeoip
-pylibmc
