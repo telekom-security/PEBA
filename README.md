@@ -103,6 +103,6 @@ Code by André Vorbach (vorband) and Markus Schmall (schmalle).
 Overall help, friendly extensions / comments / suggestions by Markus Schroer and Robin Verton.
 Valuable discussions with Aydin Kocas, Markus Schroer, Marco Ochse, Robin Verton and Rainer Schmidt.
 
-Used frameworks / tools:
+**Frameworks / tools**:
 
-Maxmind GeoIP (https://dev.maxmind.com/geoip/legacy/geolite/) Gunicorn Flask Elasticsearch
+[Maxmind GeoIP](https://dev.maxmind.com/geoip/legacy/geolite/) - Gunicorn - Flask - Elasticsearch - Memcached
