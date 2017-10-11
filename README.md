@@ -1,6 +1,6 @@
 # PEBA - Python EWS Backend API
 
-PEBA is a lightweight python3 backend application that offers an API alternative for current DTAG EWS backend.
+PEBA is a lightweight python3 backend application that offers an API alternative for the current DTAG EWS backend.
 
 The API consists of two functional parts: A "PUT-Service" to store data and a "GET-Service" to retrieve data.
 
