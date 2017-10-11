@@ -1,13 +1,29 @@
 # PEBA - Python EWS Backend API
 
-PEBA is a lightweight python3 backend application which offers an API alternative for current EWS backend. The API receives honeypot event data from [ewsposter](https://github.com/armedpot/ewsposter), e.g. from one or more [T-Pot](https://github.com/dtag-dev-sec/tpotce) installations, processes it and stores it in Elasticsearch. The data stored can be queried via the APIs below.
+PEBA is a lightweight python3 backend application that offers an API alternative for current EWS backend.
 
-**Currently implemented API endpoints:** 
+The API consists of two functional parts: A "PUT-Service" to store data and a "GET-Service" to retrieve data.
+
+The PUT-API receives honeypot event data from [ewsposter](https://github.com/armedpot/ewsposter), e.g. from one or more [T-Pot](https://github.com/dtag-dev-sec/tpotce) installations, processes it and stores it in Elasticsearch.
+
+`Attacker <--> T-Pot [honeypot <-- ewsposter] --> PEBA [Elasticsearch, memcache]`
+
+The data stored can then be queried via distinct APIs, the GET-APIs. The results are cached for performance using memcached.
+
+`Consumer, e.g. Sicherheitstacho.eu --> PEBA [Elasticsearch, memcache]`
+
+**Implemented API endpoints:** 
+
+*Private PUT endpoint* using authentication to deliver honeypot events using ewsposter. 
+
+ - [POST] */ews-0.1/alert/postSimpleMessage* ==> takes the ews xml posted by ewsposter, processes and stores honeypot alerts in elasticsearch, flagged with domain (see below)
+
+The authentication can be done using either T-Pot community credentials (1) or distinct EWS user for a private domain (2). The username & token is stored in ewsposter's ews.cfg. Depending on the credentials, the data is flagged as community data or private domain data (2). 
 
 *Private GET endpoints* using authentication:
 
- - [POST] */alert/retrieveIPs* ==> returning the unique IP addresses of the last attacks in timeframe *X* minutes. Requires authentication. 
- - [POST] */alert/retrieveAlertsCyber* ==> returning the last 1000 attacks. Requires authentication.
+ - [POST] */alert/retrieveIPs* ==> returning the unique IP addresses of the last attacks in timeframe *X* minutes.
+ - [POST] */alert/retrieveAlertsCyber* ==> returning the last 1000 attacks, including IPs. 
 
 
 *Public GET endpoints* for Sicherheitstacho:
@@ -22,39 +38,49 @@ PEBA is a lightweight python3 backend application which offers an API alternativ
  - [GET] */alert/retrieveLatLonAttacks* ==> Returns top X count on Lat and Lng. use GET parameter "offset" and "topx" to determine the offset from now in days (default: last 24h) and how many results shall be returned (default: top10). Use parameter "direction" to determine if source or destination location is given.
  - [GET] */alert/retrieveAlertsCountWithType* ==> returns the number of attacks within timespan in minutes or since the beginning of the current day, grouped by Type, e.g. */retrieveAlertsCountWithType?time=10* or */retrieveAlertsCountWithType?time=day*. Returns json.
  
-*Public PUT endpoint* using authentication (either T-Pot Community or distinct EWS WSUser):
- - [POST] */ews-0.1/alert/postSimpleMessage* ==> takes the ews xml posted and puts honeypot alerts into elasticsearch
+
  
-***Data domain:***
+**Data domain:**
 
-By default, queriying the above endpoints, data from the **community honeypots** is returned. To retrieve data from the **DTAG honeypots**, add a GET parameter *ci=0*. Example:  */alert/retrieveAlertsJson?****ci=0*** to retrieve the DTAG json data feed. This works both on the public and private endpoints.
+By default, querying the above endpoints, data from the **T-Pot community honeypots** is returned. To retrieve data from the **private domain honeypots**, add a GET parameter *ci=0*. Example:  */alert/retrieveAlertsJson?**ci=0*** to retrieve the private json data feed. This works both on the public and private endpoints.
 
 
-**Install requirements:**
+**Installation:** (on Debian/Ubuntu)
 
-    apt-get install python3 python3-dev python3-pip 
-    pip3 install -r requirements.txt
 
+    sudo apt-get install python3 python3-dev python3-pip python3-pylibmc
+    git clone git@github.com:dtag-dev-sec/PEBA.git
+	cd PEBA
+    sudo mkdir -p /etc/ews/
+	sudo cp etc/ews/peba.cfg /etc/ews/peba.cfg
+	pip3 install -r requirements.txt
+    cd var/lib/GeoIP/
+	./download.sh
+    
+*Reminder: *Elasticsearch and memcached must be available. They must be configured in */etc/ews/peba.cfg*. 
+
+*Note:*  When installing on MacOS, you need the following: 
+` brew install libmemcached` and `pip3 install pylibmc`
 
 **Run Application:**
 
-Run the application (for testing) via:
+You can run the application (for testing) via:
 
    	./start.sh
    	
-The webapplication runs on port 9922. It needs a [reverse proxy](http://flask.pocoo.org/docs/0.12/deploying/wsgi-standalone/#proxy-setups)  for SSL termination.
-Running as shown above, it logs errors to `./error.log`.
+The webapplication runs on port 9922. Running as shown above, PEBA logs errors to `./error.log`. 
 
 **Deploy Application:**
 
-The application can be deployed via ansible on a debian (tested: Stretch) / ubuntu (tested 16.04) system and started using a systemd script. PEBA further relies on an elasticsearch and memcache installation which needs to be configured separately. Adjust ./ansible/hosts with the correct paramters (hostname and following operational values). Then deploy via:
+In production environments it needs a [reverse proxy](http://flask.pocoo.org/docs/0.12/deploying/wsgi-standalone/#proxy-setups) for SSL termination.
+The application can be deployed via ansible on a debian (tested: Stretch) / ubuntu (tested 16.04) system and started using a systemd script. As mentioned before, PEBA further relies on an Elasticsearch and memcache installation which needs to be configured separately. Adjust ./ansible/hosts with the correct paramters (hostname and following operational values). Then deploy via:
 
     ./ansible/deploy.sh <prod|test>
 
 
 ** Adding users: **
 
-In order to add users to the authentication pool, the script `./misc/add-user.py` can be used. 
+In order to add users to the authentication pool - for the usage of the private domain, the script `./misc/add-user.py` can be used. 
 
 
 **Functional Tests:**

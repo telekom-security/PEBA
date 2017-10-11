@@ -122,7 +122,7 @@ def authenticate(username, token):
             elif res["hits"]["total"] == 1:
                 authtoken = res["hits"]["hits"][0]["_source"]["token"]
                 getOnly = res["hits"]["hits"][0]["_source"]["getOnly"]
-                communityOnly = res["hits"]["hits"][0]["_source"]["community"]
+                community = res["hits"]["hits"][0]["_source"]["community"]
 
                 # add user and token to cache for 24h
                 setCache(username, authtoken, (60*60*24))
@@ -142,7 +142,6 @@ def authenticate(username, token):
             app.logger.error('ElasticSearch error: %s' %  err)
 
     return False
-
 
 def checkCommunityUser():
     """ Checks if community credentials are used
