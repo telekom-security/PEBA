@@ -57,7 +57,7 @@ By default, querying the above endpoints, data from the **T-Pot community honeyp
     cd var/lib/GeoIP/
 	./download.sh
     
-*Reminder: *Elasticsearch and memcached must be available. They must be configured in */etc/ews/peba.cfg*. 
+*Reminder:* Elasticsearch and memcached must be available. They must be configured in */etc/ews/peba.cfg*. 
 
 *Note:*  When installing on MacOS, you need the following: 
 ` brew install libmemcached` and `pip3 install pylibmc`
@@ -78,7 +78,7 @@ The application can be deployed via ansible on a debian (tested: Stretch) / ubun
     ./ansible/deploy.sh <prod|test>
 
 
-** Adding users: **
+**Adding users:**
 
 In order to add users to the authentication pool - for the usage of the private domain, the script `./misc/add-user.py` can be used. 
 
