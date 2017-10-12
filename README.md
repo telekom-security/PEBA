@@ -1,6 +1,6 @@
 # PEBA - Python EWS Backend API
 
-PEBA is a lightweight python3 backend application that offers an API alternative for current EWS backend.
+PEBA is a lightweight python3 backend application that offers an API alternative for the current DTAG EWS backend.
 
 The API consists of two functional parts: A "PUT-Service" to store data and a "GET-Service" to retrieve data.
 
@@ -12,24 +12,27 @@ The data stored can then be queried via distinct APIs, the GET-APIs. The results
 
 `Consumer, e.g. Sicherheitstacho.eu --> PEBA [Elasticsearch, memcache]`
 
+It is crucial to understand that in PEBA honeypot data is devided in (1) *public community data* (everyone can contribute using T-Pot, submit and query data) and (2) data from *private domain honeypots* (e.g. those from DTAG) which can only be submitted and queried using distinct credentials. 
+
 **Implemented API endpoints:** 
 
-*Private PUT endpoint* using authentication to deliver honeypot events using ewsposter. 
+*Public/Private PUT endpoint* using authentication to deliver honeypot events using ewsposter. 
 
- - [POST] */ews-0.1/alert/postSimpleMessage* ==> takes the ews xml posted by ewsposter, processes and stores honeypot alerts in elasticsearch, flagged with domain (see below)
+ - [POST] */ews-0.1/alert/postSimpleMessage* ==> takes the ews xml posted by ewsposter, processes and stores honeypot alerts in elasticsearch, flagged with domain
 
-The authentication can be done using either T-Pot community credentials (1) or distinct EWS user for a private domain (2). The username & token is stored in ewsposter's ews.cfg. Depending on the credentials, the data is flagged as community data or private domain data (2). 
+The authentication can be done using either T-Pot community credentials (1) or distinct EWS user for the private domain (2). The username & token is stored in ewsposter's ews.cfg residing on T-Pot. Depending on the credentials, the data is flagged as community data (1) or private domain data (2).
 
 *Private GET endpoints* using authentication:
 
  - [POST] */alert/retrieveIPs* ==> returning the unique IP addresses of the last attacks in timeframe *X* minutes.
  - [POST] */alert/retrieveAlertsCyber* ==> returning the last 1000 attacks, including IPs. 
 
+The above private endpoints cannot be queried using the community credentials (1), only by users of the private domain (2).
 
 *Public GET endpoints* for Sicherheitstacho:
  
  - [GET] */alert/retrieveAlertsCount* ==> returns the number of attacks within timespan in minutes or since the beginning of the current day e.g. */retrieveAlertsCount?time=10* or */retrieveAlertsCount?time=day*. Can further be parametrized using *out=json*. Defaults to xml.  
- - [GET] */alert/heartbeat* ==> Returns backend status : "*me*" if *everything* is ok, *m* if only mongoDB connection is ok, *e* if only elasticsearch connection is ok. If mongodb and elasticsearch connection fail, *flatline* is returned.
+ - [GET] */alert/heartbeat* ==> Returns backend elasticsearch status
  - [GET] */alert/retrieveAlertsJson* ==> Returns last 5 Alerts in json for usage in sicherheitstacho
  - [GET] */alert/datasetAlertsPerMonth* ==> Returns attacks / day for */datasetAlertsPerMonth?days=x* in the last x days OR for the last month, defaults to last month, if no GET parameter "days" is given
  - [GET] */alert/datasetAlertTypesPerMonth* ==> Returns attacks / day, grouped by honeypot type, for */datasetAlertTypesPerMonth?days=x* in the last x days OR for the last month, defaults to last month, if no GET parameter "days" is given
@@ -57,7 +60,7 @@ By default, querying the above endpoints, data from the **T-Pot community honeyp
     cd var/lib/GeoIP/
 	./download.sh
     
-*Reminder: *Elasticsearch and memcached must be available. They must be configured in */etc/ews/peba.cfg*. 
+*Reminder:* Elasticsearch and memcached must be available. They must be configured in */etc/ews/peba.cfg*. 
 
 *Note:*  When installing on MacOS, you need the following: 
 ` brew install libmemcached` and `pip3 install pylibmc`
@@ -78,7 +81,7 @@ The application can be deployed via ansible on a debian (tested: Stretch) / ubun
     ./ansible/deploy.sh <prod|test>
 
 
-** Adding users: **
+**Adding users:**
 
 In order to add users to the authentication pool - for the usage of the private domain, the script `./misc/add-user.py` can be used. 
 
@@ -100,6 +103,6 @@ Code by André Vorbach (vorband) and Markus Schmall (schmalle).
 Overall help, friendly extensions / comments / suggestions by Markus Schroer and Robin Verton.
 Valuable discussions with Aydin Kocas, Markus Schroer, Marco Ochse, Robin Verton and Rainer Schmidt.
 
-Used frameworks / tools:
+**Frameworks / tools**:
 
-Maxmind GeoIP (https://dev.maxmind.com/geoip/legacy/geolite/) Gunicorn Flask Elasticsearch
+[Maxmind GeoIP](https://dev.maxmind.com/geoip/legacy/geolite/) - Gunicorn - Flask - Elasticsearch - Memcached
