@@ -1,6 +1,8 @@
 from flask import current_app as app
 import pygeoip, datetime
 import hashlib
+import ipaddress
+
 
 from flask_elasticsearch import FlaskElasticsearch
 
@@ -49,15 +51,23 @@ def getGeoIPNative(sourceip, cache):
     giASN = pygeoip.GeoIP('/var/lib/GeoIP/GeoIPASNum.dat')
 
     try:
+        if ipaddress.ip_address(sourceip).is_private:
+            ASN_fail="IANA"
+            ASN_fail_text="IANA Private IP Range"
+            country_fail = "PIR"
+        else:
+            ASN_fail="-"
+            country_fail="-"
+            ASN_fail_text = "-"
 
         asn = giASN.org_by_addr(sourceip)
-        if (asn is None):
-            setCache(sourceip, "0.0" + "|" + "0.0" + "|" + "-" + "|" + "-" + "|" + "-", 60 * 60 * 24, cache)
+        if (asn == "" ) or asn is None:
+            setCache(sourceip, "0.0" + "|" + "0.0" + "|" + country_fail + "|" + ASN_fail + "|" + ASN_fail_text, 60 * 60 * 24, cache)
             return ("0.0", "0.0", "-", "-", "-")
 
         country = gi.country_code_by_addr(sourceip)
-        if (country == ""):
-            setCache(sourceip, "0.0" + "|" + "0.0" + "|" + "-" + "|" + "-" + "|" + "-", 60 * 60 * 24, cache)
+        if (country == "") or country is None:
+            setCache(sourceip, "0.0" + "|" + "0.0" + "|" + country_fail + "|" + ASN_fail + "|" + ASN_fail_text, 60 * 60 * 24, cache)
             return ("0.0", "0.0", "-", "-", "-")
 
         long = giCity.record_by_addr(sourceip)['longitude']
@@ -71,9 +81,8 @@ def getGeoIPNative(sourceip, cache):
         return (lat, long, country, asn, countryName)
 
     except:
-
-        setCache(sourceip, "0.0" + "|" + "0.0" + "|" + "-" + "|" + "-" + "|" + "-", 60 * 60 * 24, cache)
-        return ("0.0", "0.0", "-", "-", "-")
+        setCache(sourceip, "0.0" + "|" + "0.0" + "|" + country_fail + "|" + ASN_fail + "|" + ASN_fail_text, 60 * 60 * 24, cache)
+        return ("0.0", "0.0", country_fail, ASN_fail, ASN_fail_text)
 
 
 
