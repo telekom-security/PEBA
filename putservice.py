@@ -167,6 +167,7 @@ def handleAlerts(tree, tenant, es, cache):
             #
             if (len(str(vulnid)) > 2):
                 elastic.putVuln(vulnid, app.config['ELASTICINDEX'], createTime, source, app.config['DEBUG'], es )
+                url = "(" + vulnid + ") " + url
 
             #
             # store attack itself
