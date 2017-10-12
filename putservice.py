@@ -30,7 +30,6 @@ peerIdents = ["WebHoneypot", "Webpage",
 
 
 
-
 def checkPostData(postrequest):
     """check if postdata is XML"""
     postdata = postrequest.decode('utf-8')

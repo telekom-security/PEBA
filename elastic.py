@@ -43,6 +43,7 @@ def getCountries(id):
 def getGeoIPNative(sourceip, cache):
 
     """ get geoip and ASN information from IP """
+
     gi = pygeoip.GeoIP("/var/lib/GeoIP/GeoIP.dat")
     giCity = pygeoip.GeoIP("/var/lib/GeoIP/GeoLiteCity.dat")
     giASN = pygeoip.GeoIP('/var/lib/GeoIP/GeoIPASNum.dat')
@@ -59,7 +60,6 @@ def getGeoIPNative(sourceip, cache):
             setCache(sourceip, "0.0" + "|" + "0.0" + "|" + "-" + "|" + "-" + "|" + "-", 60 * 60 * 24, cache)
             return ("0.0", "0.0", "-", "-", "-")
 
-
         long = giCity.record_by_addr(sourceip)['longitude']
         lat = giCity.record_by_addr(sourceip)['latitude']
         countryName = getCountries(country)
@@ -67,6 +67,8 @@ def getGeoIPNative(sourceip, cache):
 
         # store data in memcache
         setCache(sourceip, str(lat) + "|" + str(long) + "|" + country + "|"+ asn  + "|" + countryName, 60*60*24, cache)
+
+        print("Sending data out of MaxMind")
 
         return (lat, long, country, asn, countryName)
 
@@ -76,8 +78,11 @@ def getGeoIPNative(sourceip, cache):
         return ("0.0", "0.0", "-", "-", "-")
 
 
-def getGeoIPCache(ip, cache):
 
+
+
+def getGeoIP(ip,cache):
+    """ get geoip and ASN information from IP """
 
     # get result from cache
     getCacheResult = getCache(ip, cache)
@@ -86,19 +91,9 @@ def getGeoIPCache(ip, cache):
 
     data = getCacheResult.split("|");
 
+    print("Sending data out of cache")
+
     return (data[0], data[1], data[2], data[3], data[4])
-
-
-
-
-def getGeoIP(sourceip, destinationip, cache):
-    """ get geoip and ASN information from IP """
-
-    (lat, long, country, asn, countryName) = getGeoIPCache(sourceip, cache)
-    (latDest, longDest, countryTarget, asnTarget, countryTargetName) = getGeoIPCache(destinationip, cache)
-
-    return (lat, long, country, asn, countryName, latDest, longDest, countryTarget, asnTarget, countryTargetName)
-
 
 
 def initIndex(index, es):
@@ -247,8 +242,8 @@ def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, an
     m = hashlib.md5()
     m.update((createTime + sourceip + destinationip + url + analyzerID).encode())
 
-    (lat, long, country, asn, countryName, latDest, longDest, countryTarget, asnTarget, countryTargetName) = getGeoIP(
-        sourceip, destinationip, cache)
+    (lat, long, country, asn, countryName) = getGeoIP(sourceip, cache)
+    (latDest, longDest, countryTarget, asnTarget, countryTargetName) = getGeoIP(destinationip, cache)
 
     currentTime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
