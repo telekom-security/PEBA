@@ -68,8 +68,6 @@ def getGeoIPNative(sourceip, cache):
         # store data in memcache
         setCache(sourceip, str(lat) + "|" + str(long) + "|" + country + "|"+ asn  + "|" + countryName, 60*60*24, cache)
 
-        print("Sending data out of MaxMind")
-
         return (lat, long, country, asn, countryName)
 
     except:
@@ -90,8 +88,6 @@ def getGeoIP(ip,cache):
         return getGeoIPNative(ip, cache)
 
     data = getCacheResult.split("|");
-
-    print("Sending data out of cache")
 
     return (data[0], data[1], data[2], data[3], data[4])
 
