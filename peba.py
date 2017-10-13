@@ -1088,7 +1088,8 @@ def retrieveAlertsJson():
         cacheEntry=request.path + "?ci=0"
 
     # get result from cache
-    getCacheResult = getCache(cacheEntry)
+    getCacheResult = getCache(request.url)
+    print(str(getCacheResult))
     if getCacheResult is not False:
         return getCacheResult
 
@@ -1105,7 +1106,7 @@ def retrieveAlertsJson():
 
         # Retrieve last X Alerts from ElasticSearch and return JSON formatted with limited alert content
         returnResult =  formatAlertsJson(queryAlertsWithoutIP(numAlerts, checkCommunityIndex(request)))
-        setCache(cacheEntry, returnResult, 1)
+        setCache(request.url, returnResult, 1)
         return returnResult
 
 @app.route("/alert/datasetAlertsPerMonth", methods=['GET'])
