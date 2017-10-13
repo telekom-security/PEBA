@@ -50,15 +50,15 @@ def getGeoIPNative(sourceip, cache):
     giCity = pygeoip.GeoIP("/var/lib/GeoIP/GeoLiteCity.dat")
     giASN = pygeoip.GeoIP('/var/lib/GeoIP/GeoIPASNum.dat')
 
+    ASN_fail = "-"
+    country_fail = "-"
+    ASN_fail_text = "-"
+
     try:
         if ipaddress.ip_address(sourceip).is_private:
             ASN_fail="IANA"
             ASN_fail_text="IANA Private IP Range"
             country_fail = "PIR"
-        else:
-            ASN_fail="-"
-            country_fail="-"
-            ASN_fail_text = "-"
 
         asn = giASN.org_by_addr(sourceip)
         if (asn == "" ) or asn is None:
