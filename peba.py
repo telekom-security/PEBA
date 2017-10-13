@@ -85,7 +85,11 @@ def getCache(cacheItem):
     return rv
 
 def setCache(cacheItem, cacheValue, cacheTimeout):
-    cache.set(cacheItem, cacheValue, timeout=cacheTimeout)
+    try:
+        cache.set(cacheItem, cacheValue, timeout=cacheTimeout)
+    except:
+        app.logger.error("Could not set memcache cache {0} to value {1} and Timeout {2}".format(cacheItem, cacheValue, cacheTimeout))
+
 
 def authenticate(username, token):
     """ Authenticate user from cache or in ES """
@@ -1078,8 +1082,13 @@ def retrieveAlertsCountWithType():
 def retrieveAlertsJson():
     """ Retrieve last 5 Alerts in JSON without IPs """
 
+    # set cacheItem independent from url parameters, respect community index
+    cacheEntry = request.path
+    if request.args.get('ci') == "0":
+        cacheEntry=request.path + "?ci=0"
+
     # get result from cache
-    getCacheResult = getCache(request.url)
+    getCacheResult = getCache(cacheEntry)
     if getCacheResult is not False:
         return getCacheResult
 
@@ -1096,7 +1105,7 @@ def retrieveAlertsJson():
 
         # Retrieve last X Alerts from ElasticSearch and return JSON formatted with limited alert content
         returnResult =  formatAlertsJson(queryAlertsWithoutIP(numAlerts, checkCommunityIndex(request)))
-        setCache(request.url, returnResult, 1)
+        setCache(cacheEntry, returnResult, 1)
         return returnResult
 
 @app.route("/alert/datasetAlertsPerMonth", methods=['GET'])
