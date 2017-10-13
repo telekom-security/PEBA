@@ -88,7 +88,7 @@ def setCache(cacheItem, cacheValue, cacheTimeout):
     try:
         cache.set(cacheItem, cacheValue, timeout=cacheTimeout)
     except:
-        app.logger.error("Could not set memcache cache {0} to value {1} and Timeout {2}".format(cacheItem, cacheValue, cacheTimeout))
+        app.logger.error("Could not set memcache cache {0} to value {1} and Timeout {2}".format(cacheItem, str(cacheValue), cacheTimeout))
 
 
 def authenticate(username, token):
@@ -1088,9 +1088,11 @@ def retrieveAlertsJson():
         cacheEntry=request.path + "?ci=0"
 
     # get result from cache
+#    getCacheResult = getCache(cacheEntry)
     getCacheResult = getCache(request.url)
-    print(str(getCacheResult))
+
     if getCacheResult is not False:
+        app.logger.debug('Returning /retrieveAlertsJson from Cache')
         return getCacheResult
 
     # query ES
@@ -1106,7 +1108,9 @@ def retrieveAlertsJson():
 
         # Retrieve last X Alerts from ElasticSearch and return JSON formatted with limited alert content
         returnResult =  formatAlertsJson(queryAlertsWithoutIP(numAlerts, checkCommunityIndex(request)))
+#        setCache(cacheEntry, returnResult, 1)
         setCache(request.url, returnResult, 1)
+        app.logger.debug('Returning /retrieveAlertsJson from ES')
         return returnResult
 
 @app.route("/alert/datasetAlertsPerMonth", methods=['GET'])
