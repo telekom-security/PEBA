@@ -841,7 +841,7 @@ def formatAlertsJson(alertslist):
 
             jsonarray.append(jsondata)
 
-    return jsonify({'alerts': jsonarray})
+    return ({'alerts': jsonarray})
 
 def formatAlertsCount(numberofalerts, outformat):
     """ Create XML / Json Structure with number of Alerts in requested timespan """
@@ -904,7 +904,7 @@ def formatAlertStats(retrieveAlertStat):
             'AlertsLastHour': retrieveAlertStat[1]['doc_count'],
             'AlertsLastMinute': retrieveAlertStat[2]['doc_count']
         }
-        return jsonify(jsondata)
+        return (jsondata)
     else:
         return app.config['DEFAULTRESPONSE']
 
@@ -1088,12 +1088,11 @@ def retrieveAlertsJson():
         cacheEntry=request.path + "?ci=0"
 
     # get result from cache
-#    getCacheResult = getCache(cacheEntry)
-    getCacheResult = getCache(request.url)
-
+    getCacheResult = getCache(cacheEntry)
+#    getCacheResult = getCache(request.url)
     if getCacheResult is not False:
         app.logger.debug('Returning /retrieveAlertsJson from Cache')
-        return getCacheResult
+        return jsonify(getCacheResult)
 
     # query ES
     else:
@@ -1108,10 +1107,10 @@ def retrieveAlertsJson():
 
         # Retrieve last X Alerts from ElasticSearch and return JSON formatted with limited alert content
         returnResult =  formatAlertsJson(queryAlertsWithoutIP(numAlerts, checkCommunityIndex(request)))
-#        setCache(cacheEntry, returnResult, 1)
-        setCache(request.url, returnResult, 1)
+        setCache(cacheEntry, returnResult, 1)
+#        setCache(request.url, returnResult, 1)
         app.logger.debug('Returning /retrieveAlertsJson from ES')
-        return returnResult
+        return jsonify(returnResult)
 
 @app.route("/alert/datasetAlertsPerMonth", methods=['GET'])
 def retrieveDatasetAlertsPerMonth():
@@ -1167,13 +1166,13 @@ def retrieveAlertStats():
     # get result from cache
     getCacheResult = getCache(request.url)
     if getCacheResult is not False:
-        return getCacheResult
+        return jsonify(getCacheResult)
 
     # query ES
     else:
         returnResult = formatAlertStats(queryAlertStats(checkCommunityIndex(request)))
         setCache(request.url, returnResult, 60)
-        return returnResult
+        return jsonify(returnResult)
 
 @app.route("/alert/topCountriesAttacks", methods=['GET'])
 def retrieveTopCountriesAttacks():

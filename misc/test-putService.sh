@@ -61,4 +61,11 @@ echo "***** END alarmsuricata.xml *****"
 echo ""
 sleep 3
 
+echo "***** SENDING broken.xml *****"
+AUTH=./put-requests/broken.xml
+curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/ews-0.1/alert/postSimpleMessage
+echo "***** END broken.xml *****"
+echo ""
+sleep 3
+
 echo "***** END TESTING PUT WEBSERVICE"
