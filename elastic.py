@@ -26,7 +26,10 @@ def getCache(cacheItem, cache):
     return rv
 
 def setCache(cacheItem, cacheValue, cacheTimeout, cache):
-    cache.set(cacheItem, cacheValue, timeout=cacheTimeout)
+  try:
+      cache.set(cacheItem, cacheValue, timeout=cacheTimeout)
+  except:
+        app.logger.error("Could not set memcache cache {0} to value {1} and Timeout {2}".format(cacheItem, str(cacheValue), cacheTimeout))
 
 
 def getCountries(id):

@@ -6,7 +6,7 @@ from flask_cors import CORS, cross_origin
 from flask_elasticsearch import FlaskElasticsearch
 import urllib.request, urllib.parse, urllib.error
 import elastic, communication
-
+import ipaddress
 
 ################
 # PUT Variables
@@ -83,7 +83,7 @@ def handleAlerts(tree, tenant, es, cache):
                     peerType = getPeerType(analyzerID)
 
             if (childName == "Source"):
-                if child.text is not None:
+                if child.text is not None and testIPAddress(child.text):
                     source = child.text.replace('"', '')
                 else:
                     parsingError += "| source = NONE "
@@ -96,7 +96,7 @@ def handleAlerts(tree, tenant, es, cache):
                     parsingError += "| CreateTime = NONE "
 
             if (childName == "Target"):
-                if child.text is not None:
+                if child.text is not None and testIPAddress(child.text) :
                     destination = child.text.replace('"', '')
                 else:
                     parsingError += "| destination = NONE "
@@ -155,9 +155,9 @@ def handleAlerts(tree, tenant, es, cache):
                     else:
                         parsingError += "| input = NONE "
 
-                if parsingError is not "":
-                    app.logger.debug("Skipping incomplete ews xml alert element : " + parsingError)
-                    skip = True
+        if parsingError is not "":
+            app.logger.debug("Skipping incomplete ews xml alert element : " + parsingError)
+            skip = True
 
         if not skip:
             url = fixUrl(destinationPort, url, peerType)
@@ -188,3 +188,10 @@ def handleAlerts(tree, tenant, es, cache):
 
     app.logger.debug("Info: Added " + str(counter) + " entries")
     return True
+
+def testIPAddress(ip):
+    try:
+        ipaddress.IPv4Address(ip)
+        return True
+    except:
+        return False

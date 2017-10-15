@@ -1,0 +1,147 @@
+<EWS-SimpleMessage version="2.0">
+    <Authentication>
+        <username>community-01-user</username>
+        <token>foth{a5maiCee8fineu7</token>
+    </Authentication>
+
+      <Alert>
+        <Analyzer id="honeytrap"/>
+        <CreateTime tz="+0200">2016-03-11 09:12:22</CreateTime>
+        <Source category="ipv4" port="200" protocol="tcp">192.168.8.1</Source>
+        <Target category="ipv4" port="80" protocol="tcp">1.2.3.4</Target>
+        <Request type="url">/cgi-bin/.br/style.css3/444</Request>
+        <Request type="raw">R0VUIC9jZ2ktYmluLy5ici9zdHlsZS5jc3MgSFRUUC8xLjENCkFjY2VwdDogdGV4dC9jc3MsKi8q
+            O3E9MC4xLCovKg0KQWNjZXB0LUVuY29kaW5nOiBnemlwLGRlZmxhdGUNCkNvbm5lY3Rpb246IEtl
+            ZXAtYWxpdmUNCkZyb206IGdvb2dsZWJvdChhdClnb29nbGVib3QuY29tDQpIb3N0OiB3d3cud2Vi
+            bWFpbGhvdXNlLmRlDQpSZWZlcmVyOiBodHRwOi8vd3d3LndlYm1haWxob3VzZS5kZS9jZ2ktYmlu
+            Ly5ici9wYXRoLnBocA0KVXNlci1BZ2VudDogTW96aWxsYS81LjAgKGNvbXBhdGlibGU7IEdvb2ds
+            ZWJvdC8yLjE7ICtodHRwOi8vd3d3Lmdvb2dsZS5jb20vYm90Lmh0bWwp
+        </Request>
+        <Request type="description">honeytrap</Request>
+        <AdditionalData meaning="host" type="string">www.webe.de</AdditionalData>
+        <AdditionalData meaning="sqliteid" type="integer">3688</AdditionalData>
+    </Alert>
+
+
+
+    <Alert>
+        <Analyzer id="kippo-community-01"/>
+        <CreateTime tz="+0000">2016-08-01 03:30:31</CreateTime>
+        <Source category="ipv4" port="" protocol="tcp">asasasas</Source>
+        <Target category="ipv4" port="22" protocol="tcp">191.209.200.111</Target>
+        <Request type="description">SSH Honeypot Kippo</Request>
+        <AdditionalData meaning="username" type="string">admin</AdditionalData>
+        <AdditionalData meaning="password" type="string"></AdditionalData>
+        <AdditionalData meaning="sqliteid" type="string">3</AdditionalData>
+        <AdditionalData meaning="version" type="string">SSH-2.0-libssh-0.6.0</AdditionalData>
+        <AdditionalData meaning="starttime" type="string">2017-08-01%2003%3A30%3A28</AdditionalData>
+        <AdditionalData meaning="login" type="string">Success</AdditionalData>
+        <AdditionalData meaning="endtime" type="string">2017-08-01%2005%3A32%3A19</AdditionalData>
+        <AdditionalData meaning="cve_id" type="string">CVE-2012-5959%20CVE-2012-5958</AdditionalData>
+    </Alert>
+
+    <Alert>
+        <Analyzer id="MSTest4"/>
+        <CreateTime tz="+0200">2016-04-11 09:10:21</CreateTime>
+        <Source category="ipv4" port="" protocol="tcp">193.99.144.95</Source>
+        <Target category="ipv4" port="80" protocol="tcp">46.29.100.76</Target>
+        <Request type="url">/cgi-bin/.br/style.css2/2</Request>
+        <Request type="raw">R0VUIC9jZ2ktYmluLy5ici9zdHlsZS5jc3MgSFRUUC8xLjENCkFjY2VwdDogdGV4dC9jc3MsKi8q
+            O3E9MC4xLCovKg0KQWNjZXB0LUVuY29kaW5nOiBnemlwLGRlZmxhdGUNCkNvbm5lY3Rpb246IEtl
+            ZXAtYWxpdmUNCkZyb206IGdvb2dsZWJvdChhdClnb29nbGVib3QuY29tDQpIb3N0OiB3d3cud2Vi
+            bWFpbGhvdXNlLmRlDQpSZWZlcmVyOiBodHRwOi8vd3d3LndlYm1haWxob3VzZS5kZS9jZ2ktYmlu
+            Ly5ici9wYXRoLnBocA0KVXNlci1BZ2VudDogTW96aWxsYS81LjAgKGNvbXBhdGlibGU7IEdvb2ds
+            ZWJvdC8yLjE7ICtodHRwOi8vd3d3Lmdvb2dsZS5jb20vYm90Lmh0bWwp
+        </Request>
+        <Request type="description">WebHoneypot : Glastopf v3.1</Request>
+        <AdditionalData meaning="host" type="string">www.webe.de</AdditionalData>
+        <AdditionalData meaning="sqliteid" type="integer">3688</AdditionalData>
+    </Alert>
+    <Alert>
+        <Analyzer id="MSTest4"/>
+        <CreateTime tz="+0200">2016-04-11 09:12:21</CreateTime>
+        <Source category="ipv4" port="" protocol="tcp">192.168.8.1</Source>
+        <Target category="ipv4" port="80" protocol="tcp">1.2.3.4</Target>
+        <Request type="url">/cgi-bin/.br/style.css3/444</Request>
+        <Request type="raw">R0VUIC9jZ2ktYmluLy5ici9zdHlsZS5jc3MgSFRUUC8xLjENCkFjY2VwdDogdGV4dC9jc3MsKi8q
+            O3E9MC4xLCovKg0KQWNjZXB0LUVuY29kaW5nOiBnemlwLGRlZmxhdGUNCkNvbm5lY3Rpb246IEtl
+            ZXAtYWxpdmUNCkZyb206IGdvb2dsZWJvdChhdClnb29nbGVib3QuY29tDQpIb3N0OiB3d3cud2Vi
+            bWFpbGhvdXNlLmRlDQpSZWZlcmVyOiBodHRwOi8vd3d3LndlYm1haWxob3VzZS5kZS9jZ2ktYmlu
+            Ly5ici9wYXRoLnBocA0KVXNlci1BZ2VudDogTW96aWxsYS81LjAgKGNvbXBhdGlibGU7IEdvb2ds
+            ZWJvdC8yLjE7ICtodHRwOi8vd3d3Lmdvb2dsZS5jb20vYm90Lmh0bWwp
+        </Request>
+        <Request type="description">WebHoneypot : Glastopf v3.1</Request>
+        <AdditionalData meaning="host" type="string">www.webe.de</AdditionalData>
+        <AdditionalData meaning="sqliteid" type="integer">3688</AdditionalData>
+    </Alert>
+    <Alert>
+        <Analyzer id="MSTest3"/>
+        <CreateTime tz="+0200">2016-03-11 11:10:21</CreateTime>
+        <Source category="ipv4" port="" protocol="tcp">193.99.144.95</Source>
+        <Target category="ipv4" port="80" protocol="tcp">46.29.100.76</Target>
+        <Request type="url">/cgi-bin/.br/style.css2/2</Request>
+        <Request type="raw">R0VUIC9jZ2ktYmluLy5ici9zdHlsZS5jc3MgSFRUUC8xLjENCkFjY2VwdDogdGV4dC9jc3MsKi8q
+            O3E9MC4xLCovKg0KQWNjZXB0LUVuY29kaW5nOiBnemlwLGRlZmxhdGUNCkNvbm5lY3Rpb246IEtl
+            ZXAtYWxpdmUNCkZyb206IGdvb2dsZWJvdChhdClnb29nbGVib3QuY29tDQpIb3N0OiB3d3cud2Vi
+            bWFpbGhvdXNlLmRlDQpSZWZlcmVyOiBodHRwOi8vd3d3LndlYm1haWxob3VzZS5kZS9jZ2ktYmlu
+            Ly5ici9wYXRoLnBocA0KVXNlci1BZ2VudDogTW96aWxsYS81LjAgKGNvbXBhdGlibGU7IEdvb2ds
+            ZWJvdC8yLjE7ICtodHRwOi8vd3d3Lmdvb2dsZS5jb20vYm90Lmh0bWwp
+        </Request>
+        <Request type="description">WebHoneypot : Glastopf v3.1</Request>
+        <AdditionalData meaning="host" type="string">www.webe.de</AdditionalData>
+        <AdditionalData meaning="sqliteid" type="integer">3688</AdditionalData>
+    </Alert>
+    <Alert>
+        <Analyzer id="MSTest3"/>
+        <CreateTime tz="+0200">2016-03-11 09:12:21</CreateTime>
+        <Source category="ipv4" port="" protocol="tcp">192.168.8.1</Source>
+        <Target category="ipv4" port="80" protocol="tcp">1.2.3.4</Target>
+        <Request type="url">/cgi-bin/.br/style.css3/444</Request>
+        <Request type="raw">R0VUIC9jZ2ktYmluLy5ici9zdHlsZS5jc3MgSFRUUC8xLjENCkFjY2VwdDogdGV4dC9jc3MsKi8q
+            O3E9MC4xLCovKg0KQWNjZXB0LUVuY29kaW5nOiBnemlwLGRlZmxhdGUNCkNvbm5lY3Rpb246IEtl
+            ZXAtYWxpdmUNCkZyb206IGdvb2dsZWJvdChhdClnb29nbGVib3QuY29tDQpIb3N0OiB3d3cud2Vi
+            bWFpbGhvdXNlLmRlDQpSZWZlcmVyOiBodHRwOi8vd3d3LndlYm1haWxob3VzZS5kZS9jZ2ktYmlu
+            Ly5ici9wYXRoLnBocA0KVXNlci1BZ2VudDogTW96aWxsYS81LjAgKGNvbXBhdGlibGU7IEdvb2ds
+            ZWJvdC8yLjE7ICtodHRwOi8vd3d3Lmdvb2dsZS5jb20vYm90Lmh0bWwp
+        </Request>
+        <Request type="description">WebHoneypot : Glastopf v3.1</Request>
+        <AdditionalData meaning="host" type="string">www.webe.de</AdditionalData>
+        <AdditionalData meaning="sqliteid" type="integer">3688</AdditionalData>
+    </Alert>
+    <Alert>
+        <Analyzer id="MSTest4"/>
+        <CreateTime tz="+0200">2016-03-11 09:10:22</CreateTime>
+        <Source category="ipv4" port="" protocol="tcp">193.99.144.95</Source>
+        <Target category="ipv4" port="80" protocol="tcp">46.29.100.76</Target>
+        <Request type="url">/cgi-bin/.br/style.css2/2</Request>
+        <Request type="raw">R0VUIC9jZ2ktYmluLy5ici9zdHlsZS5jc3MgSFRUUC8xLjENCkFjY2VwdDogdGV4dC9jc3MsKi8q
+            O3E9MC4xLCovKg0KQWNjZXB0LUVuY29kaW5nOiBnemlwLGRlZmxhdGUNCkNvbm5lY3Rpb246IEtl
+            ZXAtYWxpdmUNCkZyb206IGdvb2dsZWJvdChhdClnb29nbGVib3QuY29tDQpIb3N0OiB3d3cud2Vi
+            bWFpbGhvdXNlLmRlDQpSZWZlcmVyOiBodHRwOi8vd3d3LndlYm1haWxob3VzZS5kZS9jZ2ktYmlu
+            Ly5ici9wYXRoLnBocA0KVXNlci1BZ2VudDogTW96aWxsYS81LjAgKGNvbXBhdGlibGU7IEdvb2ds
+            ZWJvdC8yLjE7ICtodHRwOi8vd3d3Lmdvb2dsZS5jb20vYm90Lmh0bWwp
+        </Request>
+        <Request type="description">WebHoneypot : Glastopf v3.1</Request>
+        <AdditionalData meaning="host" type="string">www.webe.de</AdditionalData>
+        <AdditionalData meaning="sqliteid" type="integer">3688</AdditionalData>
+    </Alert>
+    <Alert>
+        <Analyzer id="MSTest4"/>
+        <CreateTime tz="+0200">2017-03-11 09:12:23</CreateTime>
+        <Source category="ipv4" port="" protocol="tcp">192.168.8.1</Source>
+        <Target category="ipv4" port="80" protocol="tcp">1.2.3.4</Target>
+        <Request type="url">/cgi-bin/.br/style.css3/444</Request>
+        <Request type="raw">R0VUIC9jZ2ktYmluLy5ici9zdHlsZS5jc3MgSFRUUC8xLjENCkFjY2VwdDogdGV4dC9jc3MsKi8q
+            O3E9MC4xLCovKg0KQWNjZXB0LUVuY29kaW5nOiBnemlwLGRlZmxhdGUNCkNvbm5lY3Rpb246IEtl
+            ZXAtYWxpdmUNCkZyb206IGdvb2dsZWJvdChhdClnb29nbGVib3QuY29tDQpIb3N0OiB3d3cud2Vi
+            bWFpbGhvdXNlLmRlDQpSZWZlcmVyOiBodHRwOi8vd3d3LndlYm1haWxob3VzZS5kZS9jZ2ktYmlu
+            Ly5ici9wYXRoLnBocA0KVXNlci1BZ2VudDogTW96aWxsYS81LjAgKGNvbXBhdGlibGU7IEdvb2ds
+            ZWJvdC8yLjE7ICtodHRwOi8vd3d3Lmdvb2dsZS5jb20vYm90Lmh0bWwp
+        </Request>
+        <Request type="description">WebHoneypot : Glastopf v3.1</Request>
+        <AdditionalData meaning="host" type="string">www.webe.de</AdditionalData>
+        <AdditionalData meaning="sqliteid" type="integer">3688</AdditionalData>
+    </Alert>
+
+
+</EWS-SimpleMessage>
