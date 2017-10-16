@@ -166,7 +166,7 @@ def handleAlerts(tree, tenant, es, cache):
             # persist CVE
             #
             if (len(str(vulnid)) > 2):
-                elastic.putVuln(vulnid, app.config['ELASTICINDEX'], createTime, source, app.config['DEBUG'], es )
+                elastic.putVuln(vulnid, app.config['ELASTICINDEX'], createTime, source, app.config['DEVMODE'], es )
                 url = "(" + vulnid + ") " + url
 
             #
@@ -174,7 +174,7 @@ def handleAlerts(tree, tenant, es, cache):
             #
             correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
                                           analyzerID, peerType, username, password, loginStatus, version, starttime,
-                                          endtime, sourcePort, destinationPort, app.config['DEBUG'], es, cache)
+                                          endtime, sourcePort, destinationPort, app.config['DEVMODE'], es, cache)
             counter = counter + 1 - correction
 
             #
@@ -183,8 +183,8 @@ def handleAlerts(tree, tenant, es, cache):
             if (app.config['USESLACK']):
                 if len(str(app.config['SLACKTOKEN'])) > 10:
                     if len(str(vulnid)) > 4:
-                        if (elastic.cveExisting(vulnid, app.config['ELASTICINDEX'], es, app.config['DEBUG'])):
-                            communication.sendSlack("cve", app.config['SLACKTOKEN'], "CVE (" + vulnid + ") found.", app.config['DEBUG'])
+                        if (elastic.cveExisting(vulnid, app.config['ELASTICINDEX'], es, app.config['DEVMODE'])):
+                            communication.sendSlack("cve", app.config['SLACKTOKEN'], "CVE (" + vulnid + ") found.", app.config['DEVMODE'])
 
     app.logger.debug("Info: Added " + str(counter) + " entries")
     return True
