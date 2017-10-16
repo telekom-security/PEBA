@@ -15,7 +15,7 @@ import html
 import datetime
 from dateutil.relativedelta import relativedelta
 
-from flask import Flask, request, abort, jsonify, Response
+from flask import Flask, request, abort, jsonify, Response, redirect
 from flask_cors import CORS, cross_origin
 from flask_elasticsearch import FlaskElasticsearch
 
@@ -76,10 +76,21 @@ def authentication_required(f):
     return decorated_function
 
 def testElasticsearch():
-    return es.ping()
+    try:
+        return es.ping()
+    except:
+        return False
+
+def testMemcached():
+    try:
+        getCache("heartbeat")
+        return True
+    except:
+        return False
 
 def getCache(cacheItem):
     rv = cache.get(cacheItem)
+    app.logger.debug("Returning item from cache: {0} - Value: {1}".format(cacheItem, str(rv)[:200]+" ..."))
     if rv is None:
         return False
     return rv
@@ -87,6 +98,7 @@ def getCache(cacheItem):
 def setCache(cacheItem, cacheValue, cacheTimeout):
     try:
         cache.set(cacheItem, cacheValue, timeout=cacheTimeout)
+        app.logger.debug("Setting item to cache: {0} - Value: {1}".format(cacheItem, str(cacheValue)[:200]+" ..."))
     except:
         app.logger.error("Could not set memcache cache {0} to value {1} and Timeout {2}".format(cacheItem, str(cacheValue), cacheTimeout))
 
@@ -749,7 +761,7 @@ def formatBadIPxml(iplist):
         iplistxml = '<?xml version="1.0" encoding="UTF-8"?>'
         iplistxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml")).decode('utf-8')
 
-        return Response(iplistxml, mimetype='text/xml')
+        return iplistxml
     else:
         return app.config['DEFAULTRESPONSE']
 
@@ -790,7 +802,7 @@ def formatAlertsXml(alertslist):
     alertsxml = '<?xml version="1.0" encoding="UTF-8"?>'
     alertsxml += (ET.tostring(EWSSimpleAlertInfo, encoding="utf-8", method="xml")).decode('utf-8')
 
-    return Response(alertsxml, mimetype='text/xml')
+    return alertsxml
 
 def formatAlertsJson(alertslist):
     """ Create JSON Structure for Alerts list """
@@ -856,9 +868,9 @@ def formatAlertsCount(numberofalerts, outformat):
         prettify(ewssimpleinfo)
         alertcountxml = '<?xml version="1.0" encoding="UTF-8"?>'
         alertcountxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml")).decode('utf-8')
-        return Response(alertcountxml, mimetype='text/xml')
+        return alertcountxml
     else:
-        return jsonify({'AlertCount': numberofalerts})
+        return ({'AlertCount': numberofalerts})
 
 def formatAlertsCountWithType(numberofalerts):
     if numberofalerts:
@@ -870,7 +882,7 @@ def formatAlertsCountWithType(numberofalerts):
                 "AlertCountTotal" : numberofalerts['aggregations']['communityfilter']['doc_count'],
                 "AlertCountPerType" : jsondata1
         }
-        return jsonify(jsondata2)
+        return (jsondata2)
     else:
         return app.config['DEFAULTRESPONSE']
 
@@ -880,7 +892,7 @@ def formatDatasetAlertsPerMonth(datasetAlertsPerMonth):
         for alertsPerMonth in datasetAlertsPerMonth['buckets']:
                 jsondata[alertsPerMonth['key_as_string']] = alertsPerMonth['doc_count']
 
-        return jsonify([{'datasetAlertsPerMonth': jsondata}])
+        return ([{'datasetAlertsPerMonth': jsondata}])
     else:
         return app.config['DEFAULTRESPONSE']
 
@@ -893,7 +905,7 @@ def formatDatasetAlertTypesPerMonth(datasetAlertTypePerMonth):
                 jsondatatype[alertTypes['key']] =  alertTypes['doc_count']
                 jsondatamonth[alertTypesPerMonth['key_as_string']] = jsondatatype
 
-        return jsonify([{'datasetAlertsPerMonth': jsondatamonth}])
+        return ([{'datasetAlertsPerMonth': jsondatamonth}])
     else:
         return app.config['DEFAULTRESPONSE']
 
@@ -947,7 +959,7 @@ def formatTopCountriesAttacks(retrieveTopCountryAttacksArr):
                  'attacksPerCountry': jsonarray_attacker,
                  'attacksToTargetCountry': jsonarray_attacked
                      }
-    return jsonify([countryStats])
+    return ([countryStats])
 
 def formatLatLonAttacks(retrieveLatLonAttacksArr):
     if retrieveLatLonAttacksArr:
@@ -973,7 +985,7 @@ def formatLatLonAttacks(retrieveLatLonAttacksArr):
                      }
 
 
-    return jsonify([LatLonStats])
+    return ([LatLonStats])
 
 
 ###############
@@ -983,12 +995,12 @@ def formatLatLonAttacks(retrieveLatLonAttacksArr):
 # Default webroot access
 @app.route("/")
 def webroot():
-    return app.config['DEFAULTRESPONSE']
+    return redirect(app.config['CORSDOMAIN'])
 
 # Heartbeat
 @app.route("/heartbeat", methods=['GET'])
 def heartbeat():
-    if testElasticsearch():
+    if testElasticsearch() and testMemcached():
         return "I'm alive"
     else:
         abort(401)
@@ -1010,7 +1022,7 @@ def retrieveIPs():
     else:
         returnResult = formatBadIPxml(queryBadIPs(app.config['BADIPTIMESPAN'], checkCommunityIndex(request)))
         setCache(request.url, returnResult, 60)
-        return returnResult
+        return Response(returnResult, mimetype='text/xml')
 
 @app.route("/alert/retrieveAlertsCyber", methods=['POST'])
 @authentication_required
@@ -1022,13 +1034,13 @@ def retrieveAlertsCyber():
     # get result from cache
     getCacheResult = getCache(request.url)
     if getCacheResult is not False:
-        return getCacheResult
+        return Response(getCacheResult)
 
     # query ES
     else:
         returnResult = formatAlertsXml(queryAlerts(app.config['MAXALERTS'], checkCommunityIndex(request)))
         setCache(request.url, returnResult, 60)
-        return returnResult
+        return Response(returnResult, mimetype='text/xml')
 
 
 # Routes with both XML and JSON output
@@ -1037,24 +1049,31 @@ def retrieveAlertsCyber():
 def retrieveAlertsCount():
     """ Retrieve number of alerts in timeframe (GET-Parameter time as decimal or "day") """
 
-    # get result from cache
-    getCacheResult = getCache(request.url)
-    if getCacheResult is not False:
-        return getCacheResult
-
-    # query ES
+    # Retrieve Number of Alerts from ElasticSearch and return as xml / json
+    if not request.args.get('time'):
+        app.logger.error('No time GET-parameter supplied in retrieveAlertsCount. Must be decimal number (in minutes) or string "day"')
+        return app.config['DEFAULTRESPONSE']
     else:
-        # Retrieve Number of Alerts from ElasticSearch and return as xml / json
-        if not request.args.get('time'):
-            app.logger.error('No time GET-parameter supplied in retrieveAlertsCount. Must be decimal number (in minutes) or string "day"')
-            return app.config['DEFAULTRESPONSE']
-        else:
-            if request.args.get('out') and request.args.get('out') == 'json':
+        if request.args.get('out') and request.args.get('out') == 'json':
+            # get result from cache
+            getCacheResult = getCache(request.url)
+            if getCacheResult is not False:
+                return jsonify(getCacheResult)
+            else:
                 returnResult = formatAlertsCount(queryAlertsCount(request.args.get('time'), checkCommunityIndex(request)), 'json')
+                setCache(request.url, returnResult, 60)
+                return jsonify(returnResult)
+
+        else:
+            # get result from cache
+            getCacheResult = getCache(request.url)
+            if getCacheResult is not False:
+                return Response(getCacheResult, mimetype='text/xml')
             else:
                 returnResult = formatAlertsCount(queryAlertsCount(request.args.get('time'), checkCommunityIndex(request)), 'xml')
-            setCache(request.url, returnResult, 60)
-            return returnResult
+                setCache(request.url, returnResult, 60)
+                return Response(returnResult, mimetype='text/xml')
+
 
 # Routes with JSON output
 
@@ -1065,7 +1084,7 @@ def retrieveAlertsCountWithType():
     # get result from cache
     getCacheResult = getCache(request.url)
     if getCacheResult is not False:
-        return getCacheResult
+        return jsonify(getCacheResult)
 
     # query ES
     else:
@@ -1076,7 +1095,7 @@ def retrieveAlertsCountWithType():
         else:
             returnResult = formatAlertsCountWithType(queryAlertsCountWithType(request.args.get('time'), checkCommunityIndex(request)))
             setCache(request.url, returnResult, 60)
-            return returnResult
+            return jsonify(returnResult)
 
 @app.route("/alert/retrieveAlertsJson", methods=['GET'])
 def retrieveAlertsJson():
@@ -1122,7 +1141,7 @@ def retrieveDatasetAlertsPerMonth():
     # get result from cache
     getCacheResult = getCache(request.url)
     if getCacheResult is not False:
-        return getCacheResult
+        return jsonify(getCacheResult)
 
     # query ES
     else:
@@ -1132,7 +1151,7 @@ def retrieveDatasetAlertsPerMonth():
         else:
             returnResult = formatDatasetAlertsPerMonth(queryDatasetAlertsPerMonth(request.args.get('days'), checkCommunityIndex(request)))
         setCache(request.url, returnResult, 600)
-        return returnResult
+        return jsonify(returnResult)
 
 @app.route("/alert/datasetAlertTypesPerMonth", methods=['GET'])
 def retrieveDatasetAlertTypesPerMonth():
@@ -1145,7 +1164,7 @@ def retrieveDatasetAlertTypesPerMonth():
     # get result from cache
     getCacheResult = getCache(request.url)
     if getCacheResult is not False:
-        return getCacheResult
+        return jsonify(getCacheResult)
 
     # query ES
     else:
@@ -1155,7 +1174,7 @@ def retrieveDatasetAlertTypesPerMonth():
         else:
             returnResult = formatDatasetAlertTypesPerMonth(queryDatasetAlertTypesPerMonth(request.args.get('days'), checkCommunityIndex(request)))
         setCache(request.url, returnResult, 3600)
-        return returnResult
+        return jsonify(returnResult)
 
 @app.route("/alert/retrieveAlertStats", methods=['GET'])
 def retrieveAlertStats():
@@ -1182,7 +1201,7 @@ def retrieveTopCountriesAttacks():
     # get result from cache
     getCacheResult = getCache(request.url)
     if getCacheResult is not False:
-        return getCacheResult
+        return jsonify(getCacheResult)
 
     # query ES
     else:
@@ -1199,7 +1218,7 @@ def retrieveTopCountriesAttacks():
             topx = request.args.get('topx')
         returnResult = formatTopCountriesAttacks(queryTopCountriesAttacks(offset, topx, checkCommunityIndex(request)))
         setCache(request.url, returnResult, 3600)
-        return returnResult
+        return jsonify(returnResult)
 
 @app.route("/alert/retrieveLatLonAttacks", methods=['GET'])
 def retrieveLatLonAttacks():
@@ -1213,7 +1232,7 @@ def retrieveLatLonAttacks():
     # get result from cache
     getCacheResult = getCache(request.url)
     if getCacheResult is not False:
-        return getCacheResult
+        return jsonify(getCacheResult)
 
     # query ES
     else:
@@ -1238,7 +1257,7 @@ def retrieveLatLonAttacks():
 
         returnResult=formatLatLonAttacks(queryLatLonAttacks(direction, topx, offset, checkCommunityIndex(request)))
         setCache(request.url, returnResult, 60)
-        return returnResult
+        return jsonify(returnResult)
 
 # PUT Service
 
