@@ -1108,26 +1108,16 @@ def retrieveAlertsJson():
 
     # get result from cache
     getCacheResult = getCache(cacheEntry)
-#    getCacheResult = getCache(request.url)
     if getCacheResult is not False:
         app.logger.debug('Returning /retrieveAlertsJson from Cache')
         return jsonify(getCacheResult)
 
     # query ES
     else:
-        if not request.args.get('topx'):
-            numAlerts = 5
-        else:
-            topx = request.args.get('topx')
-            if topx.isdecimal() and int(topx) >= 5 and int(topx) <= 50:
-                numAlerts = topx
-            else:
-                numAlerts = 5
-
+        numAlerts = 35
         # Retrieve last X Alerts from ElasticSearch and return JSON formatted with limited alert content
         returnResult =  formatAlertsJson(queryAlertsWithoutIP(numAlerts, checkCommunityIndex(request)))
-        setCache(cacheEntry, returnResult, 1)
-#        setCache(request.url, returnResult, 1)
+        setCache(cacheEntry, returnResult, 29)
         app.logger.debug('Returning /retrieveAlertsJson from ES')
         return jsonify(returnResult)
 
