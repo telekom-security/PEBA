@@ -1094,7 +1094,7 @@ def retrieveAlertsCountWithType():
             return app.config['DEFAULTRESPONSE']
         else:
             returnResult = formatAlertsCountWithType(queryAlertsCountWithType(request.args.get('time'), checkCommunityIndex(request)))
-            setCache(request.url, returnResult, 60)
+            setCache(request.url, returnResult, 29)
             return jsonify(returnResult)
 
 @app.route("/alert/retrieveAlertsJson", methods=['GET'])
@@ -1180,7 +1180,7 @@ def retrieveAlertStats():
     # query ES
     else:
         returnResult = formatAlertStats(queryAlertStats(checkCommunityIndex(request)))
-        setCache(request.url, returnResult, 60)
+        setCache(request.url, returnResult, 29)
         return jsonify(returnResult)
 
 @app.route("/alert/topCountriesAttacks", methods=['GET'])
@@ -1207,7 +1207,7 @@ def retrieveTopCountriesAttacks():
         else:
             topx = request.args.get('topx')
         returnResult = formatTopCountriesAttacks(queryTopCountriesAttacks(offset, topx, checkCommunityIndex(request)))
-        setCache(request.url, returnResult, 3600)
+        setCache(request.url, returnResult, 60)
         return jsonify(returnResult)
 
 @app.route("/alert/retrieveLatLonAttacks", methods=['GET'])
