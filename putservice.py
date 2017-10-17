@@ -18,12 +18,12 @@ from dateutil.relativedelta import relativedelta
 peerIdents = ["WebHoneypot", "Webpage",
               "dionaea", "Network(Dionaea)",
               "honeytrap", "Network(honeytrap)",
-              "kippo", "SSH/console(kippo)",
+              "kippo", "SSH/console(cowrie)",
               "cowrie", "SSH/console(cowrie)",
               "glastopf", "Webpage",
               ".gt3",  "Webpage",
               ".dio", "Network(Dionaea)",
-              ".kip", "SSH/console(kippo)",
+              ".kip", "SSH/console(cowrie)",
               ".ht", "Network(honeytrap)"
               "", ""]
 
