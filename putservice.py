@@ -62,6 +62,10 @@ def fixUrl(destinationPort, url, peerType):
     if ("honeytrap" in peerType):
         return "Attack on port " + str(destinationPort)
 
+    # prepared dionaea to output additional information in ticker
+    # if ("Dionaea" in peerType):
+    #     return "Attack on port " + str(destinationPort)
+
     return url
 
 def handleAlerts(tree, tenant, es, cache):
