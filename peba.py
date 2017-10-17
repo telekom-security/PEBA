@@ -833,7 +833,7 @@ def formatAlertsJson(alertslist):
             destlatlong = alert['_source']['locationDestination'].split(' , ')
 
             # kippo attack details
-            if alert['_source']['originalRequestString'] is not " " and alert['_source']['peerType'] == "SSH/console(cowrie)":
+            if alert['_source']['peerType'] == "SSH/console(cowrie)" and alert['_source']['originalRequestString'] == "":
                 requestString =  ""
                 if alert['_source']['username'] is not None:
                     requestString+= "Username: \"" + str(urllib.parse.unquote(alert['_source']['username'])) + "\""
