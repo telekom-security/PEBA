@@ -75,6 +75,11 @@ def authentication_required(f):
             return f(*args, **kwargs)
     return decorated_function
 
+@app.after_request
+def add_header(response):
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
 def testElasticsearch():
     try:
         return es.ping()
@@ -246,13 +251,14 @@ def queryAlerts(maxAlerts, clientDomain):
                 }
             },
             "sort": {
-                "createTime": {
+                "recievedTime": {
                     "order": "desc"
                     }
                 },
             "size": maxAlerts,
             "_source": [
                 "createTime",
+                "recievedTime",
                 "peerIdent",
                 "peerType",
                 "country",
@@ -773,11 +779,17 @@ def formatAlertsXml(alertslist):
 
     if alertslist:
         for alert in alertslist:
+            if datetime.datetime.strptime(alert['_source']['createTime'],"%Y-%m-%d %H:%M:%S") > datetime.datetime.utcnow():
+                returnDate = alert['_source']['recievedTime']
+                app.logger.debug('formatAlertsJson: createTime > now, returning recievedTime, honeypot timezone probably manually set to eastern timezone')
+            else:
+                returnDate = alert['_source']['recievedTime']
+
             alertElement = ET.SubElement(alertsElement, 'Alert')
             alertId = ET.SubElement(alertElement, 'Id')
             alertId.text = alert['_id']
             alertDate = ET.SubElement(alertElement, 'DateCreated')
-            alertDate.text = alert['_source']['createTime']
+            alertDate.text = returnDate
             peerElement = ET.SubElement(alertElement, 'Peer')
             peerId = ET.SubElement(peerElement, 'Id')
             peerId.text = alert['_source']['peerIdent']
@@ -836,6 +848,15 @@ def formatAlertsJson(alertslist):
                 requestStringOut = html.escape(requestString)
             else:
                 requestStringOut = html.escape(urllib.parse.unquote(alert['_source']['originalRequestString']))
+
+            # map private IP ranges 0:0 Locations to DTAG HQ in Bonn :) # 50.708021, 7.129191
+            if latlong == ["0.0","0.0"]:
+                latlong = ["50.708021", "7.129191"]
+                app.logger.debug('formatAlertsJson: mapping location 0.0/0.0 to DTAG HQ')
+
+            if destlatlong == ["0.0","0.0"]:
+                destlatlong = ["50.708021", "7.129191"]
+                app.logger.debug('formatAlertsJson: mapping location 0.0/0.0 to DTAG HQ')
 
             jsondata = {
                 'id': alert['_id'],
@@ -1034,12 +1055,14 @@ def retrieveAlertsCyber():
     # get result from cache
     getCacheResult = getCache(request.url)
     if getCacheResult is not False:
+        app.logger.debug('Returning /retrieveAlertsCyber from Cache for %s' % str(request.remote_addr))
         return Response(getCacheResult)
 
     # query ES
     else:
         returnResult = formatAlertsXml(queryAlerts(app.config['MAXALERTS'], checkCommunityIndex(request)))
-        setCache(request.url, returnResult, 60)
+        setCache(request.url, returnResult, 1)
+        app.logger.debug('Returning /retrieveAlertsCyber from ES for %s' % str(request.remote_addr))
         return Response(returnResult, mimetype='text/xml')
 
 
@@ -1109,7 +1132,7 @@ def retrieveAlertsJson():
     # get result from cache
     getCacheResult = getCache(cacheEntry)
     if getCacheResult is not False:
-        app.logger.debug('Returning /retrieveAlertsJson from Cache')
+        app.logger.debug('Returning /retrieveAlertsJson from Cache %s' % str(request.remote_addr))
         return jsonify(getCacheResult)
 
     # query ES
@@ -1117,8 +1140,8 @@ def retrieveAlertsJson():
         numAlerts = 35
         # Retrieve last X Alerts from ElasticSearch and return JSON formatted with limited alert content
         returnResult =  formatAlertsJson(queryAlertsWithoutIP(numAlerts, checkCommunityIndex(request)))
-        setCache(cacheEntry, returnResult, 29)
-        app.logger.debug('Returning /retrieveAlertsJson from ES')
+        setCache(cacheEntry, returnResult, 25)
+        app.logger.debug('Returning /retrieveAlertsJson from ES for %s' % str(request.remote_addr))
         return jsonify(returnResult)
 
 @app.route("/alert/datasetAlertsPerMonth", methods=['GET'])

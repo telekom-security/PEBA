@@ -60,7 +60,7 @@
 
 - name: install configuration file
   template:
-      src: ./roles/peba/templates/peba.cfg
+      src: ../roles/peba/templates/peba.cfg
       dest: '/etc/ews/peba.cfg'
       owner: root
       group: root
