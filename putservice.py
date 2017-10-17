@@ -7,6 +7,8 @@ from flask_elasticsearch import FlaskElasticsearch
 import urllib.request, urllib.parse, urllib.error
 import elastic, communication
 import ipaddress
+import datetime
+from dateutil.relativedelta import relativedelta
 
 ################
 # PUT Variables
@@ -16,12 +18,13 @@ import ipaddress
 peerIdents = ["WebHoneypot", "Webpage",
               "dionaea", "Network(Dionaea)",
               "honeytrap", "Network(honeytrap)",
-              "kippo", "SSH/console(cowrie)",
+              "kippo", "SSH/console(kippo)",
               "cowrie", "SSH/console(cowrie)",
               "glastopf", "Webpage",
               ".gt3",  "Webpage",
-              ".dio", "Network",
-              ".kip", "SSH/console",
+              ".dio", "Network(Dionaea)",
+              ".kip", "SSH/console(kippo)",
+              ".ht", "Network(honeytrap)"
               "", ""]
 
 ################
@@ -92,6 +95,16 @@ def handleAlerts(tree, tenant, es, cache):
             if (childName == "CreateTime"):
                 if child.text is not None:
                     createTime = child.text
+
+                    ### prepared time conversion from utc to (honeypot) localtime using timezone transmitted.
+
+                    # if child.attrib.get('tz') is not "":
+                    #     timezone=child.attrib.get('tz')
+                    #    createTime=calculateLocalTime(createTime, timezone)
+                    # else:
+                    #    parsingError += "| timezone = NONE "
+
+
                 else:
                     parsingError += "| CreateTime = NONE "
 
@@ -131,29 +144,32 @@ def handleAlerts(tree, tenant, es, cache):
                 if (meaning == "version"):
                     version = child.text
 
+                # starttime (cowrie) must be present
                 if (meaning == "starttime"):
                     if child.text is not None:
                         starttime = urllib.parse.unquote(child.text)
                     else:
                         parsingError += "| starttime = NONE "
 
+                # endtime (cowrie) is not necessarily set
                 if (meaning == "endtime"):
                     if child.text is not None:
                         endtime = urllib.parse.unquote(child.text)
-                    else:
-                        parsingError += "| endtime = NONE "
 
+                # cveid (suricata) must be set, otherwise discard.
                 if (meaning == "cve_id"):
                     if child.text is not None:
                         vulnid = urllib.parse.unquote(child.text)
                     else:
                         parsingError += "| cve_id = NONE "
 
+                # input (cowrie) not necessarily set, might be an empty session
                 if (meaning == "input"):
                     if child.text is not None:
                         url = urllib.parse.unquote(child.text).replace('\n', '; ')[2:]
-                    else:
-                        parsingError += "| input = NONE "
+
+                # Todo: add addidtional data from ewsposter fields as json structure.
+
 
         if parsingError is not "":
             app.logger.debug("Skipping incomplete ews xml alert element : " + parsingError)
@@ -190,8 +206,20 @@ def handleAlerts(tree, tenant, es, cache):
     return True
 
 def testIPAddress(ip):
+    ''' test if it is an ipv4 address'''
     try:
         ipaddress.IPv4Address(ip)
         return True
     except:
         return False
+
+def calculateLocalTime(utctimestamp, timezone):
+    ''' function to calculate localtime from utc time and timezone.'''
+    operand=timezone[0]
+    timedelta=timezone[1:3]
+    timedeltaMin=timezone[3:5]
+    if operand == "+":
+        createTime=datetime.datetime.strptime(utctimestamp, "%Y-%m-%d %H:%M:%S")+relativedelta(hours=+int(timedelta),minutes=+int(timedeltaMin))
+    else:
+        createTime=datetime.datetime.strptime(utctimestamp, "%Y-%m-%d %H:%M:%S")+relativedelta(hours=-int(timedelta),minutes=-int(timedeltaMin))
+    return str(createTime)
