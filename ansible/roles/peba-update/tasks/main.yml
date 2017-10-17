@@ -1,0 +1,47 @@
+
+
+---
+- name: Copy scripts
+  copy: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - { src: './../../../../peba.py', dest: '/opt/peba/peba.py' }
+    - { src: './../../../../putservice.py', dest: '/opt/peba/putservice.py' }
+    - { src: './../../../../elastic.py', dest: '/opt/peba/elastic.py' }
+    - { src: './../../../../communication.py', dest: '/opt/peba/communication.py' }
+    - { src: './../../../../requirements.txt', dest: '/opt/peba/requirements.txt' }
+
+- name: install configuration file
+  template:
+      src: ../roles/peba/templates/peba.cfg
+      dest: '/etc/ews/peba.cfg'
+      owner: root
+      group: root
+      mode: 0644
+
+- name: Install peba.service Unitfile
+  template:
+     src: './../../../../etc/systemd/system/peba.service'
+     dest: '/etc/systemd/system/peba.service'
+     owner: root
+     group: root
+     mode: 0644
+
+
+- name: Reload daemon
+  shell: "systemctl daemon-reload"
+
+- name: Change Ownership to Peba
+  file:
+     path: /opt/peba
+     owner: peba
+     group: peba
+     recurse: yes
+
+- name: Start peba service
+  systemd:
+     name: peba.service
+     enabled: yes
+     state: restarted
+     masked: no
+     daemon_reload: yes
+

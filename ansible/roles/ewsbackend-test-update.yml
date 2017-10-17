@@ -1,0 +1,17 @@
+
+---
+# This playbook deploys a PEBA instance and is proxy aware
+
+- hosts: ews-test
+  remote_user: root
+
+  vars:
+    proxy_env:
+        http_proxy: "{{ http_proxy }}"
+        https_proxy: "{{ https_proxy }}"
+
+  roles:
+    - peba-update
+
+  environment: "{{proxy_env}}"
+
