@@ -107,7 +107,6 @@ def setCache(cacheItem, cacheValue, cacheTimeout):
     except:
         app.logger.error("Could not set memcache cache {0} to value {1} and Timeout {2}".format(cacheItem, str(cacheValue), cacheTimeout))
 
-
 def authenticate(username, token):
     """ Authenticate user from cache or in ES """
 
@@ -1125,9 +1124,7 @@ def retrieveAlertsJson():
     """ Retrieve last 5 Alerts in JSON without IPs """
 
     # set cacheItem independent from url parameters, respect community index
-    cacheEntry = request.path
-    if request.args.get('ci') == "0":
-        cacheEntry=request.path + "?ci=0"
+    cacheEntry = request.url
 
     # get result from cache
     getCacheResult = getCache(cacheEntry)
