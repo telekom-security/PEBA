@@ -102,10 +102,10 @@ def handleAlerts(tree, tenant, es, cache):
 
                     ### prepared time conversion from utc to (honeypot) localtime using timezone transmitted.
 
-                    # if child.attrib.get('tz') is not "":
-                    #     timezone=child.attrib.get('tz')
-                    #    createTime=calculateLocalTime(createTime, timezone)
-                    # else:
+                    #if child.attrib.get('tz') is not "":
+                    #    timezone=child.attrib.get('tz')
+                    #    createTime=calculateUTCTime(createTime, timezone)
+                    #else:
                     #    parsingError += "| timezone = NONE "
 
 
@@ -217,13 +217,13 @@ def testIPAddress(ip):
     except:
         return False
 
-def calculateLocalTime(utctimestamp, timezone):
+def calculateUTCTime(timestamp, timezone):
     ''' function to calculate localtime from utc time and timezone.'''
     operand=timezone[0]
     timedelta=timezone[1:3]
     timedeltaMin=timezone[3:5]
     if operand == "+":
-        createTime=datetime.datetime.strptime(utctimestamp, "%Y-%m-%d %H:%M:%S")+relativedelta(hours=+int(timedelta),minutes=+int(timedeltaMin))
+        createTime= datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S") + relativedelta(hours=-int(timedelta), minutes=-int(timedeltaMin))
     else:
-        createTime=datetime.datetime.strptime(utctimestamp, "%Y-%m-%d %H:%M:%S")+relativedelta(hours=-int(timedelta),minutes=-int(timedeltaMin))
+        createTime= datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S") + relativedelta(hours=+int(timedelta), minutes=+int(timedeltaMin))
     return str(createTime)
