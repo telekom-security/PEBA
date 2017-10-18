@@ -20,7 +20,7 @@
   </Alert>
   <Alert>
     <Analyzer id="cowrie-community-01"/>
-    <CreateTime tz="+0200">2017-02-22 03:34:59</CreateTime>
+    <CreateTime tz="+0000">2017-02-22 03:34:59</CreateTime>
     <Source category="ipv4" port="52202" protocol="tcp">92.44.193.5</Source>
     <Target category="ipv4" port="23" protocol="tcp">1.1.1.1</Target>
     <Request type="description">Telnet Honeypot Cowrie</Request>
@@ -35,7 +35,7 @@
   </Alert>
   <Alert>
     <Analyzer id="cowrie-community-01"/>
-    <CreateTime tz="+0200">2017-02-22 03:34:59</CreateTime>
+    <CreateTime tz="-0200">2017-02-22 03:34:59</CreateTime>
     <Source category="ipv4" port="52202" protocol="tcp">92.44.193.5</Source>
     <Target category="ipv4" port="23" protocol="tcp">1.1.1.1</Target>
     <Request type="description">Telnet Honeypot Cowrie</Request>
