@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# script to fill peba caches
+# v0.2
 
 import xml.etree.ElementTree as ET
 import defusedxml.ElementTree as ETdefused
@@ -10,25 +12,36 @@ import urllib.request, urllib.parse, urllib.error
 import html
 import datetime
 from dateutil.relativedelta import relativedelta
-from flask import Flask, request, abort, jsonify, Response
-from flask_cors import CORS, cross_origin
-from flask_elasticsearch import FlaskElasticsearch
 from elasticsearch import Elasticsearch, ElasticsearchException
-from werkzeug.contrib.fixers import ProxyFix
-from functools import wraps
-from werkzeug.contrib.cache import MemcachedCache
 import pylibmc
 from time import sleep
 import threading
 
-
-#caches = [MemcachedCache(['192.168.1.64:11211']),MemcachedCache(['192.168.1.173:11211']),MemcachedCache(['192.168.1.233:11211']), MemcachedCache(['192.168.1.87:11211']), MemcachedCache(['192.168.1.152:11211']), MemcachedCache(['192.168.1.213:11211']),   ]
-#caches = [MemcachedCache(['127.0.0.1:11211']),MemcachedCache(['127.0.0.1:11222'])]
-#caches = pylibmc.Client(["127.0.0.1:11211","127.0.0.1:11222"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200})
-
-caches = [pylibmc.Client(["127.0.0.1:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}), pylibmc.Client(["127.0.0.1:11222"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200})]
+caches = []
 es = Elasticsearch(["127.0.0.1"])
 esindex="ews2017.1"
+
+
+def init():
+    for i in range(8):
+        caches.append([
+                    pylibmc.Client(["192.168.1.64:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
+                    pylibmc.Client(["192.168.1.173:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
+                    pylibmc.Client(["192.168.1.233:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
+                    pylibmc.Client(["192.168.1.87:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
+                    pylibmc.Client(["192.168.1.152:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
+                    pylibmc.Client(["192.168.1.213:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200})
+
+        ])
+
+def inittest():
+    ''' testing function '''
+    for i in range(8):
+        caches.append([
+                    pylibmc.Client(["127.0.0.1:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
+                    pylibmc.Client(["127.0.0.1:11222"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
+                    pylibmc.Client(["127.0.0.1:11223"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200})
+        ])
 
 def testElasticsearch():
     try:
@@ -43,24 +56,20 @@ def getCache(cacheItem):
     return rv
 
 def testMemcached():
-    for cache in caches:
+    for cache in caches[0]:
         try:
-            cache.has("heartbeat")
-        except:
+           cache.get("heartbeat")
+        except pylibmc.Error as e:
+            print("Memcache Error: {0} ".format(e))
             return False
     return True
 
-def setCache(cacheItem, cacheValue, cacheTimeout):
-    i=0
-    for cache in caches:
-        i+=1
+def setCache(cacheItem, cacheValue, cacheTimeout,cacheIndex):
+    for cache in caches[cacheIndex]:
         try:
             cache.set(cacheItem, cacheValue, cacheTimeout)
         except pylibmc.Error as e:
-            #print("Could not set memcache {0} cache {1}".format(i, cacheItem))
-            print(e)
-            return False
-    return True
+            print("Could not set {0} to {1}".format(cacheItem, e))
 
 def checkCommunityIndex(request):
     """check if request is agains community index or production index"""
@@ -467,12 +476,11 @@ def fillCacheRetrieveAlertsJson(sleeptime, cachetime, community):
         returnResult = formatAlertsJson(queryAlertsWithoutIP(numAlerts, community))
         if community == False:
             cacheItem=domain+itemRetrieveAlertsJson
+            cacheIndex=0
         else:
             cacheItem=domain+itemRetrieveAlertsJsonCommunity
-        #print("filling %s cache with response...." % cacheItem)
-        settingResult=setCache(cacheItem, returnResult, cachetime)
-        if not settingResult:
-            print("could not successuflly set all caches %s" %cacheItem )
+            cacheIndex = 1
+        settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex)
         sleep(sleeptime)
 
 ## /topCountriesAttacks
@@ -481,13 +489,11 @@ def fillCacheTopCountriesAttacks(sleeptime, cachetime, community):
         returnResult = formatTopCountriesAttacks(queryTopCountriesAttacks(None, None, community))
         if community == False:
             cacheItem=domain+itemTopCountriesAttacks
+            cacheIndex = 2
         else:
             cacheItem=domain+itemTopCountriesAttacksCommunity
-        #print("filling %s cache with response...." % cacheItem)
-        settingResult=setCache(cacheItem, returnResult, cachetime)
-        if not settingResult:
-            print("could not successuflly set all caches %s" %cacheItem )
-
+            cacheIndex = 3
+        settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex)
         sleep(sleeptime)
 
 
@@ -497,13 +503,11 @@ def fillRetrieveAlertStats(sleeptime, cachetime, community):
         returnResult = formatAlertStats(queryAlertStats(community))
         if community == False:
             cacheItem=domain+itemRetrieveAlertStats
+            cacheIndex = 4
         else:
             cacheItem=domain+itemRetrieveAlertStatsCommunity
-        #print("filling %s cache with response...." % cacheItem)
-        settingResult=setCache(cacheItem, returnResult, cachetime)
-        if not settingResult:
-            print("could not successuflly set all caches %s" %cacheItem )
-
+            cacheIndex = 5
+        settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex)
         sleep(sleeptime)
 
 ## /retrieveAlertsCountWithType
@@ -513,13 +517,11 @@ def fillRetrieveAlertsCountWithType(sleeptime, cachetime, community):
             queryAlertsCountWithType("1", community))
         if community == False:
             cacheItem = domain + itemAlertsCountWithType
+            cacheIndex = 6
         else:
             cacheItem = domain + itemAlertsCountWithTypeCommunity
-        #print("filling %s cache with response...." % cacheItem)
-        settingResult=setCache(cacheItem, returnResult, cachetime)
-        if not settingResult:
-            print("could not successuflly set all caches %s" %cacheItem )
-
+            cacheIndex = 7
+        settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex)
         sleep(sleeptime)
 
 
@@ -528,16 +530,24 @@ def fillRetrieveAlertsCountWithType(sleeptime, cachetime, community):
 #######################
 
 if __name__ == '__main__':
+
+    # init()
+
+    # for local testing
+    inittest()
+
     print("******** FILLING PEBA CACHE **********")
-    # if not testElasticsearch():
-    #     print("Elasticsearch is not accessible")
-    #     exit(1)
-    # if not testMemcached():
-    #     print("No all configured Memcached are accessible")
-    #     exit(1)
 
 
-    # ## /retrieveAlertsJson
+    if not testElasticsearch():
+        print("Elasticsearch is not accessible")
+        exit(1)
+    if not testMemcached():
+        print("No all configured Memcached are accessible")
+        exit(1)
+
+
+    ## /retrieveAlertsJson
     tRetrieveAlertsJsonCommunity = threading.Thread(target=fillCacheRetrieveAlertsJson, args=(10,60,True,))
     tRetrieveAlertsJsonCommunity.start()
     tRetrieveAlertsJson = threading.Thread(target=fillCacheRetrieveAlertsJson, args=(10,60,False,))
@@ -549,7 +559,7 @@ if __name__ == '__main__':
     tTopCountriesAttacks = threading.Thread(target=fillCacheTopCountriesAttacks, args=(10,60,False,))
     tTopCountriesAttacks.start()
 
-    # ## /retrieveAlertStats
+    ## /retrieveAlertStats
     tRetrieveAlertStatsCommunity = threading.Thread(target=fillRetrieveAlertStats, args=(10,60,True,))
     tRetrieveAlertStatsCommunity.start()
     tRetrieveAlertStats = threading.Thread(target=fillRetrieveAlertStats, args=(10,60,False,))
