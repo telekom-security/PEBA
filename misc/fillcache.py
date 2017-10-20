@@ -531,10 +531,10 @@ def fillRetrieveAlertsCountWithType(sleeptime, cachetime, community):
 
 if __name__ == '__main__':
 
-    # init()
+    init()
 
     # for local testing
-    inittest()
+    #inittest()
 
     print("******** FILLING PEBA CACHE **********")
 
