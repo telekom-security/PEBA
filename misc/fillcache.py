@@ -18,7 +18,7 @@ from time import sleep
 import threading
 
 caches = []
-es = Elasticsearch(["127.0.0.1"])
+es = Elasticsearch(["192.168.1.64"])
 esindex="ews2017.1"
 
 
@@ -453,8 +453,8 @@ def formatAlertsCountWithType(numberofalerts):
 ########################
 ### string variables
 ########################
-domain = "http://localhost:9922"
-itemRetrieveAlertsJsonCommunity="/alert/retrieveAlertsJson?ci=0&topx=35"
+domain = "https://community.sicherheitstacho.eu"
+itemRetrieveAlertsJsonCommunity="/alert/retrieveAlertsJson?ci=1&topx=35"
 itemRetrieveAlertsJson="/alert/retrieveAlertsJson?ci=0&topx=35"
 itemTopCountriesAttacksCommunity="/alert/topCountriesAttacks?ci=1"
 itemTopCountriesAttacks="/alert/topCountriesAttacks?ci=0"
