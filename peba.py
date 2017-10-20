@@ -1029,6 +1029,7 @@ def heartbeat():
 # Routes with XML output
 
 @app.route("/alert/retrieveIPs", methods=['POST'])
+@app.route("/ews-0.1/alert/retrieveIPs", methods=['POST'])
 @authentication_required
 def retrieveIPs():
     """ Retrieve IPs from ElasticSearch and return formatted XML with IPs """
