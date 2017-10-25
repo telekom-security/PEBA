@@ -7,9 +7,9 @@
 curl -XPUT 'localhost:9200/ews2017.1/_mapping/CVE?pretty' -H 'Content-Type: application/json' -d'
 {
   "properties": {
- 						"firstSeen": {
-                        "type": "date",
-                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    "firstSeen": {
+                    "type": "date",
+                    "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
                     },
                     "lastSeen": {
                         "type": "date",
@@ -76,7 +76,7 @@ curl -XPUT 'localhost:9200/ews2017.1/_mapping/IP?pretty' -H 'Content-Type: appli
                     "country": {
                         "type": "text"
                     },
-                                        "countyname": {
+                    "countyname": {
                         "type": "text"
                     }
   }

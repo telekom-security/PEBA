@@ -58,16 +58,20 @@ def getPeerType(id):
 
     return "Unclassified"
 
-def fixUrl(destinationPort, url, peerType):
+def fixUrl(destinationPort, transport, url, peerType):
     """
         fixes the URL (original request string)
     """
+    transportProtocol = ""
+    if transport.lower() in "udp" or transport.lower() in "tcp":
+        transportProtocol="/"+transport
+
     if ("honeytrap" in peerType):
-        return "Attack on port " + str(destinationPort)
+        return "Attack on port " + str(destinationPort) + transportProtocol
 
     # prepared dionaea to output additional information in ticker
     if ("Dionaea" in peerType):
-        return "Attack on port " + str(destinationPort)
+        return "Attack on port " + str(destinationPort)+ transportProtocol
 
     return url
 
@@ -80,7 +84,7 @@ def handleAlerts(tree, tenant, es, cache):
         # default values
         parsingError = ""
         skip = False
-        peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime, externalIP, internalIP, hostname = "Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", "", "", "", ""
+        peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime, externalIP, internalIP, hostname, sourceTransport = "Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", "", "", "", "", ""
         for child in node:
             childName = child.tag
 
@@ -98,6 +102,7 @@ def handleAlerts(tree, tenant, es, cache):
                 else:
                     parsingError += "| source = NONE "
                 sourcePort = child.attrib.get('port')
+                sourceTransport = child.attrib.get('protocol')
 
             if (childName == "CreateTime"):
                 if child.text is not None:
@@ -197,7 +202,7 @@ def handleAlerts(tree, tenant, es, cache):
             skip = True
 
         if not skip:
-            url = fixUrl(destinationPort, url, peerType)
+            url = fixUrl(destinationPort, sourceTransport, url, peerType)
 
             #
             # persist CVE
@@ -211,7 +216,7 @@ def handleAlerts(tree, tenant, es, cache):
             #
             correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
                                           analyzerID, peerType, username, password, loginStatus, version, starttime,
-                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, app.config['DEVMODE'], es, cache)
+                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, app.config['DEVMODE'], es, cache)
             counter = counter + 1 - correction
 
             #
