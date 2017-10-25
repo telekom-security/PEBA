@@ -31,6 +31,15 @@ settings = {
                 "clientDomain": {
                     "type": "boolean"
                 },
+                "externalIP": {
+                    "type": "ip"
+                },
+                 "internalIP": {
+                    "type": "ip"
+                },
+                 "hostname": {
+                    "type": "text"
+                }
             }
         },
         "CVE": {
