@@ -245,7 +245,7 @@ def putVuln(vulnid, esindex, createTime, ip, debug, es):
         app.logger.error("Error when persisting vulnid: " + str(vulnid))
         return 1
 
-def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, debug, es, cache):
+def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, debug, es, cache):
     """stores an alarm in the index"""
     m = hashlib.md5()
     m.update((createTime + sourceip + destinationip + url + analyzerID).encode())
@@ -284,7 +284,10 @@ def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, an
         "clientVersion": version,
         "sessionStart": startTime,
         "sessionEnd": endTime,
-        "recievedTime": currentTime
+        "recievedTime": currentTime,
+        "externalIP": externalIP,
+        "internalIP": internalIP,
+        "hostname": hostname
     }
 
     if debug:
