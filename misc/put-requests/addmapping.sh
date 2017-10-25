@@ -44,6 +44,15 @@ curl -XPUT 'localhost:9200/ews2017.1/_mapping/Alert?pretty' -H 'Content-Type: ap
                     },
                     "clientDomain": {
                         "type": "boolean"
+                    },
+                    "externalIP": {
+                        "type": "ip"
+                    },
+                     "internalIP": {
+                        "type": "ip"
+                    },
+                     "hostname": {
+                        "type": "text"
                     }
   }
 }
