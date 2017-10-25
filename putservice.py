@@ -24,7 +24,10 @@ peerIdents = ["WebHoneypot", "Webpage",
               ".gt3",  "Webpage",
               ".dio", "Network(Dionaea)",
               ".kip", "SSH/console(cowrie)",
-              ".ht", "Network(honeytrap)"
+              ".ht", "Network(honeytrap)",
+              "vnclowpot", "VNC(vnclowpot)",
+              "rdpy", "RDP(rdpy)",
+              "mailoney", "E-Mail(mailoney)"
               "", ""]
 
 ################
@@ -63,8 +66,8 @@ def fixUrl(destinationPort, url, peerType):
         return "Attack on port " + str(destinationPort)
 
     # prepared dionaea to output additional information in ticker
-    # if ("Dionaea" in peerType):
-    #     return "Attack on port " + str(destinationPort)
+    if ("Dionaea" in peerType):
+        return "Attack on port " + str(destinationPort)
 
     return url
 
@@ -77,7 +80,7 @@ def handleAlerts(tree, tenant, es, cache):
         # default values
         parsingError = ""
         skip = False
-        peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime = "Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", ""
+        peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime, externalIP, internalIP, hostname = "Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", "", "", "", ""
         for child in node:
             childName = child.tag
 
@@ -100,13 +103,15 @@ def handleAlerts(tree, tenant, es, cache):
                 if child.text is not None:
                     createTime = child.text
 
-                    ### prepared time conversion from utc to (honeypot) localtime using timezone transmitted.
-
-                    #if child.attrib.get('tz') is not "":
-                    #    timezone=child.attrib.get('tz')
-                    #    createTime=calculateUTCTime(createTime, timezone)
-                    #else:
-                    #    parsingError += "| timezone = NONE "
+                    # time conversion to utc from honeypot's localtime using timezone transmitted.
+                    if child.attrib.get('tz') is not "":
+                        timezone=child.attrib.get('tz')
+                        if timezone != "+0000":
+                            createTimeOld=createTime
+                            createTime=calculateUTCTime(createTime, timezone)
+                            app.logger.debug("Calculating new timezone for " + createTimeOld + " timezone: " + timezone + " => " + createTime)
+                    else:
+                        parsingError += "| timezone = NONE "
 
 
                 else:
@@ -172,6 +177,18 @@ def handleAlerts(tree, tenant, es, cache):
                     if child.text is not None:
                         url = urllib.parse.unquote(child.text).replace('\n', '; ')[2:]
 
+                if (meaning == "externalIP"):
+                    if child.text is not None:
+                        externalIP = child.text
+
+                if (meaning == "internalIP"):
+                    if child.text is not None:
+                        internalIP = child.text
+
+                if (meaning == "hostname"):
+                    if child.text is not None:
+                        hostname = child.text
+
                 # Todo: add addidtional data from ewsposter fields as json structure.
 
 
@@ -194,7 +211,7 @@ def handleAlerts(tree, tenant, es, cache):
             #
             correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
                                           analyzerID, peerType, username, password, loginStatus, version, starttime,
-                                          endtime, sourcePort, destinationPort, app.config['DEVMODE'], es, cache)
+                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, app.config['DEVMODE'], es, cache)
             counter = counter + 1 - correction
 
             #
