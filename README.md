@@ -66,7 +66,7 @@ By default, querying the above endpoints, data from the **T-Pot community honeyp
     create manually an index for the alerts and store the name in /etc/peba/cfg in in ELASTICINDEX 
     config field
     
-    create manually an index named ewscves (will be used in the next update for the long term cve storage)
+    create manually an index named ewscve (will be used in the next update for the long term cve storage)
     
     modify misc/put-service/addmapping to your environment and execute it to setup the initial mappings
     
