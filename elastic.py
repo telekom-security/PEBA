@@ -19,17 +19,21 @@ countries = ["AD","Andorra","AE","United Arab Emirates","AG","Antigua and Barbud
 # ES PUT functions
 ##################
 
-def getCache(cacheItem, cache):
-    rv = cache.get(cacheItem)
+def getCache(cacheItem, cache, cacheType):
+    cacheTypeItem = cacheType + ":" + cacheItem
+    rv = cache.get(cacheTypeItem)
+    app.logger.debug("Returning item from cache: {0} - Value: {1}".format(cacheTypeItem, str(rv)[:200]+" ..."))
     if rv is None:
         return False
     return rv
 
-def setCache(cacheItem, cacheValue, cacheTimeout, cache):
+def setCache(cacheItem, cacheValue, cacheTimeout, cache, cacheType):
   try:
-      cache.set(cacheItem, cacheValue, timeout=cacheTimeout)
+      cacheTypeItem = cacheType + ":" + cacheItem
+      cache.set(cacheTypeItem, cacheValue, timeout=cacheTimeout)
+      app.logger.debug("Setting item to cache: {0} - Value: {1}".format(cacheTypeItem, str(cacheValue)[:200] + " ..."))
   except:
-        app.logger.error("Could not set memcache cache {0} to value {1} and Timeout {2}".format(cacheItem, str(cacheValue), cacheTimeout))
+        app.logger.error("Could not set memcache cache {0} to value {1} and Timeout {2}".format(cacheTypeItem, str(cacheValue), cacheTimeout))
 
 
 def getCountries(id):
@@ -65,12 +69,12 @@ def getGeoIPNative(sourceip, cache):
 
         asn = giASN.org_by_addr(sourceip)
         if (asn == "" ) or asn is None:
-            setCache(sourceip, "0.0" + "|" + "0.0" + "|" + country_fail + "|" + ASN_fail + "|" + ASN_fail_text, 60 * 60 * 24, cache)
+            setCache(sourceip, "0.0" + "|" + "0.0" + "|" + country_fail + "|" + ASN_fail + "|" + ASN_fail_text, 60 * 60 * 24, cache, "ip")
             return ("0.0", "0.0", "-", "-", "-")
 
         country = gi.country_code_by_addr(sourceip)
         if (country == "") or country is None:
-            setCache(sourceip, "0.0" + "|" + "0.0" + "|" + country_fail + "|" + ASN_fail + "|" + ASN_fail_text, 60 * 60 * 24, cache)
+            setCache(sourceip, "0.0" + "|" + "0.0" + "|" + country_fail + "|" + ASN_fail + "|" + ASN_fail_text, 60 * 60 * 24, cache, "ip")
             return ("0.0", "0.0", "-", "-", "-")
 
         long = giCity.record_by_addr(sourceip)['longitude']
@@ -79,12 +83,12 @@ def getGeoIPNative(sourceip, cache):
         asn = giASN.org_by_addr(sourceip)
 
         # store data in memcache
-        setCache(sourceip, str(lat) + "|" + str(long) + "|" + country + "|"+ asn  + "|" + countryName, 60*60*24, cache)
+        setCache(sourceip, str(lat) + "|" + str(long) + "|" + country + "|"+ asn  + "|" + countryName, 60*60*24, cache, "ip")
 
         return (lat, long, country, asn, countryName)
 
     except:
-        setCache(sourceip, "0.0" + "|" + "0.0" + "|" + country_fail + "|" + ASN_fail + "|" + ASN_fail_text, 60 * 60 * 24, cache)
+        setCache(sourceip, "0.0" + "|" + "0.0" + "|" + country_fail + "|" + ASN_fail + "|" + ASN_fail_text, 60 * 60 * 24, cache, "ip")
         return ("0.0", "0.0", country_fail, ASN_fail, ASN_fail_text)
 
 
@@ -95,7 +99,7 @@ def getGeoIP(ip,cache):
     """ get geoip and ASN information from IP """
 
     # get result from cache
-    getCacheResult = getCache(ip, cache)
+    getCacheResult = getCache(ip, cache, "ip")
     if getCacheResult is False:
         return getGeoIPNative(ip, cache)
 

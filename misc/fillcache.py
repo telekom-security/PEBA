@@ -49,8 +49,9 @@ def testElasticsearch():
     except:
         return False
 
-def getCache(cacheItem):
-    rv = cache.get(cacheItem)
+def getCache(cacheItem, cacheType):
+    cacheTypeItem = cacheType + ":" + cacheItem
+    rv = cache.get(cacheTypeItem)
     if rv is None:
         return False
     return rv
@@ -64,12 +65,13 @@ def testMemcached():
             return False
     return True
 
-def setCache(cacheItem, cacheValue, cacheTimeout,cacheIndex):
+def setCache(cacheItem, cacheValue, cacheTimeout, cacheIndex, cacheType):
     for cache in caches[cacheIndex]:
+        cacheTypeItem = cacheType + ":" + cacheItem
         try:
-            cache.set(cacheItem, cacheValue, cacheTimeout)
+            cache.set(cacheTypeItem, cacheValue, cacheTimeout)
         except pylibmc.Error as e:
-            print("Could not set {0} to {1}".format(cacheItem, e))
+            print("Could not set {0} to {1}".format(cacheTypeItem, e))
 
 def checkCommunityIndex(request):
     """check if request is agains community index or production index"""
@@ -480,7 +482,7 @@ def fillCacheRetrieveAlertsJson(sleeptime, cachetime, community):
         else:
             cacheItem=domain+itemRetrieveAlertsJsonCommunity
             cacheIndex = 1
-        settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex)
+        settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex, "url")
         sleep(sleeptime)
 
 ## /topCountriesAttacks
@@ -493,7 +495,7 @@ def fillCacheTopCountriesAttacks(sleeptime, cachetime, community):
         else:
             cacheItem=domain+itemTopCountriesAttacksCommunity
             cacheIndex = 3
-        settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex)
+        settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex, "url")
         sleep(sleeptime)
 
 
@@ -507,7 +509,7 @@ def fillRetrieveAlertStats(sleeptime, cachetime, community):
         else:
             cacheItem=domain+itemRetrieveAlertStatsCommunity
             cacheIndex = 5
-        settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex)
+        settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex, "url")
         sleep(sleeptime)
 
 ## /retrieveAlertsCountWithType
@@ -521,7 +523,7 @@ def fillRetrieveAlertsCountWithType(sleeptime, cachetime, community):
         else:
             cacheItem = domain + itemAlertsCountWithTypeCommunity
             cacheIndex = 7
-        settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex)
+        settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex, "url")
         sleep(sleeptime)
 
 

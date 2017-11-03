@@ -88,30 +88,32 @@ def testElasticsearch():
 
 def testMemcached():
     try:
-        getCache("heartbeat")
+        getCache("heartbeat", "test")
         return True
     except:
         return False
 
-def getCache(cacheItem):
-    rv = cache.get(cacheItem)
-    app.logger.debug("Returning item from cache: {0} - Value: {1}".format(cacheItem, str(rv)[:200]+" ..."))
+def getCache(cacheItem, cacheType):
+    cacheTypeItem = cacheType + ":" + cacheItem
+    rv = cache.get(cacheTypeItem)
+    app.logger.debug("Returning item from cache: {0} - Value: {1}".format(cacheTypeItem, str(rv)[:200]+" ..."))
     if rv is None:
         return False
     return rv
 
-def setCache(cacheItem, cacheValue, cacheTimeout):
+def setCache(cacheItem, cacheValue, cacheTimeout, cacheType):
     try:
-        cache.set(cacheItem, cacheValue, timeout=cacheTimeout)
-        app.logger.debug("Setting item to cache: {0} - Value: {1}".format(cacheItem, str(cacheValue)[:200]+" ..."))
+        cacheTypeItem = cacheType + ":" + cacheItem
+        cache.set(cacheTypeItem, cacheValue, timeout=cacheTimeout)
+        app.logger.debug("Setting item to cache: {0} - Value: {1}".format(cacheTypeItem, str(cacheValue)[:200]+" ..."))
     except:
-        app.logger.error("Could not set memcache cache {0} to value {1} and Timeout {2}".format(cacheItem, str(cacheValue), cacheTimeout))
+        app.logger.error("Could not set memcache cache {0} to value {1} and Timeout {2}".format(cacheTypeItem, str(cacheValue), cacheTimeout))
 
 def authenticate(username, token):
     """ Authenticate user from cache or in ES """
 
     # check for user in cache
-    authtoken = getCache(username)
+    authtoken = getCache(username, "user")
     if authtoken is not False:
         if len(authtoken) == 128:
             tokenhash = hashlib.sha512(token.encode('utf-8')).hexdigest()
@@ -144,19 +146,21 @@ def authenticate(username, token):
                 getOnly = res["hits"]["hits"][0]["_source"]["getOnly"]
                 community = res["hits"]["hits"][0]["_source"]["community"]
 
-                # add user and token to cache for 24h
-                setCache(username, authtoken, (60*60*24))
-
                 if len(authtoken) == 128:
                     tokenhash = hashlib.sha512(token.encode('utf-8')).hexdigest()
                     if authtoken == tokenhash:
+                        # add user and token to cache for 24h
+                        setCache(username, authtoken, (60 * 60 * 24), "user")
                         return True
                 elif len(authtoken) == 32:
                     tokenhash = hashlib.md5(token.encode('utf-8')).hexdigest()
                     if authtoken == tokenhash:
+                        # add user and token to cache for 24h
+                        setCache(username, authtoken, (60 * 60 * 24),"user")
                         return True
                 else:
                     app.logger.error('authenticate(): Hash "{0}" for user "{1}" is not matching md5 or sha512 length! Needs to be checked in ES index!'.format(authtoken, username))
+                    return False
 
         except ElasticsearchException as err:
             app.logger.error('ElasticSearch error: %s' %  err)
@@ -1035,14 +1039,14 @@ def retrieveIPs():
     """ Retrieve IPs from ElasticSearch and return formatted XML with IPs """
 
     # get result from cache
-    getCacheResult = getCache(request.url)
+    getCacheResult = getCache(request.url, "url")
     if getCacheResult is not False:
         return getCacheResult
 
     # query ES
     else:
         returnResult = formatBadIPxml(queryBadIPs(app.config['BADIPTIMESPAN'], checkCommunityIndex(request)))
-        setCache(request.url, returnResult, 60)
+        setCache(request.url, returnResult, 60, "url")
         return Response(returnResult, mimetype='text/xml')
 
 @app.route("/alert/retrieveAlertsCyber", methods=['POST'])
@@ -1053,7 +1057,7 @@ def retrieveAlertsCyber():
     """
 
     # get result from cache
-    getCacheResult = getCache(request.url)
+    getCacheResult = getCache(request.url, "url")
     if getCacheResult is not False:
         app.logger.debug('Returning /retrieveAlertsCyber from Cache for %s' % str(request.remote_addr))
         return Response(getCacheResult)
@@ -1061,7 +1065,7 @@ def retrieveAlertsCyber():
     # query ES
     else:
         returnResult = formatAlertsXml(queryAlerts(app.config['MAXALERTS'], checkCommunityIndex(request)))
-        setCache(request.url, returnResult, 1)
+        setCache(request.url, returnResult, 1, "url")
         app.logger.debug('Returning /retrieveAlertsCyber from ES for %s' % str(request.remote_addr))
         return Response(returnResult, mimetype='text/xml')
 
@@ -1079,22 +1083,22 @@ def retrieveAlertsCount():
     else:
         if request.args.get('out') and request.args.get('out') == 'json':
             # get result from cache
-            getCacheResult = getCache(request.url)
+            getCacheResult = getCache(request.url, "url")
             if getCacheResult is not False:
                 return jsonify(getCacheResult)
             else:
                 returnResult = formatAlertsCount(queryAlertsCount(request.args.get('time'), checkCommunityIndex(request)), 'json')
-                setCache(request.url, returnResult, 60)
+                setCache(request.url, returnResult, 60, "url")
                 return jsonify(returnResult)
 
         else:
             # get result from cache
-            getCacheResult = getCache(request.url)
+            getCacheResult = getCache(request.url, "url")
             if getCacheResult is not False:
                 return Response(getCacheResult, mimetype='text/xml')
             else:
                 returnResult = formatAlertsCount(queryAlertsCount(request.args.get('time'), checkCommunityIndex(request)), 'xml')
-                setCache(request.url, returnResult, 60)
+                setCache(request.url, returnResult, 60, "url")
                 return Response(returnResult, mimetype='text/xml')
 
 
@@ -1105,7 +1109,7 @@ def retrieveAlertsCountWithType():
     """ Retrieve number of alerts in timeframe (GET-Parameter time as decimal or "day") and divide into honypot types"""
 
     # get result from cache
-    getCacheResult = getCache(request.url)
+    getCacheResult = getCache(request.url, "url")
     if getCacheResult is not False:
         return jsonify(getCacheResult)
 
@@ -1117,7 +1121,7 @@ def retrieveAlertsCountWithType():
             return app.config['DEFAULTRESPONSE']
         else:
             returnResult = formatAlertsCountWithType(queryAlertsCountWithType(request.args.get('time'), checkCommunityIndex(request)))
-            setCache(request.url, returnResult, 13)
+            setCache(request.url, returnResult, 13, "url")
             app.logger.debug('UNCACHED %s' % str(request.url))
             return jsonify(returnResult)
 
@@ -1129,7 +1133,7 @@ def retrieveAlertsJson():
     cacheEntry = request.url
 
     # get result from cache
-    getCacheResult = getCache(cacheEntry)
+    getCacheResult = getCache(cacheEntry, "url")
     if getCacheResult is not False:
         app.logger.debug('Returning /retrieveAlertsJson from Cache %s' % str(request.remote_addr))
         return jsonify(getCacheResult)
@@ -1139,7 +1143,7 @@ def retrieveAlertsJson():
         numAlerts = 35
         # Retrieve last X Alerts from ElasticSearch and return JSON formatted with limited alert content
         returnResult =  formatAlertsJson(queryAlertsWithoutIP(numAlerts, checkCommunityIndex(request)))
-        setCache(cacheEntry, returnResult, 25)
+        setCache(cacheEntry, returnResult, 25, "url")
         app.logger.debug('UNCACHED %s' % str(request.url))
         return jsonify(returnResult)
 
@@ -1151,7 +1155,7 @@ def retrieveDatasetAlertsPerMonth():
     """
 
     # get result from cache
-    getCacheResult = getCache(request.url)
+    getCacheResult = getCache(request.url, "url")
     if getCacheResult is not False:
         return jsonify(getCacheResult)
 
@@ -1162,7 +1166,7 @@ def retrieveDatasetAlertsPerMonth():
             returnResult = formatDatasetAlertsPerMonth(queryDatasetAlertsPerMonth(None, checkCommunityIndex(request)))
         else:
             returnResult = formatDatasetAlertsPerMonth(queryDatasetAlertsPerMonth(request.args.get('days'), checkCommunityIndex(request)))
-        setCache(request.url, returnResult, 600)
+        setCache(request.url, returnResult, 600, "url")
         return jsonify(returnResult)
 
 @app.route("/alert/datasetAlertTypesPerMonth", methods=['GET'])
@@ -1174,7 +1178,7 @@ def retrieveDatasetAlertTypesPerMonth():
     """
 
     # get result from cache
-    getCacheResult = getCache(request.url)
+    getCacheResult = getCache(request.url, "url")
     if getCacheResult is not False:
         return jsonify(getCacheResult)
 
@@ -1185,7 +1189,7 @@ def retrieveDatasetAlertTypesPerMonth():
             returnResult = formatDatasetAlertTypesPerMonth(queryDatasetAlertTypesPerMonth(None, checkCommunityIndex(request)))
         else:
             returnResult = formatDatasetAlertTypesPerMonth(queryDatasetAlertTypesPerMonth(request.args.get('days'), checkCommunityIndex(request)))
-        setCache(request.url, returnResult, 3600)
+        setCache(request.url, returnResult, 3600, "url")
         return jsonify(returnResult)
 
 @app.route("/alert/retrieveAlertStats", methods=['GET'])
@@ -1195,14 +1199,14 @@ def retrieveAlertStats():
     """
 
     # get result from cache
-    getCacheResult = getCache(request.url)
+    getCacheResult = getCache(request.url, "url")
     if getCacheResult is not False:
         return jsonify(getCacheResult)
 
     # query ES
     else:
         returnResult = formatAlertStats(queryAlertStats(checkCommunityIndex(request)))
-        setCache(request.url, returnResult, 13)
+        setCache(request.url, returnResult, 13, "url")
         app.logger.debug('UNCACHED %s' % str(request.url))
         return jsonify(returnResult)
 
@@ -1212,7 +1216,7 @@ def retrieveTopCountriesAttacks():
     """
 
     # get result from cache
-    getCacheResult = getCache(request.url)
+    getCacheResult = getCache(request.url, "url")
     if getCacheResult is not False:
         return jsonify(getCacheResult)
 
@@ -1230,7 +1234,7 @@ def retrieveTopCountriesAttacks():
         else:
             topx = request.args.get('topx')
         returnResult = formatTopCountriesAttacks(queryTopCountriesAttacks(offset, topx, checkCommunityIndex(request)))
-        setCache(request.url, returnResult, 60)
+        setCache(request.url, returnResult, 60, "url")
         app.logger.debug('UNCACHED %s' % str(request.url))
         return jsonify(returnResult)
 
@@ -1244,7 +1248,7 @@ def retrieveLatLonAttacks():
     """
 
     # get result from cache
-    getCacheResult = getCache(request.url)
+    getCacheResult = getCache(request.url, "url")
     if getCacheResult is not False:
         return jsonify(getCacheResult)
 
@@ -1270,7 +1274,7 @@ def retrieveLatLonAttacks():
             offset = request.args.get('offset')
 
         returnResult=formatLatLonAttacks(queryLatLonAttacks(direction, topx, offset, checkCommunityIndex(request)))
-        setCache(request.url, returnResult, 60)
+        setCache(request.url, returnResult, 60, "url")
         return jsonify(returnResult)
 
 # PUT Service
