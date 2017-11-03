@@ -82,3 +82,47 @@ curl -XPUT 'localhost:9200/ews2017.1/_mapping/IP?pretty' -H 'Content-Type: appli
   }
 }
 '
+
+curl -XPUT 'localhost:9200/ewscve?pretty' -H 'Content-Type: application/json' -d'
+{
+    "settings" : {
+        "index" : {
+            "number_of_shards" : 5,
+            "number_of_replicas" : 1
+        }
+    }
+}
+'
+
+curl -XPUT 'localhost:9200/ewscve/_mapping/CVE?pretty' -H 'Content-Type: application/json' -d'
+{
+  "properties": {
+                    "createTime": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    },
+                    "recievedTime": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    },
+                    "sourceEntryIp": {
+                        "type": "ip"
+                    },
+                    "targetEntryIp": {
+                        "type": "ip"
+                    },
+                    "clientDomain": {
+                        "type": "boolean"
+                    },
+                    "externalIP": {
+                        "type": "ip"
+                    },
+                     "internalIP": {
+                        "type": "ip"
+                    },
+                     "hostname": {
+                        "type": "text"
+                    }
+  }
+}
+'
