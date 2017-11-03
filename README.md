@@ -47,6 +47,9 @@ The above private endpoints cannot be queried using the community credentials (1
 
 By default, querying the above endpoints, data from the **T-Pot community honeypots** is returned. To retrieve data from the **private domain honeypots**, add a GET parameter *ci=0*. Example:  */alert/retrieveAlertsJson?**ci=0*** to retrieve the private json data feed. This works both on the public and private endpoints.
 
+**Preconditions:** (on Debian/Ubuntu)
+
+    Install Elasticsearch (5.4 and 5.5 tested)
 
 **Installation:** (on Debian/Ubuntu)
 
