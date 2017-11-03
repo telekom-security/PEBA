@@ -66,7 +66,7 @@ By default, querying the above endpoints, data from the **T-Pot community honeyp
     create manually an index for the alerts and store the name in /etc/peba/cfg in in ELASTICINDEX 
     config field
         
-    modify misc/put-service/addmapping to your environment and execute it to setup the initial mappings
+    modify misc/put-service/initindex.py to your environment and execute it to setup the initial mappings
     and creation of the ewscve long term index
     
 *Reminder:* Elasticsearch and memcached must be available. They must be configured in */etc/ews/peba.cfg*. 
