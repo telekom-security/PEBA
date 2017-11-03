@@ -54,7 +54,7 @@ By default, querying the above endpoints, data from the **T-Pot community honeyp
 **Installation:** (on Debian/Ubuntu)
 
 
-    sudo apt-get install python3 python3-dev python3-pip python3-pylibmc
+    sudo apt-get install python3 python3-dev python3-pip python3-pylibmc memcached
     git clone git@github.com:dtag-dev-sec/PEBA.git
 	cd PEBA
     sudo mkdir -p /etc/ews/
@@ -65,10 +65,9 @@ By default, querying the above endpoints, data from the **T-Pot community honeyp
 
     create manually an index for the alerts and store the name in /etc/peba/cfg in in ELASTICINDEX 
     config field
-    
-    create manually an index named ewscve (will be used in the next update for the long term cve storage)
-    
+        
     modify misc/put-service/addmapping to your environment and execute it to setup the initial mappings
+    and creation of the ewscve long term index
     
 *Reminder:* Elasticsearch and memcached must be available. They must be configured in */etc/ews/peba.cfg*. 
 
