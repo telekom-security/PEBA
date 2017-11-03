@@ -194,8 +194,26 @@ def initIndex(index, es):
 
 def ipExisting(ip, index, es):
     """ checks if an IP already is existing in the index """
-    query = '{"query":{"bool":{"must":[{"query_string":{"default_field":"ip","query":"' + ip + '"}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}'
-
+    query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "query_string": {
+                            "default_field": "ip",
+                            "query": ip
+                        }
+                    }
+                ],
+                "must_not": [],
+                "should": []
+            }
+        },
+        "from": 0,
+        "size": 10,
+        "sort": [],
+        "aggs": {}
+    }
     res = es.search(index=index, doc_type="IP", body=query)
 
     for hit in res['hits']['hits']:
@@ -318,7 +336,26 @@ def cveExisting(cve, index, es, debug):
         app.logger.debug("Pretending as if %s was existing in index." % str(cve))
         return True
 
-    query = '{"query":{"bool":{"must":[{"query_string":{"default_field":"number","query":"' + cve + '"}}],"must_not":[],"should":[]}},"from":0,"size":10,"sort":[],"aggs":{}}'
+    query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "query_string": {
+                            "default_field": "number",
+                            "query": cve
+                        }
+                    }
+                ],
+                "must_not": [],
+                "should": []
+            }
+        },
+        "from": 0,
+        "size": 10,
+        "sort": [],
+        "aggs": {}
+    }
 
     res = es.search(index=index, doc_type="CVE", body=query)
 
