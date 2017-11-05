@@ -1,6 +1,8 @@
 # PEBA - Python EWS Backend API
 
-PEBA is a lightweight python3 backend application that offers an API alternative for the current DTAG EWS backend.
+PEBA is a lightweight python3 backend application that offers an API alternative for the current DTAG EWS backend. 
+
+PEBA runs in production @DTAG since October 2017 and is a replacement for our previous grails based backend, which was developed by our friend Lutz Wischmann.
 
 The API consists of two functional parts: A "PUT-Service" to store data and a "GET-Service" to retrieve data.
 
@@ -115,3 +117,7 @@ Valuable discussions with Aydin Kocas, Markus Schroer, Marco Ochse, Robin Verton
 **Frameworks / tools**:
 
 [Maxmind GeoIP](https://dev.maxmind.com/geoip/legacy/geolite/) - Gunicorn - Flask - Elasticsearch - Memcached
+
+**Thanks**:
+Lutz Wischmann from 42 Software Architects
+All people from the Honeynet project
