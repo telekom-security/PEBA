@@ -1,7 +1,7 @@
 # PEBA - Python EWS Backend API
 
 
-##**Intro:**
+## **Intro:**
 
 PEBA is a lightweight python3 backend service to collect and process attack events captured by honyeypot daemons, in particular those running on our multi honeypot plattform [T-Pot](https://github.com/dtag-dev-sec/tpotce). PEBA can serve as a centralized data collection tool for distributed T-Pot installations.
 
@@ -9,7 +9,7 @@ PEBA is running in production @DTAG since October 2017 and serves as a replaceme
 
 The data is visualized on our new [sicherheitstacho.eu](http://community.sicherheitstacho.eu) website.
 
-##**Overview:**
+## **Overview:**
 
 PEBA's API consists of two functional parts: 
 
@@ -25,7 +25,7 @@ The data stored can then be queried via distinct APIs, the GET-APIs. The results
 
 It is crucial to understand that in PEBA honeypot data is devided in (1) *public community data* (everyone can contribute using T-Pot, submit and query data) and (2) data from *private domain honeypots* (e.g. those from DTAG) which can only be submitted and queried using distinct credentials. 
 
-##**Implemented API endpoints:** 
+## **Implemented API endpoints:** 
 
 ***Public & Private PUT endpoint*** using authentication to deliver honeypot events using ewsposter. 
 
@@ -59,7 +59,7 @@ By default, querying the above endpoints, data from the **T-Pot community honeyp
 
 Example:  */alert/retrieveAlertsJson?****ci=0*** to retrieve the private json data feed. This works both on the public and private endpoints.
 
-##**Setup:**
+## **Setup:**
 
 **Preconditions:** 
 
@@ -107,13 +107,13 @@ Data can be submitted with the community credentials (as specified in `/etc/ews/
 
 You can safely ignore the last two questions, as the are not yet implemented. ;) 
 
-##**Configuration:**
+## **Configuration:**
 
 By default, and if you have everything running on localhost, you do not need to modify the `/etc/ews/peba.cfg`. However, if your elasticsearch or memcache is running on another host, you may want to edit the configuration file. 
 
 You should therefore check the following paramters and make sure they match your environment: ELASTICSEARCH_HOST, ELASTICINDEX, MEMCACHE. 
 
-##**Running PEBA:**
+## **Running PEBA:**
 
 **Testing PEBA:**
 
@@ -124,7 +124,7 @@ You can test the application via:
 The webapplication runs on port 9922. Running as shown above, PEBA logs errors to `./error.log`. However, this is not recommended in a production environment.
 
 
-##**Deploying PEBA:**
+## **Deploying PEBA:**
 
 In production environments PEBA needs a [reverse proxy](http://flask.pocoo.org/docs/0.12/deploying/wsgi-standalone/#proxy-setups) for SSL termination.
 
@@ -197,7 +197,7 @@ The script is located at `misc/fillcaches.py` and is tailored to our frontend us
 
 When setting up your own backend for honeypot data collection, you need to change the submission url of ewsposter's `ews.cfg` in the `[EWS]`-section to whatever domain your backend is running on (`rhost_first` / `rhost_second`). Further, make sure your ewsposter's `ews.cfg` has matching community username and token as defined in `/etc/ews/peba.cfg`.
 
-##**Development:**
+## **Development:**
 
 Although the backend is tailored to fullfill our own needs, we think it might be a good starting point for setting up your own centralized honeypot collection plattform.  
 
@@ -214,7 +214,7 @@ The basic functionality of the application's GET and a PUT service can be rudime
 For some of the above requests, you need a username & password in order to access the API. Use the script `./misc/add-user.py` to add new users and replace the file username and token in `./misc/request.xml`. 
 
 
-##**Credits**
+## **Credits**
 
 Developed by André Vorbach (vorband)  &  Markus Schmall (schmalle).
 
@@ -228,11 +228,11 @@ Overall help, friendly extensions / comments / suggestions by Markus Schroer and
 
 Lutz Wischmann from [42, The Software architects](http://www.software-architects.de/) and all people from [The Honeynet Project](https://www.honeynet.org/)
 
-##**Disclaimer**:
+## **Disclaimer**:
 
 PEBA is published as it is without any liability as open source software. As with every piece of code, it may contain bugs. We will try to fix them as soon as we can verify the bugs, so please let us know when you find any. 
 
 
-##**Misc**:
+## **Misc**:
 
 It would have taken 42 bottles of Club-Mate to develop PEBA. However, we ran out of supplies. ;) 
