@@ -9,6 +9,7 @@ PEBA is running in production @DTAG since October 2017 and serves as a replaceme
 
 The data is visualized on our new [sicherheitstacho.eu](http://community.sicherheitstacho.eu) website.
 
+
 ## **Overview:**
 
 PEBA's API consists of two functional parts: 
@@ -17,11 +18,11 @@ A **PUT-Service** to process and store attack data and a **GET-Service** to retr
 
 The PUT-API receives honeypot events from our honeypot attack data aggregation tool [ewsposter](https://github.com/armedpot/ewsposter), e.g. from one or more T-Pot installations, processes it and stores it in Elasticsearch.
 
-`Attacker <--> T-Pot [honeypot[1..n] <-- ewsposter] --> PEBA [Elasticsearch, memcache]`
+`Attacker <--> T-Pot [honeypot[1..n] <-- ewsposter] --> PEBA PUT Service [Elasticsearch, memcache]`
 
 The data stored can then be queried via distinct APIs, the GET-APIs. The results from Elasticsearch are cached for performance using memcached.
 
-`Consumer, e.g. Sicherheitstacho.eu --> PEBA [Elasticsearch, memcache]`
+`Consumer, e.g. sicherheitstacho.eu --> PEBA GET-Service [Elasticsearch, memcache]`
 
 It is crucial to understand that in PEBA honeypot data is devided in (1) *public community data* (everyone can contribute using T-Pot, submit and query data) and (2) data from *private domain honeypots* (e.g. those from DTAG) which can only be submitted and queried using distinct credentials. 
 
@@ -101,11 +102,11 @@ The index name as well as the Elasticsearch connection parameters have to be ref
 
 **Adding users:**
 
-Data can be submitted with the community credentials (as specified in `/etc/ews/peba.cfg`) and it will be added to the community domain. If you want to add data to the private domain or query one of the APIs above which require authentication, a users have to be added. In order to add users to the authentication pool the script `./misc/add-user.py` can be used. It will query for username and password and add the users to the authentication index. You should at least have one user setup here. 
+Data can be submitted with the community credentials (as specified in `/etc/ews/peba.cfg`) and it will be added to the community domain. If you want to add data to the private domain or query one of the APIs above which require authentication,  users have to be added. In order to add users to the authentication pool, the script `./misc/add-user.py` can be used. It will ask you for a username and a password and add the user to the authentication index "users". You should at least have one user setup here. 
 
 	python3 misc/add-user.py
 
-You can safely ignore the last two questions, as the are not yet implemented. ;) 
+You can safely ignore the last two questions in the script, as the are not yet implemented. ;) 
 
 ## **Configuration:**
 
@@ -117,11 +118,11 @@ You should therefore check the following paramters and make sure they match your
 
 **Testing PEBA:**
 
-You can test the application via:
+For testing, you can run the application via:
 
    	./start.sh
    	
-The webapplication runs on port 9922. Running as shown above, PEBA logs errors to `./error.log`. However, this is not recommended in a production environment.
+The webapplication runs on port 9922. Running as shown above, PEBA logs errors to `./error.log`. However, running like this is not recommended in a production environment.
 
 
 ## **Deploying PEBA:**
@@ -130,7 +131,7 @@ In production environments PEBA needs a [reverse proxy](http://flask.pocoo.org/d
 
 For convenience, the application can be deployed via ansible on a debian (tested: stretch) / ubuntu (tested 16.04) system and started using a systemd script. 
 
-As mentioned before, PEBA further relies on an Elasticsearch and memcache installation which needs to be configured separately. Adjust `ansible/hosts` with the correct paramters (hostname and following operational values), then deploy via:
+As mentioned before, PEBA relies on an Elasticsearch and memcache installation which needs to be configured separately. Having both up and running, adjust `ansible/hosts` with the correct paramters (hostname and following operational values), then deploy via:
 
     ./ansible/deploy.sh <prod|test>
 
@@ -188,10 +189,10 @@ It would be something like this, **note that this is *not* tested**:
 
 **Caching:**
 
-A caching mechanism has been implemented so GET requests to the API are cached by memcached. 
+As mentioned before, a caching mechanism has been implemented so GET requests to the API are cached by memcached. 
 
 While running the [sicherheitstacho.eu](http://community.sicherheitstacho.eu) website, we encountered that still too many queries reached the backend and hence we decided to prefill the caches for the queries issued by the reactjs application. 
-The script is located at `misc/fillcaches.py` and is tailored to our frontend using multiple caching servers on each node. This may be a good starting point for you if you also encounter caching problems and want to prefill them. 
+The script is located at `misc/fillcaches.py` and is tailored to our frontend using multiple caching servers on each node. This may be a good starting point for you if you also encounter caching problems and want to prefill the caches in use. 
 
 **Configuration of ewsposter:**
 
@@ -199,19 +200,19 @@ When setting up your own backend for honeypot data collection, you need to chang
 
 ## **Development:**
 
-Although the backend is tailored to fullfill our own needs, we think it might be a good starting point for setting up your own centralized honeypot collection plattform.  
+Although the backend is tailored to fullfill our specific needs, we think it might be a good starting point for setting up your own centralized honeypot collection plattform. 
 
-Support will be handled same as with T-Pot via Github issues. Please bear in mind that the software is developed in the spare time next to our main job. If you have any contributions you think could be beneficial for the project, feel free to submit pull requests. :) 
+PEBA support will be handled same as with T-Pot, via Github issues. Please bear in mind that the software is developed in the spare time next to our main job. If you have any contributions you think could be beneficial for the project, feel free to submit pull requests. :) 
 
 
 **Functional Tests:**
 
-The basic functionality of the application's GET and a PUT service can be rudimentarily tested using `./misc/test-getService.sh` respectively `./misc/test-putService.sh` which will send appropriate requests to retrieve or store data. Again, prod and test instance can be tested, further community data or private (dtag honeypots) data can be retrieved (only GET). Change the config section in script according to your environment.
+The basic functionality of the application's GET and a PUT service can be rudimentarily tested using `./misc/test-getService.sh` respectively `./misc/test-putService.sh` which will send corresponding requests to retrieve or store data. Again, prod and test instance can be tested, further community data or private (dtag honeypots) data can be retrieved (only GET). Change the config section in script according to your environment.
 
     ./misc/test-getService.sh <prod|test> <private|community>
     ./misc/test-putService.sh <prod|test>
 
-For some of the above requests, you need a username & password in order to access the API. Use the script `./misc/add-user.py` to add new users and replace the file username and token in `./misc/request.xml`. 
+For some of the above requests, you need a username & password in order to access the API. As described above, use the script `./misc/add-user.py` to add new users and replace the file username and token in `./misc/request.xml`. 
 
 
 ## **Credits**
@@ -235,4 +236,4 @@ PEBA is published as it is without any liability as open source software. As wit
 
 ## **Misc**:
 
-It would have taken 42 bottles of Club-Mate to develop PEBA. However, we ran out of supplies. ;) 
+It would have taken at least 42 bottles of Club-Mate to support the development of PEBA. However, we ran out of supplies. ;) 
