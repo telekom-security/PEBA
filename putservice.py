@@ -109,14 +109,16 @@ def handleAlerts(tree, tenant, es, cache):
                     createTime = child.text
 
                     # time conversion to utc from honeypot's localtime using timezone transmitted.
-                    if child.attrib.get('tz') is not "":
-                        timezone=child.attrib.get('tz')
-                        if timezone != "+0000":
-                            createTimeOld=createTime
-                            createTime=calculateUTCTime(createTime, timezone)
-                            app.logger.debug("Calculating new timezone for " + createTimeOld + " timezone: " + timezone + " => " + createTime)
-                    else:
-                        parsingError += "| timezone = NONE "
+                    # must ignore this for honeytrap, as it already sends utc no matter what the system time is.
+                    if not "honeytrap" in peerType.lower():
+                        if child.attrib.get('tz') is not "":
+                            timezone=child.attrib.get('tz')
+                            if timezone != "+0000":
+                                createTimeOld=createTime
+                                createTime=calculateUTCTime(createTime, timezone)
+                                app.logger.debug("Calculating new timezone for " + createTimeOld + " timezone: " + timezone + " => " + createTime)
+                        else:
+                            parsingError += "| timezone = NONE "
 
 
                 else:
