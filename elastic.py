@@ -251,35 +251,19 @@ def putIP(ip, esindex, country, countryname, asn, debug, es):
         app.logger.error("Error when persisting IP: " + str(ip))
         return 1
 
-def putVuln(vulnid, esindex, createTime, ip, debug, es):
-    """store alerts, which include a vulnerability id"""
-    m = hashlib.md5()
-    m.update((createTime + vulnid).encode())
 
-    vuln = {
-        "firstSeen" : createTime,
-        "lastSeen": createTime,
-        "firstIp": ip,
-        "number": vulnid
+def putVuln(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache):
+    return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache, "CVE")
 
-    }
-
-    if debug:
-        app.logger.debug("Not adding vulnerability to index: " + str(vulnid))
-        return 0
-
-    try:
-        res = es.index(index=esindex, doc_type='CVE', id=m.hexdigest(), body=vuln)
-        return 0
-
-    except:
-        app.logger.error("Error when persisting vulnid: " + str(vulnid))
-        return 1
 
 def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache):
+    return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache, "Alert")
+
+
+def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache, docType):
     """stores an alarm in the index"""
     m = hashlib.md5()
-    m.update((createTime + sourceip + destinationip + url + analyzerID).encode())
+    m.update((createTime + sourceip + destinationip + url + analyzerID + docType).encode())
 
     (lat, long, country, asn, countryName) = getGeoIP(sourceip, cache)
     (latDest, longDest, countryTarget, asnTarget, countryTargetName) = getGeoIP(destinationip, cache)
@@ -322,11 +306,11 @@ def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, an
     }
 
     if debug:
-        app.logger.debug("Not sending out alert: " + str(alert))
+        app.logger.debug("Not sending out " + docType + ": " + str(alert))
         return 0
 
     try:
-        res = es.index(index=index, doc_type='Alert', id=m.hexdigest(), body=alert)
+        res = es.index(index=index, doc_type=docType, id=m.hexdigest(), body=alert)
         return 0
 
     except:

@@ -210,7 +210,11 @@ def handleAlerts(tree, tenant, es, cache):
             # persist CVE
             #
             if (len(str(vulnid)) > 2):
-                elastic.putVuln(vulnid, app.config['ELASTICINDEX'], createTime, source, app.config['DEVMODE'], es )
+                elastic.putVuln(vulnid, "ewscve", source, destination, createTime,
+                                              tenant, url,
+                                              analyzerID, peerType, username, password, loginStatus, version, starttime,
+                                              endtime, sourcePort, destinationPort, externalIP, internalIP, hostname,
+                                              sourceTransport, app.config['DEVMODE'], es, cache)
                 url = "(" + vulnid + ") " + url
 
             #
