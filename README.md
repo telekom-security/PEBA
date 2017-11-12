@@ -97,6 +97,10 @@ For the next step, make sure that both Elasticsearch and memcached are running!
 Next, we need to create an Elasticsearch index for the alerts. You should edit the file `misc/put-requests/initIndex.py`to match the Elasticsearch host:port tuple and set your individual index name. If Elasticsearch is running on localhost, there is nothing to change here.
 
     python3 misc/put-requests/initIndex.py
+    
+    or
+    
+    cd misc; ./setupes.sh (edit the files accordingly to your needs)
 
 The index name as well as the Elasticsearch connection parameters have to be reflected in */etc/ews/peba.cfg*.
 
