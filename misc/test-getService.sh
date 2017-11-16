@@ -58,7 +58,14 @@ curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/al
 echo ""
 echo "***** END RETRIEVEIPS *****"
 echo ""
-sleep 3   
+sleep 3
+
+echo "***** QUERYSINGLEIP *****"
+curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/alert/querySingleIP?ip=103.253.211.151&$DOM
+echo ""
+echo "***** END QUERYSINGLEIP *****"
+echo ""
+sleep 3
 
 echo "***** RETRIEVEALERTCOUNT XML  *****"
 curl "$BIND/alert/retrieveAlertsCount?time=10&$DOM"

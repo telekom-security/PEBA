@@ -37,7 +37,8 @@ The authentication can be done using either T-Pot community credentials (1) or d
 ***Private GET endpoints*** using authentication:
 
  - [POST] */alert/retrieveIPs* ==> returning the unique IP addresses of the last attacks in timeframe *X* minutes.
- - [POST] */alert/retrieveAlertsCyber* ==> returning the last 1000 attacks, including IPs. 
+ - [POST] */alert/retrieveAlertsCyber* ==> returning the last 1000 attacks, including IPs.
+ - [POST] */alert/querySingleIP* ==> returns last 1000 attacks from IP. Set IP in GET parameter "ip", e.g. */querySingleIP?ip=8.8.8.8*
 
 The above private endpoints cannot be queried using the community credentials (1), only by users of the private domain (2).
 
