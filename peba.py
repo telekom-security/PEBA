@@ -25,6 +25,7 @@ from werkzeug.contrib.fixers import ProxyFix
 from functools import wraps
 import putservice
 from werkzeug.contrib.cache import MemcachedCache
+import ipaddress
 
 ###################
 ### Initialization
@@ -732,6 +733,54 @@ def queryLatLonAttacks(direction, topX, dayoffset, clientDomain):
 
     return False
 
+def queryForSingleIP(maxAlerts, ip, clientDomain):
+    """ Get data for specific IP addresse from elasticsearch """
+    try:
+        ipaddress.IPv4Address(ip)
+        if not ipaddress.ip_address(ip).is_global:
+            app.logger.debug('No global IP address given on /querySingleIP: %s' % str(request.args.get('ip')))
+            return False
+
+    except:
+        app.logger.debug('No valid IP given on /querySingleIP: %s' % str(request.args.get('ip')))
+        return False
+
+    try:
+        res = es.search(index=app.config['ELASTICINDEX'], body={
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "term": {
+                    "sourceEntryIp": str(ip)
+                  }
+                },
+                {
+                  "term": {
+                    "clientDomain": clientDomain
+                  }
+                }
+              ]
+            }
+          },
+          "size": maxAlerts,
+          "sort": {
+            "createTime": {
+              "order": "desc"
+            }
+          },
+          "_source": [
+            "createTime",
+            "peerType",
+            "targetCountry",
+            "originalRequestString"
+          ]
+        })
+        return res["hits"]["hits"]
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' %  err)
+
+    return False
 
 # Formatting functions
 
@@ -1011,6 +1060,33 @@ def formatLatLonAttacks(retrieveLatLonAttacksArr):
 
     return ([LatLonStats])
 
+def formatSingleIP(alertslist):
+    """ Create XML Strucure for Alerts list """
+
+    EWSSimpleAlertInfo = ET.Element('EWSSimpleAlertInfo')
+    alertsElement = ET.SubElement(EWSSimpleAlertInfo, 'Alerts')
+
+    if alertslist:
+        for alert in alertslist:
+            alertElement = ET.SubElement(alertsElement, 'Alert')
+            alertId = ET.SubElement(alertElement, 'Id')
+            alertId.text = alert['_id']
+            alertDate = ET.SubElement(alertElement, 'DateCreated')
+            alertDate.text = alert['_source']['createTime']
+            peerElement = ET.SubElement(alertElement, 'Peer')
+            peerType = ET.SubElement(peerElement, 'Type')
+            peerType.text = alert['_source']['peerType']
+            peerCountry = ET.SubElement(peerElement, 'Country')
+            peerCountry.text = alert['_source']['targetCountry']
+            requestElement = ET.SubElement(alertElement, 'Request')
+            requestElement.text = alert['_source']['originalRequestString']
+
+    prettify(EWSSimpleAlertInfo)
+    alertsxml = '<?xml version="1.0" encoding="UTF-8"?>'
+    alertsxml += (ET.tostring(EWSSimpleAlertInfo, encoding="utf-8", method="xml")).decode('utf-8')
+
+    return alertsxml
+
 
 ###############
 ### App Routes
@@ -1069,6 +1145,24 @@ def retrieveAlertsCyber():
         app.logger.debug('Returning /retrieveAlertsCyber from ES for %s' % str(request.remote_addr))
         return Response(returnResult, mimetype='text/xml')
 
+@app.route("/alert/querySingleIP", methods=['POST'])
+@authentication_required
+def querySingleIP():
+    """ Retrieve Attack data from index about a single IP
+    """
+
+    # get result from cache
+    getCacheResult = getCache(request.url, "url")
+    if getCacheResult is not False:
+        app.logger.debug('Returning /querySingleIP from Cache for %s' % str(request.remote_addr))
+        return Response(getCacheResult)
+
+    # query ES
+    else:
+        returnResult = formatSingleIP(queryForSingleIP(app.config['MAXALERTS'], request.args.get('ip'), checkCommunityIndex(request)))
+        setCache(request.url, returnResult, 60, "url")
+        app.logger.debug('Returning /querySingleIP from ES for %s' % str(request.remote_addr))
+        return Response(returnResult, mimetype='text/xml')
 
 # Routes with both XML and JSON output
 
