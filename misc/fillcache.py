@@ -354,7 +354,7 @@ def queryAlertStats(clientDomain):
             "aggs": {
             "ctr": {
               "range": {
-                "field": "createTime",
+                "field": "recievedTime",
                 "ranges": [
                   {
                     "key": "1d",
@@ -363,6 +363,10 @@ def queryAlertStats(clientDomain):
                   {
                     "key": "1h",
                     "from": "now-60m"
+                  },
+                  {
+                    "key": "5m",
+                    "from": "now-5m"
                   },
                   {
                     "key": "1m",
@@ -385,7 +389,8 @@ def formatAlertStats(retrieveAlertStat):
         jsondata = {
             'AlertsLast24Hours': retrieveAlertStat[0]['doc_count'],
             'AlertsLastHour': retrieveAlertStat[1]['doc_count'],
-            'AlertsLastMinute': retrieveAlertStat[2]['doc_count']
+            'AlertsLast5Minutes': retrieveAlertStat[2]['doc_count'],
+            'AlertsLastMinute': retrieveAlertStat[3]['doc_count']
         }
         return (jsondata)
     else:
