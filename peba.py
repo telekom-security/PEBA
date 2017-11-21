@@ -508,7 +508,7 @@ def queryAlertStats(clientDomain):
             "aggs": {
             "ctr": {
               "range": {
-                "field": "recievedTime",
+                "field": "createTime",
                 "ranges": [
                   {
                     "key": "1d",
