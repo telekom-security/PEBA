@@ -197,8 +197,8 @@ if __name__ == '__main__':
     #### Retrieve Data
 
     # DTAG
-    handleHoneypotAlerts(50, False)
+    handleHoneypotAlerts(5, False)
 
 
     # Community
-    handleHoneypotAlerts(50, True)
+    handleHoneypotAlerts(5, True)
