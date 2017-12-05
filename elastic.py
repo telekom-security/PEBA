@@ -165,7 +165,11 @@ def putIP(ip, esindex, country, countryname, asn, debug, es):
 
 
 def putVuln(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache):
-    return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache, "CVE")
+
+    if cveExisting(vulnid, index, es, debug):
+        return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache, "CVE")
+
+    return 1
 
 
 def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache):
@@ -229,6 +233,7 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
         app.logger.error("Error persisting alert in ES: " + str(alert))
         return 1
 
+
 def cveExisting(cve, index, es, debug):
     """ check if cve already exists in index """
 
@@ -242,7 +247,7 @@ def cveExisting(cve, index, es, debug):
                 "must": [
                     {
                         "query_string": {
-                            "default_field": "number",
+                            "default_field": "vulnid",
                             "query": cve
                         }
                     }
@@ -260,9 +265,6 @@ def cveExisting(cve, index, es, debug):
     res = es.search(index=index, doc_type="CVE", body=query)
 
     for hit in res['hits']['hits']:
-
-        #cveFound = "%(number)s " % hit["_source"]
-        #if (cve in cveFound):
         return True
 
     return False
