@@ -62,7 +62,7 @@ curl -XPUT "http://"$host":"$port"/"$indexCve"?pretty" -H 'Content-Type: applica
         }
     },
     "mappings": {
-        "Alert": {
+        "CVE": {
             "properties":  {
                     "createTime": {
                         "type": "date",
