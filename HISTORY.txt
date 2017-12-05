@@ -1,2 +1,3 @@
 
 11/12/2017: Added storage of CVEs
+12/05/2017: added index creation script /misc/setupES6Indeces.sh for Elasticsearch 6
