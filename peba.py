@@ -804,26 +804,40 @@ def prettify(elem, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
-def formatBadIPxml(iplist):
+def formatBadIP(iplist, outformat):
     """ Create XML Strucure for BadIP list """
+    if outformat=='xml':
+        if iplist:
+            ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
+            sources = ET.SubElement(ewssimpleinfo, 'Sources')
 
-    if iplist:
-        ewssimpleinfo = ET.Element('EWSSimpleIPInfo')
-        sources = ET.SubElement(ewssimpleinfo, 'Sources')
-
-        for ip in iplist['buckets']:
-            source = ET.SubElement(sources, 'Source')
-            address = ET.SubElement(source, 'Address')
-            address.text = ip['key']
-            counter = ET.SubElement(source, 'Count')
-            counter.text = str(ip['doc_count'])
+            for ip in iplist['buckets']:
+                source = ET.SubElement(sources, 'Source')
+                address = ET.SubElement(source, 'Address')
+                address.text = ip['key']
+                counter = ET.SubElement(source, 'Count')
+                counter.text = str(ip['doc_count'])
 
 
-        prettify(ewssimpleinfo)
-        iplistxml = '<?xml version="1.0" encoding="UTF-8"?>'
-        iplistxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml")).decode('utf-8')
+            prettify(ewssimpleinfo)
+            iplistxml = '<?xml version="1.0" encoding="UTF-8"?>'
+            iplistxml += (ET.tostring(ewssimpleinfo, encoding="utf-8", method="xml")).decode('utf-8')
 
-        return iplistxml
+            return iplistxml
+        else:
+            return app.config['DEFAULTRESPONSE']
+
+    elif outformat == 'json':
+        if iplist:
+            iplistjson=[]
+            for ip in iplist['buckets']:
+                iplistjson.append({
+                    "ip" : ip['key'],
+                    "count" : ip['doc_count']
+                })
+            return iplistjson
+        else:
+            return app.config['DEFAULTRESPONSE']
     else:
         return app.config['DEFAULTRESPONSE']
 
@@ -1113,23 +1127,6 @@ def heartbeat():
 
 # Routes with XML output
 
-@app.route("/alert/retrieveIPs", methods=['POST'])
-@app.route("/ews-0.1/alert/retrieveIPs", methods=['POST'])
-@authentication_required
-def retrieveIPs():
-    """ Retrieve IPs from ElasticSearch and return formatted XML with IPs """
-
-    # get result from cache
-    getCacheResult = getCache(request.url, "url")
-    if getCacheResult is not False:
-        return getCacheResult
-
-    # query ES
-    else:
-        returnResult = formatBadIPxml(queryBadIPs(app.config['BADIPTIMESPAN'], checkCommunityIndex(request)))
-        setCache(request.url, returnResult, 60, "url")
-        return Response(returnResult, mimetype='text/xml')
-
 @app.route("/alert/retrieveAlertsCyber", methods=['POST'])
 @authentication_required
 def retrieveAlertsCyber():
@@ -1199,6 +1196,32 @@ def retrieveAlertsCount():
                 returnResult = formatAlertsCount(queryAlertsCount(request.args.get('time'), checkCommunityIndex(request)), 'xml')
                 setCache(request.url, returnResult, 60, "url")
                 return Response(returnResult, mimetype='text/xml')
+
+
+@app.route("/alert/retrieveIPs", methods=['POST'])
+@app.route("/ews-0.1/alert/retrieveIPs", methods=['POST'])
+@authentication_required
+def retrieveIPs():
+    """ Retrieve IPs from ElasticSearch and return formatted XML or JSON with IPs """
+
+    if request.args.get('out') and request.args.get('out') == 'json':
+        getCacheResult = getCache(request.url, "url")
+        if getCacheResult is not False:
+            return jsonify(getCacheResult)
+        else:
+            returnResult = formatBadIP(
+                queryBadIPs(app.config['BADIPTIMESPAN'], checkCommunityIndex(request)), 'json')
+            setCache(request.url, returnResult, 60, "url")
+            return jsonify(returnResult)
+    else:
+        getCacheResult = getCache(request.url, "url")
+        if getCacheResult is not False:
+            return Response(getCacheResult, mimetype='text/xml')
+        else:
+            returnResult = formatBadIP(
+                queryBadIPs(app.config['BADIPTIMESPAN'], checkCommunityIndex(request)), 'xml')
+            setCache(request.url, returnResult, 60, "url")
+            return Response(returnResult, mimetype='text/xml')
 
 
 # Routes with JSON output
