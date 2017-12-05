@@ -65,7 +65,7 @@ Example:  */alert/retrieveAlertsJson?ci=0* to retrieve the private json data fee
 
 **Preconditions:** 
 
-PEBA requires an installation of Elasticsearch (5.4 and 5.5 tested). 
+PEBA requires an installation of Elasticsearch (5.4, 5.5 and 6.01 tested).
 
 **Installation:** (on Debian/Ubuntu)
 
@@ -91,6 +91,17 @@ PEBA requires an installation of Elasticsearch (5.4 and 5.5 tested).
 *Note:*  When installing on MacOS, you need to install the following additional packets: 
 `brew install libmemcached` and `pip3 install pylibmc`
 
+*Note:* If you use Elasticsearch 6, please change the requirements.txt
+as follows
+
+
+    remove elasticsearch
+
+    and replace it with
+
+    elasticsearch>=6.0.0,<7.0.0
+
+
 For the next step, make sure that both Elasticsearch and memcached are running!
 
 **Initializing the Index:**
@@ -98,7 +109,11 @@ For the next step, make sure that both Elasticsearch and memcached are running!
 Next, we need to create an Elasticsearch index for the alerts. You should edit the file `misc/setup-es-indices.py`to match the Elasticsearch host:port tuple and set your individual index names. If Elasticsearch is running on localhost, there is nothing to change here.
 
     python3 misc/setup-es-indices.py
-       
+
+For elasticsearch 6 use
+
+    ./misc/setupES6Indeces.sh
+
 The index name as well as the Elasticsearch connection parameters have to be reflected in */etc/ews/peba.cfg*.
 
 **Adding users:**
