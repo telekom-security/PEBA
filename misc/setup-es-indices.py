@@ -1,4 +1,6 @@
 from elasticsearch import Elasticsearch
+import json
+
 
 host = "127.0.0.1"
 port = 9200
@@ -7,6 +9,14 @@ indexCve= "ewscve"
 indexPackets = "packets"
 
 es = Elasticsearch([{'host': host, 'port': 9200}])
+
+def getTargetIds(jsonData):
+    data = json.loads(jsonData)
+    if 'error' in data:
+        return "fail"
+    if 'data' not in data['to']:
+        return "success"
+
 
 settings = {
     "settings": {
@@ -46,9 +56,9 @@ settings = {
 
 # create index
 res = es.indices.create(index=indexAlerts, ignore=400, body=settings)
-print("Result: " + res)
+print("Result for Alert mapping")
+print(res)
 
-print("Index for Alerts successful?:" + str(res['acknowledged']))
 
 
 
@@ -91,9 +101,10 @@ settings2 = {
 
 # create index for cve
 res = es.indices.create(index=indexCve, ignore=400, body=settings2)
-print("Result: " + res)
+print("Result for CVE mapping")
+print(res)
 
-print("Index for CVEs successful?:" + str(res['acknowledged']))
+#print("Index for CVEs successful?:" + str(res['acknowledged']))
 
 
 settingsPackets = {
@@ -118,7 +129,6 @@ settingsPackets = {
 
 # create index for cve
 res = es.indices.create(index=indexPackets, ignore=400, body=settingsPackets)
-print("Result: " + res)
-
-print("Index for Packets successful?:" + str(res['acknowledged']))
+print("Result for Packet mapping")
+print(res)
 
