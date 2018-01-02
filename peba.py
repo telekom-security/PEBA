@@ -812,11 +812,12 @@ def formatBadIP(iplist, outformat):
             sources = ET.SubElement(ewssimpleinfo, 'Sources')
 
             for ip in iplist['buckets']:
-                source = ET.SubElement(sources, 'Source')
-                address = ET.SubElement(source, 'Address')
-                address.text = ip['key']
-                counter = ET.SubElement(source, 'Count')
-                counter.text = str(ip['doc_count'])
+                if ipaddress.ip_address(ip['key']).is_global:
+                    source = ET.SubElement(sources, 'Source')
+                    address = ET.SubElement(source, 'Address')
+                    address.text = ip['key']
+                    counter = ET.SubElement(source, 'Count')
+                    counter.text = str(ip['doc_count'])
 
 
             prettify(ewssimpleinfo)
@@ -831,10 +832,11 @@ def formatBadIP(iplist, outformat):
         if iplist:
             iplistjson=[]
             for ip in iplist['buckets']:
-                iplistjson.append({
-                    "ip" : ip['key'],
-                    "count" : ip['doc_count']
-                })
+                if ipaddress.ip_address(ip['key']).is_global:
+                    iplistjson.append({
+                        "ip" : ip['key'],
+                        "count" : ip['doc_count']
+                    })
             return iplistjson
         else:
             return app.config['DEFAULTRESPONSE']
