@@ -84,7 +84,7 @@ def handleAlerts(tree, tenant, es, cache):
         # default values
         parsingError = ""
         skip = False
-        peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime, externalIP, internalIP, hostname, sourceTransport = "Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", "", "1.1.1.1", "1.1.1.1", "undefined", ""
+        packetdata, peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime, externalIP, internalIP, hostname, sourceTransport = "","Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", "", "1.1.1.1", "1.1.1.1", "undefined", ""
         for child in node:
             childName = child.tag
 
@@ -151,6 +151,9 @@ def handleAlerts(tree, tenant, es, cache):
                 if (meaning == "username"):
                     username = child.text
 
+                if (meaning == "packetdata"):
+                    packetdata = child.text
+
                 if (meaning == "password"):
                     password = child.text
 
@@ -214,7 +217,7 @@ def handleAlerts(tree, tenant, es, cache):
                                               tenant, url,
                                               analyzerID, peerType, username, password, loginStatus, version, starttime,
                                               endtime, sourcePort, destinationPort, externalIP, internalIP, hostname,
-                                              sourceTransport, app.config['DEVMODE'], es, cache)
+                                              sourceTransport, app.config['DEVMODE'], es, cache, packetdata)
                 url = "(" + vulnid + ") " + url
 
             #
@@ -222,7 +225,7 @@ def handleAlerts(tree, tenant, es, cache):
             #
             correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
                                           analyzerID, peerType, username, password, loginStatus, version, starttime,
-                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, app.config['DEVMODE'], es, cache)
+                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, app.config['DEVMODE'], es, cache, packetdata)
             counter = counter + 1 - correction
 
             #
