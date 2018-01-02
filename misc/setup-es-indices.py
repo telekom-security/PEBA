@@ -104,7 +104,6 @@ res = es.indices.create(index=indexCve, ignore=400, body=settings2)
 print("Result for CVE mapping")
 print(res)
 
-#print("Index for CVEs successful?:" + str(res['acknowledged']))
 
 
 settingsPackets = {
