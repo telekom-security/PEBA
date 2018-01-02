@@ -164,6 +164,31 @@ def putIP(ip, esindex, country, countryname, asn, debug, es):
         return 1
 
 
+def handlePacketData(packetdata, id, createTime, debug, es):
+
+    m = hashlib.md5()
+    m.update(packetdata.encode('utf-8'))
+    packetHash = m.hexdigest()
+
+    packet = {
+        "data" : packetdata,
+        "createTime" : createTime,
+        "hash" : packetHash,
+    }
+
+    if debug:
+        app.logger.debug("Not sending out " + "Packet" + ": " + str(packet))
+        return 0
+
+    try:
+        res = es.index(index="packets", doc_type="Packet", id=packetHash, body=packet)
+        return 0
+
+    except:
+        app.logger.error("Error persisting alert in ES: " + str(packet))
+        return 1
+
+
 def putVuln(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache, packetdata):
 
     if cveExisting(vulnid, index, es, debug):
@@ -185,6 +210,9 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
     (latDest, longDest, countryTarget, asnTarget, countryTargetName) = getGeoIP(destinationip, cache)
 
     currentTime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+    if (len(str(packetdata)) > 100):
+        handlePacketData(packetdata, m.hexdigest, createTime, debug, es)
 
 
     alert = {
