@@ -170,6 +170,11 @@ def handlePacketData(packetdata, id, createTime, debug, es):
     m.update(packetdata.encode('utf-8'))
     packetHash = m.hexdigest()
 
+
+    if (packetExisting(packetHash, "packets", es, debug)):
+        print("Packet with similar hash already existing....")
+        return 0;
+
     packet = {
         "data" : packetdata,
         "createTime" : createTime,
@@ -212,8 +217,8 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
     currentTime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
     if (len(str(packetdata)) > 100):
-        handlePacketData(packetdata, m.hexdigest, createTime, debug, es)
-
+        if ("honeytrap" in peerType):
+            handlePacketData(packetdata, m.hexdigest, createTime, debug, es)
 
     alert = {
         "country": country,
@@ -297,5 +302,39 @@ def cveExisting(cve, index, es, debug):
 
     return False
 
+def packetExisting(hash, index, es, debug):
+    """ check if cve already exists in index """
+
+    if debug:
+        app.logger.debug("Pretending as if %s was existing in index." % str(hash))
+        return True
+
+    query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "query_string": {
+                            "default_field": "hash",
+                            "query": hash
+                        }
+                    }
+                ],
+                "must_not": [],
+                "should": []
+            }
+        },
+        "from": 0,
+        "size": 10,
+        "sort": [],
+        "aggs": {}
+    }
+
+    res = es.search(index=index, doc_type="Packet", body=query)
+
+    for hit in res['hits']['hits']:
+        return True
+
+    return False
 
 
