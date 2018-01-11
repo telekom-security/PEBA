@@ -126,7 +126,7 @@ settingsPackets = {
     }
 }
 
-# create index for cve
+# create index for packets
 res = es.indices.create(index=indexPackets, ignore=400, body=settingsPackets)
 print("Result for Packet mapping")
 print(res)

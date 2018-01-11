@@ -84,7 +84,7 @@ def handleAlerts(tree, tenant, es, cache):
         # default values
         parsingError = ""
         skip = False
-        packetdata, peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime, externalIP, internalIP, hostname, sourceTransport = "","Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", "", "1.1.1.1", "1.1.1.1", "undefined", ""
+        additionalData, packetdata, peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime, externalIP, internalIP, hostname, sourceTransport = "", "","Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", "", "1.1.1.1", "1.1.1.1", "undefined", ""
         for child in node:
             childName = child.tag
 
@@ -140,19 +140,25 @@ def handleAlerts(tree, tenant, es, cache):
                     else:
                         parsingError += "| url = NONE "
 
+                if (type == "binary"):
+                    if child.text is not None:
+                        packetdata = child.text
+                    else:
+                        parsingError += "| packetdata = NONE "
+
                 # if peertype could not be identified by the identifier of the honeypot, try to use the
                 # description field
                 if (type == "description" and peerType == ""):
                     peerType = getPeerType(child.text)
 
             if (childName == "AdditionalData"):
+
+                additionalData = {}
+
                 meaning = child.attrib.get('meaning')
 
                 if (meaning == "username"):
                     username = child.text
-
-                if (meaning == "packetdata"):
-                    packetdata = child.text
 
                 if (meaning == "password"):
                     password = child.text
@@ -199,7 +205,14 @@ def handleAlerts(tree, tenant, es, cache):
                     if child.text is not None:
                         hostname = child.text
 
-                # Todo: add addidtional data from ewsposter fields as json structure.
+                # Todo: add additional data from ewsposter fields as json structure.
+
+
+                if (meaning == "payload_md5"):
+                    if child.text is not None:
+                        additionalData["payload_md5"] = child.text
+
+
 
 
         if parsingError is not "":
@@ -217,7 +230,7 @@ def handleAlerts(tree, tenant, es, cache):
                                               tenant, url,
                                               analyzerID, peerType, username, password, loginStatus, version, starttime,
                                               endtime, sourcePort, destinationPort, externalIP, internalIP, hostname,
-                                              sourceTransport, app.config['DEVMODE'], es, cache, packetdata)
+                                              sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata)
                 url = "(" + vulnid + ") " + url
 
             #
@@ -225,7 +238,7 @@ def handleAlerts(tree, tenant, es, cache):
             #
             correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
                                           analyzerID, peerType, username, password, loginStatus, version, starttime,
-                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, app.config['DEVMODE'], es, cache, packetdata)
+                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata)
             counter = counter + 1 - correction
 
             #
