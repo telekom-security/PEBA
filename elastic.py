@@ -166,7 +166,7 @@ def putIP(ip, esindex, country, countryname, asn, debug, es):
         return 1
 
 
-def handlePacketData(packetdata, id, createTime, debug, es):
+def handlePacketData(packetdata, id, createTime, debug, es, sourceip):
     m = hashlib.md5()
     m.update(base64.decodebytes(packetdata.encode('utf-8')))
     packetHash = m.hexdigest()
@@ -179,6 +179,7 @@ def handlePacketData(packetdata, id, createTime, debug, es):
         "data" : packetdata,
         "createTime" : createTime,
         "hash" : packetHash,
+        "initialIP" : sourceip
     }
 
     if debug:
@@ -218,7 +219,7 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
 
     if (len(str(packetdata)) > 10):
         if ("honeytrap" in peerType or "dionaea" in peerType):
-            handlePacketData(packetdata, m.hexdigest(), createTime, debug, es)
+            handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip)
 
     alert = {
         "country": country,
