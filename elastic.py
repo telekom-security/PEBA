@@ -166,19 +166,52 @@ def putIP(ip, esindex, country, countryname, asn, debug, es):
         return 1
 
 
+
+def getFuzzyHash(packetdata, packetHash):
+
+    packetdata = str(base64.b64decode(packetdata))
+
+    if ('Host:' in packetdata):
+
+        start = packetdata.find("Host:") + 5
+        end = packetdata.find('\\', start)
+
+        if end != -1:
+            cleanedData = packetdata[0:start] + packetdata[end:len(packetdata)]
+            cleanedData = str(cleanedData)
+
+            m = hashlib.sha256()
+            m.update(cleanedData.lower().encode('utf-8'))
+
+            return m.hexdigest()
+
+    return packetHash
+
+
+
 def handlePacketData(packetdata, id, createTime, debug, es, sourceip):
     m = hashlib.md5()
     m.update(base64.decodebytes(packetdata.encode('utf-8')))
     packetHash = m.hexdigest()
 
-    if (packetExisting(packetHash, "packets", es, debug)):
+    if (packetExisting(packetHash, "packets", es, debug, "hash")):
         app.logger.debug("Packet with same hash %s already existing."  % packetHash)
         return 0;
+
+    hashfuzzyhttp = getFuzzyHash(packetdata, packetHash)
+
+    if (packetHash == hashfuzzyhttp):
+        dummy = ""
+    else:
+        if (packetExisting(hashfuzzyhttp, "packets", es, debug, "hashfuzzyhttp")):
+            app.logger.debug("Packet with same hash %s already existing."  % packetHash)
+            return 0;
 
     packet = {
         "data" : packetdata,
         "createTime" : createTime,
         "hash" : packetHash,
+        "hashfuzzyhttp": hashfuzzyhttp,
         "initialIP" : sourceip
     }
 
@@ -303,7 +336,8 @@ def cveExisting(cve, index, es, debug):
 
     return False
 
-def packetExisting(hash, index, es, debug):
+
+def packetExisting(hash, index, es, debug, hashType):
     """ check if packet already exists in index """
 
     if debug:
@@ -316,7 +350,7 @@ def packetExisting(hash, index, es, debug):
                 "must": [
                     {
                         "query_string": {
-                            "default_field": "hash",
+                            "default_field": hashType,
                             "query": hash
                         }
                     }
