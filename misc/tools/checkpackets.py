@@ -83,4 +83,3 @@ print(" ")
 print("Fuzzy results for HTTP requests")
 print("Uniques (fuzzy): ", uniquesfuzzy)
 print("Duplicates (fuzzy): ", duplicatesfuzzy)
-
