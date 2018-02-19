@@ -1,0 +1,21 @@
+<EWS-SimpleMessage version="2.0">
+    <Authentication>
+        <username>community-01-user</username>
+        <token>foth{a5maiCee8fineu7</token>
+    </Authentication>
+
+      <Alert>
+        <Analyzer id="honeytrap"/>
+        <CreateTime tz="+0200">2018-01-21 19:12:22</CreateTime>
+        <Source category="ipv4" port="200" protocol="tcp">8.8.8.8</Source>
+        <Target category="ipv4" port="80" protocol="tcp">8.8.8.8</Target>
+        <Request type="url">/cgi-bin/.br/style.css3/444</Request>
+        <Request type="binary">RHVtbXlcclxuDQpIb3N0OiBNeUhvc3RcclxuDQpMZW5ndGg6IDEwMFxyXG4NCkNvbnRlbnQ6IERvIHlvdSByZWFsbHkgd2FudCB0byB0ZXN0IHRoaXMgP1xyXG4NCkFBQUhKS2tra2tra2tra2sNCmFqeGhrc2praGFhamtoYWtqc2hzYWFzamtoc2prc2Foc2Fqa2hzYWtzYWhqYXNoYXNramhzYWprc2hha2Fzag0KYXNqc2Foc2Fqa3Noa2pzYWhzYWprYXNhYXNqa2hzamtzYWhzYWpraHNha3NhaGphc2hhc2tqaHNhamtzaGFrYXNqDQphc2hqc2Foc2pha3Noa2phc3NhYXNqa2hzamtzYWhzYWpraHNha3NhaGphc2hhc2tqaHNhamtzaGFrYXNqDQpzYWFzamtoc2prc2Foc2Fqa2hzYWtzYWhqYXNoYXNramhzYWprc2hha2FzanNhYXNqa2hzamtzYWhzYWpraHNha3NhaGphc2hhc2tqaHNhamtzaGFrYXNqDQpzYWFzamtoc2prc2Foc2Fqa2hzYWtzYWhqYXNoYXNramhzYWprc2hha2FzanNhYXNqa2hzamtzYWhzYWpraHNha3NhaGphc2hhc2tqaHNhamtzaGFrYXNqDQpzYWFzamtoc2prc2Foc2Fqa2hzYWtzYWhqYXNoYXNramhzYWprc2hha2FzanNhYXNqa2hzamtzYWhzYWpraHNha3NhaGphc2hhc2tqaHNhamtzaGFrYXNqDQpzYWFzamtoc2prc2Foc2Fqa2hzYWtzYWhqYXNoYXNramhzYWprc2hha2FzanNhYXNqa2hzamtzYWhzYWpraHNha3NhaGphc2hhc2tqaHNhamtzaGFrYXNqDQpzYWFzamtoc2prc2Foc2Fqa2hzYWtzYWhqYXNoYXNramhzYWprc2hha2FzanNhYXNqa2hzamtzYWhzYWpraHNha3NhaGphc2hhc2tqaHNhamtzaGFrYXNq</Request>
+        <Request type="description">honeytrap</Request>
+        <AdditionalData meaning="host" type="string">www.webe.de</AdditionalData>
+        <AdditionalData meaning="sqliteid" type="integer">3688</AdditionalData>
+          <AdditionalData meaning="cve_id">CVE-2017-999</AdditionalData>
+    </Alert>
+
+
+</EWS-SimpleMessage>
