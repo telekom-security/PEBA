@@ -2,6 +2,8 @@ from flask import current_app as app
 import pygeoip, datetime
 import hashlib
 import ipaddress
+import base64
+import json
 
 
 from flask_elasticsearch import FlaskElasticsearch
@@ -164,19 +166,81 @@ def putIP(ip, esindex, country, countryname, asn, debug, es):
         return 1
 
 
-def putVuln(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache):
+
+def getFuzzyHash(packetdata, packetHash):
+
+    packetdata = str(base64.b64decode(packetdata))
+
+    if ('Host:' in packetdata):
+
+        start = packetdata.find("Host:") + 5
+        end = packetdata.find('\\', start)
+
+        if end != -1:
+            cleanedData = packetdata[0:start] + packetdata[end:len(packetdata)]
+            cleanedData = str(cleanedData)
+
+            m = hashlib.sha256()
+            m.update(cleanedData.lower().encode('utf-8'))
+
+            return m.hexdigest()
+
+    return packetHash
+
+
+
+def handlePacketData(packetdata, id, createTime, debug, es, sourceip):
+    m = hashlib.md5()
+    m.update(base64.decodebytes(packetdata.encode('utf-8')))
+    packetHash = m.hexdigest()
+
+    if (packetExisting(packetHash, "packets", es, debug, "hash")):
+        app.logger.debug("Packet with same hash %s already existing."  % packetHash)
+        return 0;
+
+    hashfuzzyhttp = getFuzzyHash(packetdata, packetHash)
+
+    if (packetHash == hashfuzzyhttp):
+        dummy = ""
+    else:
+        if (packetExisting(hashfuzzyhttp, "packets", es, debug, "hashfuzzyhttp")):
+            app.logger.debug("Packet with same hash %s already existing."  % packetHash)
+            return 0;
+
+    packet = {
+        "data" : packetdata,
+        "createTime" : createTime,
+        "hash" : packetHash,
+        "hashfuzzyhttp": hashfuzzyhttp,
+        "initialIP" : sourceip
+    }
+
+    if debug:
+        app.logger.debug("Not sending out " + "Packet" + ": " + str(packet))
+        return 0
+
+    try:
+        res = es.index(index="packets", doc_type="Packet", id=id, body=packet)
+        return 0
+
+    except:
+        app.logger.error("Error persisting packet in ES: " + str(packet))
+        return 1
+
+
+def putVuln(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata):
 
     if cveExisting(vulnid, index, es, debug):
-        return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache, "CVE")
+        return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "CVE", packetdata)
 
     return 1
 
 
-def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache):
-    return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache, "Alert")
+def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata):
+    return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "Alert", packetdata)
 
 
-def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, debug, es, cache, docType):
+def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, docType, packetdata):
     """stores an alarm in the index"""
     m = hashlib.md5()
     m.update((createTime + sourceip + destinationip + url + analyzerID + docType).encode())
@@ -186,6 +250,9 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
 
     currentTime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
+    if (len(str(packetdata)) > 10):
+        if ("honeytrap" in peerType or "dionaea" in peerType):
+            handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip)
 
     alert = {
         "country": country,
@@ -202,7 +269,7 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
         "locationDestination": str(latDest) + " , " + str(longDest),
         "sourceEntryIp": sourceip,
         "sourceEntryPort": sourcePort,
-        "additionalData": "",
+        "additionalData": json.dumps(additionalData),
         "targetEntryIp": destinationip,
         "targetEntryPort": destinationPort,
         "targetCountry": countryTarget,
@@ -269,5 +336,40 @@ def cveExisting(cve, index, es, debug):
 
     return False
 
+
+def packetExisting(hash, index, es, debug, hashType):
+    """ check if packet already exists in index """
+
+    if debug:
+        app.logger.debug("Pretending as if %s was existing in index." % str(hash))
+        return True
+
+    query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "query_string": {
+                            "default_field": hashType,
+                            "query": hash
+                        }
+                    }
+                ],
+                "must_not": [],
+                "should": []
+            }
+        },
+        "from": 0,
+        "size": 10,
+        "sort": [],
+        "aggs": {}
+    }
+
+    res = es.search(index=index, doc_type="Packet", body=query)
+
+    for hit in res['hits']['hits']:
+        return True
+
+    return False
 
 

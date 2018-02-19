@@ -4,6 +4,7 @@ host="127.0.0.1"
 port=9200
 indexAlerts="ews2017.1"
 indexCve="ewscve"
+indexPackets="packets"
 
 #
 # Create alerts index
@@ -93,3 +94,30 @@ curl -XPUT "http://"$host":"$port"/"$indexCve"?pretty" -H 'Content-Type: applica
 }
 '
 
+#
+# Create packet index
+#
+
+curl -XPUT "http://"$host":"$port"/"$indexPackets"?pretty" -H 'Content-Type: application/json' -d'
+{
+    "settings" : {
+        "index" : {
+            "number_of_shards" : 5,
+            "number_of_replicas" : 1
+        }
+    },
+    "mappings": {
+        "Packet": {
+            "properties":  {
+                    "createTime": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    },
+                    "initialIP": {
+                        "type": "ip"
+                    }
+            }
+        }
+    }
+}
+'
