@@ -230,10 +230,11 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip):
 
 def putVuln(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata):
 
-    if cveExisting(vulnid, index, es, debug):
+    if (cveExisting(vulnid, index, es, debug)):
+        return 1
+    else:
         return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "CVE", packetdata)
-
-    return 1
+        return 0
 
 
 def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata):
@@ -250,9 +251,17 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
 
     currentTime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
-    if (len(str(packetdata)) > 10):
-        if ("honeytrap" in peerType or "dionaea" in peerType):
-            handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip)
+
+    if (len(str(packetdata)) > 1024):
+
+        if (len(str(packetdata)) <= 10240):
+
+            if ("honeytrap" in peerType or "dionaea" in peerType):
+
+                if ("ewscve" not in index):
+                    handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip)
+
+
 
     alert = {
         "country": country,
@@ -304,6 +313,7 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
 def cveExisting(cve, index, es, debug):
     """ check if cve already exists in index """
 
+
     if debug:
         app.logger.debug("Pretending as if %s was existing in index." % str(cve))
         return True
@@ -333,6 +343,7 @@ def cveExisting(cve, index, es, debug):
 
     for hit in res['hits']['hits']:
         return True
+
 
     return False
 
