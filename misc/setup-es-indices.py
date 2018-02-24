@@ -1,12 +1,18 @@
 from elasticsearch import Elasticsearch
-import json
+import json, sys
+import time
 
 
 host = "127.0.0.1"
 port = 9200
-indexAlerts = "ews2017.1"
+indexAlertAlias="ews2017.1"
 indexCve= "ewscve"
 indexPackets = "packets"
+
+
+###
+
+indexAlerts = "ews-"+(time.strftime("%Y.%m.%d"))+"-1"
 
 es = Elasticsearch([{'host': host, 'port': 9200}])
 
@@ -22,6 +28,9 @@ settings = {
     "settings": {
         "number_of_shards": 5,
         "number_of_replicas": 1
+    },
+    "aliases": {
+        indexAlertAlias: {}
     },
     "mappings": {
         "Alert": {

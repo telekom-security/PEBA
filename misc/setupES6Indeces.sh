@@ -2,19 +2,24 @@
 
 host="127.0.0.1"
 port=9200
-indexAlerts="ews2017.1"
+
+indexAlertsAlias="ews2017.1"
 indexCve="ewscve"
 indexPackets="packets"
 
 #
 # Create alerts index
 #
+indexAlerts="ews-"$(date "+%Y.%m.%d")"-1"
 
 curl -XPUT "http://"$host":"$port"/"$indexAlerts"?pretty" -H 'Content-Type: application/json' -d'
 {
     "settings" : {
         "number_of_shards" : 5,
         "number_of_replicas" : 1
+    },
+    "aliases": {
+        "'$indexAlertsAlias'": {}
     },
     "mappings": {
         "Alert": {
