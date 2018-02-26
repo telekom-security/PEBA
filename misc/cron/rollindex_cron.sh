@@ -6,10 +6,14 @@
 host="127.0.0.1"
 port="9200"
 
+# in case we want to manually define the index name
+# curl -XPOST $host:$port'/ews2017.1/_rollover/%3Cews-%7Bnow%2Fd%7D-1%3E?pretty' -H 'Content-Type: application/json' -d'
+
+
 curl -XPOST $host:$port'/ews2017.1/_rollover?pretty' -H 'Content-Type: application/json' -d'
 {
   "conditions": {
-    "max_age":   "2m"
+    "max_age":   "1d"
   },
   "settings": {
         "number_of_shards": 5,

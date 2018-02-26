@@ -10,9 +10,8 @@ indexPackets="packets"
 #
 # Create alerts index
 #
-indexAlerts="ews-"$(date "+%Y.%m.%d")"-1"
 
-curl -XPUT "http://"$host":"$port"/"$indexAlerts"?pretty" -H 'Content-Type: application/json' -d'
+curl -XPUT "http://"$host":"$port"/%3Cews-%7Bnow%2Fd%7D-1%3E?pretty" -H 'Content-Type: application/json' -d'
 {
     "settings" : {
         "number_of_shards" : 5,

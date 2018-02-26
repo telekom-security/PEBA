@@ -3,10 +3,14 @@
 pebahost="127.0.0.1"
 pebaport="9922"
 
+
 while true
     do
         currenttime=$(date "+%Y-%m-%d %H:%M:%S")
         echo "sending request " $currenttime
+	lo=$(( $RANDOM % 255 ));
+	lo2=$(( $RANDOM % 255 ));
+
 
         request="""
         <EWS-SimpleMessage version=\"2.0\">
@@ -17,9 +21,9 @@ while true
 
               <Alert>
                 <Analyzer id=\"honeytrap\"/>
-                <CreateTime tz=\"+0200\">$currenttime</CreateTime>
-                <Source category=\"ipv4\" port=\"200\" protocol=\"tcp\">192.168.8.1</Source>
-                <Target category=\"ipv4\" port=\"80\" protocol=\"tcp\">1.2.3.4</Target>
+                <CreateTime tz=\"+0000\">$currenttime</CreateTime>
+                <Source category=\"ipv4\" port=\"200\" protocol=\"tcp\">1.2.3.$lo</Source>
+                <Target category=\"ipv4\" port=\"80\" protocol=\"tcp\">1.2.3.$lo2</Target>
                 <Request type=\"url\">/cgi-bin/.br/style.css3/444</Request>
                 <Request type=\"raw\">R0VUIC9jZ2ktYmluLy5ici9zdHlsZS5jc3MgSFRUUC8xLjENCkFjY2VwdDogdGV4dC9jc3MsKi8q
                     O3E9MC4xLCovKg0KQWNjZXB0LUVuY29kaW5nOiBnemlwLGRlZmxhdGUNCkNvbm5lY3Rpb246IEtl

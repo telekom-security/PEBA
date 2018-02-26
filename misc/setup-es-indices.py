@@ -12,8 +12,6 @@ indexPackets = "packets"
 
 ###
 
-indexAlerts = "ews-"+(time.strftime("%Y.%m.%d"))+"-1"
-
 es = Elasticsearch([{'host': host, 'port': 9200}])
 
 def getTargetIds(jsonData):
@@ -64,7 +62,7 @@ settings = {
 }
 
 # create index
-res = es.indices.create(index=indexAlerts, ignore=400, body=settings)
+res = es.indices.create(index="<ews-{now/d}-1>", ignore=400, body=settings)
 print("Result for Alert mapping")
 print(res)
 
