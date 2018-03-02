@@ -1,0 +1,35 @@
+
+
+---
+- name: Copy peba-cachefiller script to master node
+  copy: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - { src: './../../../../misc/fillcache.py', dest: '/opt/peba/fillcache.py' }
+
+- name: Install peba-cachefiller.service Unitfile
+  template:
+     src: './../../../../etc/systemd/system/peba-cachefiller.service'
+     dest: '/etc/systemd/system/peba-cachefiller.service'
+     owner: root
+     group: root
+     mode: 0644
+
+
+- name: Reload daemon
+  shell: "systemctl daemon-reload"
+
+- name: Change Ownership to Peba
+  file:
+     path: /opt/peba
+     owner: peba
+     group: peba
+     recurse: yes
+
+- name: Start peba-cachefiller service
+  systemd:
+     name: peba-cachefiller.service
+     enabled: yes
+     state: restarted
+     masked: no
+     daemon_reload: yes
+

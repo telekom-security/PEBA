@@ -1,0 +1,21 @@
+[Unit]
+Description=Peba-CacheFiller
+After=syslog.target
+
+[Service]
+Type=simple
+User=peba
+Group=peba
+RuntimeDirectory=peba
+WorkingDirectory=/opt/peba
+ExecStart=/usr/bin/python3 /opt/peba/fillcache.py
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+SyslogIdentifier=peba-fillcache
+StandardOutput=syslog
+StandardError=syslog
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -15,3 +15,16 @@
 
   environment: "{{proxy_env}}"
 
+- hosts: ews-test-master
+  remote_user: root
+
+  vars:
+    proxy_env:
+        http_proxy: "{{ http_proxy }}"
+        https_proxy: "{{ https_proxy }}"
+
+  roles:
+    - peba-master
+
+  environment: "{{proxy_env}}"
+
