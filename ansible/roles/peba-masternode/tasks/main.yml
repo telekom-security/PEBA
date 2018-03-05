@@ -1,12 +1,28 @@
 
 
 ---
-- name: Copy peba-cachefiller script to master node
+- name: "Create cron dir for cron jobs"
+  file:
+     path: '/opt/peba/cron'
+     owner: peba
+     group: peba
+     mode: 0755
+     state: directory
+
+- name: "Create misc dir for misc scripts"
+  file:
+     path: '/opt/peba/misc'
+     owner: peba
+     group: peba
+     mode: 0755
+     state: directory
+
+- name: "Copy peba-cachefiller script to master node"
   copy: src={{ item.src }} dest={{ item.dest }}
   with_items:
-    - { src: './../../../../misc/fillcache.py', dest: '/opt/peba/fillcache.py' }
+    - { src: './../../../../misc/fillcache.py', dest: '/opt/peba/misc/fillcache.py' }
 
-- name: Install peba-cachefiller.service Unitfile
+- name: "Install peba-cachefiller.service Unitfile"
   template:
      src: './../../../../etc/systemd/system/peba-cachefiller.service'
      dest: '/etc/systemd/system/peba-cachefiller.service'
@@ -15,7 +31,7 @@
      mode: 0644
 
 
-- name: Reload daemon
+- name: "Reload daemon"
   shell: "systemctl daemon-reload"
 
 - name: Change Ownership to Peba
@@ -25,7 +41,7 @@
      group: peba
      recurse: yes
 
-- name: Start peba-cachefiller service
+- name: "Start peba-cachefiller service"
   systemd:
      name: peba-cachefiller.service
      enabled: yes
@@ -34,10 +50,10 @@
      daemon_reload: yes
 
 
-- name: Copy rollindex_cron.sh to master node
+- name: "Copy rollindex_cron.sh to master node"
   template:
-      src: ../roles/peba-masternode/templates/rollindex_cron.sh
-      dest: '/opt/peba/rollindex_cron.sh'
+      src: '../roles/peba-masternode/templates/rollindex_cron.sh'
+      dest: '/opt/peba/cron/rollindex_cron.sh'
       owner: peba
       group: peba
       mode: 0544
@@ -53,3 +69,23 @@
     minute: "0"
     hour: "0"
     job: "/opt/peba/rollindex_cron.sh"
+
+- name: "Copy cleanupXdays.sh to master node"
+  template:
+      src: '../roles/peba-masternode/templates/cleanupXdays.sh'
+      dest: '/opt/peba/cron/cleanupXdays.sh'
+      owner: peba
+      group: peba
+      mode: 0544
+
+- name: "Remove old cronjob for daily index cleanup"
+  cron:
+    name: "cleanIndex"
+    state: absent
+
+- name: "Create cronjob for daily index cleanup"
+  cron:
+    name: "cleanIndex"
+    minute: "0"
+    hour: "0"
+    job: "/opt/peba/cron/cleanupXdays.sh"
