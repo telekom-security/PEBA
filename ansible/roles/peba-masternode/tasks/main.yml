@@ -30,11 +30,10 @@
      group: root
      mode: 0644
 
-
 - name: "Reload daemon"
   shell: "systemctl daemon-reload"
 
-- name: Change Ownership to Peba
+- name: "Change Ownership to Peba"
   file:
      path: /opt/peba
      owner: peba
@@ -89,3 +88,14 @@
     minute: "0"
     hour: "0"
     job: "/opt/peba/cron/cleanupXdays.sh"
+
+- name: "Copy setup-es-indices.py to master node"
+  template:
+      src: '../roles/peba-masternode/templates/setup-es-indices.py'
+      dest: '/opt/peba/misc/setup-es-indices.py'
+      owner: peba
+      group: peba
+      mode: 0544
+
+- name: "Setup Elasticsearch indices"
+  command: "/usr/bin/python3 /opt/peba/misc/setup-es-indices.py"

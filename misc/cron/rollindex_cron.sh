@@ -3,6 +3,17 @@
 # let this script run once every 24h to create new daily indices.
 # 0 0 * * * /pathToScript/rollindex_cron.sh
 
+
+##############################################################
+##############################################################
+
+#     NOTE to myself: ALL changes must be reflected in
+#     /ansible/peba-masternode/templates/rollindex_cron.sh
+
+##############################################################
+##############################################################
+
+
 host="127.0.0.1"
 port="9200"
 ewsAlias="ews2017.1"

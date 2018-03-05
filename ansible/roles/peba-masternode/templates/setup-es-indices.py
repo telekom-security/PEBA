@@ -1,27 +1,19 @@
+#!/usr/bin/env python3
+
 from elasticsearch import Elasticsearch
 import json, sys
 import time
 
-
-##############################################################
-##############################################################
-
-#     NOTE to myself: ALL Changes must be reflected in
-#     /ansible/peba-masternode/templates/setup-es-indices.py
-
-##############################################################
-##############################################################
-
-host = "127.0.0.1"
-port = 9200
-indexAlertAlias= "ews2017.1"
-indexCve= "ewscve"
+host = "{{ ELASTIC_IP }}"
+port = {{ ELASTIC_PORT }}
+indexAlertAlias = "{{ ELASTIC_INDEX }}"
+indexCve = "ewscve"
 indexPackets = "packets"
 
 
 ###
 
-es = Elasticsearch([{'host': host, 'port': 9200}])
+es = Elasticsearch([{'host': host, 'port': port}])
 
 def getTargetIds(jsonData):
     data = json.loads(jsonData)
