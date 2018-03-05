@@ -15,7 +15,7 @@
 
   environment: "{{proxy_env}}"
 
-- hosts: ews-deploy-master
+- hosts: ews-deploy-masternode
   remote_user: root
 
   vars:
@@ -24,7 +24,7 @@
         https_proxy: "{{ https_proxy }}"
 
   roles:
-    - peba-master
+    - peba-masternode
 
   environment: "{{proxy_env}}"
 

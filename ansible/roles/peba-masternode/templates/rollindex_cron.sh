@@ -3,15 +3,7 @@
 # let this script run once every 24h to create new daily indices.
 # 0 0 * * * /pathToScript/rollindex_cron.sh
 
-host="127.0.0.1"
-port="9200"
-ewsAlias="ews2017.1"
-
-# in case we want to manually define the index name
-# curl -XPOST $host:$port'/ews2017.1/_rollover/%3Cews-%7Bnow%2Fd%7D-1%3E?pretty' -H 'Content-Type: application/json' -d'
-
-
-curl -XPOST $host:$port/$ewsAlias'/_rollover?pretty' -H 'Content-Type: application/json' -d'
+curl -XPOST {{ ELASTIC_IP }}:{{ ELASTIC_PORT }}/{{ ELASTIC_INDEX }}'/_rollover?pretty' -H 'Content-Type: application/json' -d'
 {
   "conditions": {
     "max_age":   "720m"

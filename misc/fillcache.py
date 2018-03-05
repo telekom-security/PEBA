@@ -18,10 +18,13 @@ from time import sleep
 import threading
 
 caches = []
+
+# Make sure to match the IP to your environment !!!
 es = Elasticsearch(["192.168.1.64"])
 
 
 def init():
+    ''' Make sure to match the memcached IPs/ports to your environment !!! '''
     for i in range(8):
         caches.append([
                     pylibmc.Client(["192.168.1.64:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
@@ -475,6 +478,8 @@ def formatAlertsCountWithType(numberofalerts):
 ########################
 ### string variables
 ########################
+# variables for sicherheitstacho.eu requests
+
 domain = "https://community.sicherheitstacho.eu"
 itemRetrieveAlertsJsonCommunity="/alert/retrieveAlertsJson?ci=1&topx=35"
 itemRetrieveAlertsJson="/alert/retrieveAlertsJson?ci=0&topx=35"

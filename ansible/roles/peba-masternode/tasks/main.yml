@@ -33,3 +33,23 @@
      masked: no
      daemon_reload: yes
 
+
+- name: Copy rollindex_cron.sh to master node
+  template:
+      src: ../roles/peba-masternode/templates/rollindex_cron.sh
+      dest: '/opt/peba/rollindex_cron.sh'
+      owner: peba
+      group: peba
+      mode: 0544
+
+- name: "Remove old cronjob for daily index rotation"
+  cron:
+    name: "rollIndex"
+    state: absent
+
+- name: "Create cronjob for daily index rotation"
+  cron:
+    name: "rollIndex"
+    minute: "0"
+    hour: "0"
+    job: "/opt/peba/rollindex_cron.sh"

@@ -3,6 +3,9 @@
 ########################################################
 
 # Node section -> all ES nodes for PEBA
+# make sure you add your PEBA nodes with the appropriate environment variables
+
+
 [ews-deploy]
 ews01 LOCAL_LISTEN_IP=192.168.1.64 LOCAL_LISTEN_PORT=9922 ELASTIC_PORT=9200 ELASTIC_IP=192.168.1.64 ELASTIC_INDEX=ews2017.1 http_proxy='http://192.168.1.194:3128/' https_proxy='https://192.168.1.194:3128/' USE_SLACK=False SLACK_TOKEN=abc MEMCACHE_IP=192.168.1.64 MEMCACHE_PORT=11211
 ews02 LOCAL_LISTEN_IP=192.168.1.173 LOCAL_LISTEN_PORT=9922 ELASTIC_PORT=9200 ELASTIC_IP=192.168.1.173 ELASTIC_INDEX=ews2017.1 http_proxy='http://192.168.1.194:3128/' https_proxy='https://192.168.1.194:3128/' USE_SLACK=False SLACK_TOKEN=abc MEMCACHE_IP=192.168.1.173 MEMCACHE_PORT=11211
@@ -11,19 +14,24 @@ ews04 LOCAL_LISTEN_IP=192.168.1.87 LOCAL_LISTEN_PORT=9922 ELASTIC_PORT=9200 ELAS
 ews05 LOCAL_LISTEN_IP=192.168.1.152 LOCAL_LISTEN_PORT=9922 ELASTIC_PORT=9200 ELASTIC_IP=192.168.1.152 ELASTIC_INDEX=ews2017.1 http_proxy='http://192.168.1.194:3128/' https_proxy='https://192.168.1.194:3128/' USE_SLACK=False SLACK_TOKEN=abc MEMCACHE_IP=192.168.1.152 MEMCACHE_PORT=11211
 ews06 LOCAL_LISTEN_IP=192.168.1.213 LOCAL_LISTEN_PORT=9922 ELASTIC_PORT=9200 ELASTIC_IP=192.168.1.213 ELASTIC_INDEX=ews2017.1 http_proxy='http://192.168.1.194:3128/' https_proxy='https://192.168.1.194:3128/' USE_SLACK=False SLACK_TOKEN=abc MEMCACHE_IP=192.168.1.213 MEMCACHE_PORT=11211
 
-# Master Node section -> Only one "Master Node", install service used for pre-filling caches.
-[ews-deploy-master]
-ews01
+# Master Node section -> Only one "Master Node", install service used for pre-filling caches and cron jobs
+# make sure you add one MASTERNODE to PEBA with the appropriate environment variables
 
+[ews-deploy-masternode]
+ews01 LOCAL_LISTEN_IP=192.168.1.64 LOCAL_LISTEN_PORT=9922 ELASTIC_PORT=9200 ELASTIC_IP=192.168.1.64 ELASTIC_INDEX=ews2017.1 http_proxy='http://192.168.1.194:3128/' https_proxy='https://192.168.1.194:3128/' USE_SLACK=False SLACK_TOKEN=abc MEMCACHE_IP=192.168.1.64 MEMCACHE_PORT=11211
 
 ##################################################
 ############### TEST SYSTEMS #####################
 ##################################################
 
 # Node section -> all ES nodes for PEBA
+# make sure you add your PEBA nodes with the appropriate environment variables
+
 [ews-test]
 172.16.23.220 LOCAL_LISTEN_IP=172.16.23.220 LOCAL_LISTEN_PORT=9922 ELASTIC_PORT=9200 ELASTIC_IP=172.16.23.220 ELASTIC_INDEX=ews2017.1 http_proxy='' https_proxy='' USE_SLACK=False SLACK_TOKEN=abc MEMCACHE_IP=127.0.0.1 MEMCACHE_PORT=11211
 
-# Master Node section -> Only one "Master Node", install service used for pre-filling caches.
-[ews-test-master]
-172.16.23.220
+# Master Node section -> Only one "Master Node", install service used for pre-filling caches and cron jobs
+# make sure you add one MASTERNODE to PEBA with the appropriate environment variables
+
+[ews-test-masternode]
+172.16.23.220 LOCAL_LISTEN_IP=172.16.23.220 LOCAL_LISTEN_PORT=9922 ELASTIC_PORT=9200 ELASTIC_IP=172.16.23.220 ELASTIC_INDEX=ews2017.1 http_proxy='' https_proxy='' USE_SLACK=False SLACK_TOKEN=abc MEMCACHE_IP=127.0.0.1 MEMCACHE_PORT=11211
