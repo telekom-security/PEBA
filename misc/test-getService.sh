@@ -61,7 +61,7 @@ echo ""
 sleep 3
 
 echo "***** QUERYSINGLEIP *****"
-curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/alert/querySingleIP?ip=103.253.211.151&$DOM
+curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND"/alert/querySingleIP?ip=1.2.3.4&"$DOM
 echo ""
 echo "***** END QUERYSINGLEIP *****"
 echo ""
