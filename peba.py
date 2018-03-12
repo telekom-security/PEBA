@@ -257,7 +257,10 @@ def queryBadIPs(badIpTimespan, clientDomain, relevantIndex):
           },
           "size": 0
         })
-        return res["aggregations"]["ips"]
+        if 'aggregations' in res:
+            return res["aggregations"]["ips"]
+        else:
+            return False
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
 
@@ -551,7 +554,10 @@ def queryAlertStats(clientDomain, relevantIndex):
           },
           "size": 0
         })
-        return res['aggregations']['communityfilter']['ctr']['buckets']
+        if 'aggregations' in res:
+            return res['aggregations']['communityfilter']['ctr']['buckets']
+        else:
+            return False
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' % err)
 
@@ -985,8 +991,8 @@ def formatAlertsCount(numberofalerts, outformat):
         return ({'AlertCount': numberofalerts})
 
 def formatAlertsCountWithType(numberofalerts):
-    if numberofalerts:
-        jsondata1 = {}
+    jsondata1 = {}
+    if numberofalerts and 'aggregations' in numberofalerts:
         for alertTypes in numberofalerts['aggregations']['communityfilter']['honeypotTypes']['buckets']:
             jsondata1[alertTypes['key']] = alertTypes['doc_count']
 
@@ -996,7 +1002,7 @@ def formatAlertsCountWithType(numberofalerts):
         }
         return (jsondata2)
     else:
-        return app.config['DEFAULTRESPONSE']
+        return jsondata1
 
 def formatDatasetAlertsPerMonth(datasetAlertsPerMonth):
     if datasetAlertsPerMonth:
@@ -1022,6 +1028,7 @@ def formatDatasetAlertTypesPerMonth(datasetAlertTypePerMonth):
         return app.config['DEFAULTRESPONSE']
 
 def formatAlertStats(retrieveAlertStat):
+    jsondata={}
     if retrieveAlertStat:
         jsondata = {
             'AlertsLast24Hours': retrieveAlertStat[0]['doc_count'],
@@ -1029,9 +1036,7 @@ def formatAlertStats(retrieveAlertStat):
             'AlertsLast5Minutes': retrieveAlertStat[2]['doc_count'],
             'AlertsLastMinute': retrieveAlertStat[3]['doc_count']
         }
-        return (jsondata)
-    else:
-        return app.config['DEFAULTRESPONSE']
+    return (jsondata)
 
 def formatTopCountriesAttacks(retrieveTopCountryAttacksArr):
     if retrieveTopCountryAttacksArr:
@@ -1275,7 +1280,13 @@ def retrieveAlertsCountWithType():
             app.logger.error('No time GET-parameter supplied in retrieveAlertsCountWithType. Must be decimal number (in minutes) or string "day"')
             return app.config['DEFAULTRESPONSE']
         else:
-            returnResult = formatAlertsCountWithType(queryAlertsCountWithType(request.args.get('time'), checkCommunityIndex(request), getRelevantIndices(2)))
+            if request.args.get('time').isdecimal() and int(request.args.get('time')) <= 46080:
+                indexDays = (int(int(request.args.get('time')) / 1440)) + 2
+            elif request.args.get('time') == "day":
+                indexDays = 1
+            else:
+                indexDays = 0
+            returnResult = formatAlertsCountWithType(queryAlertsCountWithType(request.args.get('time'), checkCommunityIndex(request), getRelevantIndices(indexDays)))
             setCache(request.url, returnResult, 13, "url")
             app.logger.debug('UNCACHED %s' % str(request.url))
             return jsonify(returnResult)
