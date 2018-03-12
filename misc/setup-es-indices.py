@@ -71,7 +71,7 @@ settings = {
 }
 
 if es.indices.exists(index=indexAlertAlias):
-    print("Alias %s already exists. Quitting!"% indexAlertAlias)
+    print("Alias %s already exists. Skipping!"% indexAlertAlias)
 else:
     # create index
     res = es.indices.create(index="<ews-{now/d}-1>", ignore=400, body=settings)
@@ -117,7 +117,7 @@ settings2 = {
 }
 
 if es.indices.exists(index=indexCve):
-    print("Index %s already exists. Quitting!"% indexCve)
+    print("Index %s already exists. Skipping!"% indexCve)
 else:
     # create index for cve
     res = es.indices.create(index=indexCve, ignore=400, body=settings2)
@@ -146,7 +146,7 @@ settingsPackets = {
     }
 }
 if es.indices.exists(index=indexPackets):
-    print("Index %s already exists. Quitting!"% indexPackets)
+    print("Index %s already exists. Skipping!"% indexPackets)
 else:
     # create index for packets
     res = es.indices.create(index=indexPackets, ignore=400, body=settingsPackets)
