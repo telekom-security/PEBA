@@ -230,21 +230,21 @@ def getRelevantIndices(dayIndices):
 def queryBadIPs(badIpTimespan, clientDomain, relevantIndex):
     """ Get IP addresses from alerts in elasticsearch """
 
-    try:
-        res = es.search(index=relevantIndex, body={
+    esquery="""
+    {
           "query": {
             "bool": {
               "must": [
                 {
                   "range": {
                     "recievedTime": {
-                        "gte": "now-%sm" % badIpTimespan
+                        "gte": "now-%sm" 
                     }
                   }
                 },
                 {
-                  "match": {
-                      "clientDomain": clientDomain
+                  "terms": {
+                      "clientDomain": [ %s ]
                     }
                 }
               ]
@@ -259,7 +259,11 @@ def queryBadIPs(badIpTimespan, clientDomain, relevantIndex):
             }
           },
           "size": 0
-        })
+        } 
+    """ % (badIpTimespan, clientDomain)
+
+    try:
+        res = es.search(index=relevantIndex, body=esquery)
         if 'aggregations' in res:
             return res["aggregations"]["ips"]
         else:

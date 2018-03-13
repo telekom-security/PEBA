@@ -76,12 +76,10 @@ def setCache(cacheItem, cacheValue, cacheTimeout, cacheIndex, cacheType):
             print("Could not set {0} to {1}".format(cacheTypeItem, e))
 
 def checkCommunityIndex(request):
-    """check if request is agains community index or production index"""
-    if not request.args.get('ci'):
-        return "true"
-    elif request.args.get('ci') == "0":
+    """check if request is against community index or production index"""
+    if request == 0:
         return "false"
-    elif request.args.get('ci') == "-1":
+    elif request == -1:
         return "true, false"
     return "true"
 
@@ -522,7 +520,7 @@ itemAlertsCountWithTypeAll="/alert/retrieveAlertsCountWithType?time=1&ci=-1"
 def fillCacheRetrieveAlertsJson(sleeptime, cachetime, community):
     while True:
         numAlerts = 35
-        returnResult = formatAlertsJson(queryAlertsWithoutIP(numAlerts, community, getRelevantIndices(2)))
+        returnResult = formatAlertsJson(queryAlertsWithoutIP(numAlerts, checkCommunityIndex(community), getRelevantIndices(2)))
         if community == 0:
             cacheItem=domain+itemRetrieveAlertsJson
             cacheIndex=0
@@ -538,7 +536,7 @@ def fillCacheRetrieveAlertsJson(sleeptime, cachetime, community):
 ## /topCountriesAttacks
 def fillCacheTopCountriesAttacks(sleeptime, cachetime, community):
     while True:
-        returnResult = formatTopCountriesAttacks(queryTopCountriesAttacks(None, None, community, getRelevantIndices(0)))
+        returnResult = formatTopCountriesAttacks(queryTopCountriesAttacks(None, None, checkCommunityIndex(community), getRelevantIndices(0)))
         if community == 0:
             cacheItem=domain+itemTopCountriesAttacks
             cacheIndex = 2
@@ -555,7 +553,7 @@ def fillCacheTopCountriesAttacks(sleeptime, cachetime, community):
 ## /retrieveAlertStats
 def fillRetrieveAlertStats(sleeptime, cachetime, community):
     while True:
-        returnResult = formatAlertStats(queryAlertStats(community, getRelevantIndices(2)))
+        returnResult = formatAlertStats(queryAlertStats(checkCommunityIndex(community), getRelevantIndices(2)))
         if community == 0:
             cacheItem=domain+itemRetrieveAlertStats
             cacheIndex = 4
@@ -571,7 +569,7 @@ def fillRetrieveAlertStats(sleeptime, cachetime, community):
 ## /retrieveAlertsCountWithType
 def fillRetrieveAlertsCountWithType(sleeptime, cachetime, community):
     while True:
-        returnResult = formatAlertsCountWithType(queryAlertsCountWithType("1", community, getRelevantIndices(2)))
+        returnResult = formatAlertsCountWithType(queryAlertsCountWithType("1", checkCommunityIndex(community), getRelevantIndices(2)))
         if community == 0:
             cacheItem = domain + itemAlertsCountWithType
             cacheIndex = 6
@@ -595,7 +593,7 @@ if __name__ == '__main__':
 
     # for local testing
 
-    # inittest()
+    #inittest()
 
     print("******** FILLING PEBA CACHE **********")
 
