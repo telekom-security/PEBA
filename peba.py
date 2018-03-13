@@ -200,10 +200,12 @@ def checkCommunityUser():
 def checkCommunityIndex(request):
     """check if request is agains community index or production index"""
     if not request.args.get('ci'):
-        return True
+        return "true"
     elif request.args.get('ci') == "0":
-        return False
-    return True
+        return "false"
+    elif request.args.get('ci') == "-1":
+        return "true, false"
+    return "true"
 
 def getRelevantIndices(dayIndices):
     """calculate the relevant indices to be queried in days
@@ -227,6 +229,7 @@ def getRelevantIndices(dayIndices):
 
 def queryBadIPs(badIpTimespan, clientDomain, relevantIndex):
     """ Get IP addresses from alerts in elasticsearch """
+
     try:
         res = es.search(index=relevantIndex, body={
           "query": {
@@ -301,11 +304,12 @@ def queryAlerts(maxAlerts, clientDomain, relevantIndex):
 
 def queryAlertsWithoutIP(maxAlerts, clientDomain, relevantIndex):
     """ Get IP addresses from alerts in elasticsearch """
-    try:
-        res = es.search(index=relevantIndex, body={
+
+    esquery="""
+    {
             "query": {
-                "match": {
-                    "clientDomain": clientDomain
+                "terms": {
+                    "clientDomain": [ %s ]
                 }
             },
             "sort": {
@@ -313,7 +317,7 @@ def queryAlertsWithoutIP(maxAlerts, clientDomain, relevantIndex):
                     "order": "desc"
                     }
                 },
-            "size": maxAlerts,
+            "size": %s,
             "_source": [
                 "createTime",
                 "peerType",
@@ -326,9 +330,13 @@ def queryAlertsWithoutIP(maxAlerts, clientDomain, relevantIndex):
                 "recievedTime",
                 "username",
                 "password",
-                "login"
+                "login",
+                "clientDomain"
                 ]
-            })
+            }""" % (clientDomain, maxAlerts)
+
+    try:
+        res = es.search(index=relevantIndex, body=esquery)
         return res["hits"]["hits"]
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' % err)
@@ -389,20 +397,20 @@ def queryAlertsCountWithType(timeframe, clientDomain, relevantIndex):
         app.logger.error('Non numeric value in retrieveAlertsCountWithType timespan. Must be decimal number (in minutes) or string "day"')
         return False
 
-    try:
-        res = es.search(index=relevantIndex, body={
+    esquery=""" 
+    {
           "query": {
             "range": {
               "recievedTime": {
-                  "gte": str(span)
+                  "gte": "%s"
               }
             }
           },
           "aggs": {
             "communityfilter": {
               "filter": {
-                "term": {
-                  "clientDomain": clientDomain
+                "terms": {
+                  "clientDomain": [ %s ] 
                 }
               },
               "aggs": {
@@ -415,7 +423,11 @@ def queryAlertsCountWithType(timeframe, clientDomain, relevantIndex):
             }
           },
           "size": 0
-        })
+        }
+    """ % (span, clientDomain)
+
+    try:
+        res = es.search(index=relevantIndex, body=esquery)
         return res
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' %  err)
@@ -517,14 +529,12 @@ def queryDatasetAlertTypesPerMonth(days, clientDomain, relevantIndex):
 
 def queryAlertStats(clientDomain, relevantIndex):
     """ Get combined statistics from elasticsearch """
-    try:
-        res = es.search(index=relevantIndex, body={
-
+    esquery="""{
             "aggs": {
                 "communityfilter": {
                     "filter": {
-                        "term": {
-                            "clientDomain": clientDomain
+                        "terms": {
+                            "clientDomain": [ %s ]
                         }
                     },
             "aggs": {
@@ -553,7 +563,10 @@ def queryAlertStats(clientDomain, relevantIndex):
             }}}
           },
           "size": 0
-        })
+        }""" % clientDomain
+
+    try:
+        res = es.search(index=relevantIndex, body=esquery)
         if 'aggregations' in res:
             return res['aggregations']['communityfilter']['ctr']['buckets']
         else:
@@ -588,30 +601,27 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
             'Non numeric value in topCountriesAttacks topX. Must be decimal number.')
         return False
 
-
-    # Get top 10 attacker countries
-    try:
-        res = es.search(index=relevantIndex, body={
+    esquery="""{
           "query": {
             "range": {
               "recievedTime": {
-                "gte": span,
-                "lt": span2
+                "gte": "%s",
+                "lt": "%s"
               }
             }
           },
             "aggs": {
                 "communityfilter": {
                     "filter": {
-                        "term": {
-                            "clientDomain": clientDomain
+                        "terms": {
+                            "clientDomain": [ %s ]
                         }
                     },
                     "aggs": {
             "countries": {
               "terms": {
                 "field": "country.keyword",
-                "size" : str(topx)
+                "size" : %s
               },
               "aggs": {
                 "country": {
@@ -628,26 +638,28 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
             }
           },
           "size": 0
-        })
+        }""" % (span, span2, clientDomain, str(topx))
+
+    # Get top 10 attacker countries
+    try:
+        res = es.search(index=relevantIndex, body=esquery)
     except ElasticsearchException as err:
         app.logger.error('ElasticSearch error: %s' % err)
 
-    # Get top 10 attacked countries
-    try:
-        res2 = es.search(index=relevantIndex, body={
+    esquery2="""{
             "query": {
                 "range": {
                     "recievedTime": {
-                        "gte": span,
-                        "lt": span2
+                        "gte": "%s",
+                        "lt": "%s"
                     }
                 }
             },
             "aggs": {
                 "communityfilter": {
                     "filter": {
-                        "term": {
-                            "clientDomain": clientDomain
+                        "terms": {
+                            "clientDomain": [ %s ]
                         }
                     },
 
@@ -655,7 +667,7 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
                 "countries": {
                     "terms": {
                         "field": "targetCountry.keyword",
-                        "size": str(topx)
+                        "size" : %s
                     },
                     "aggs": {
                         "country": {
@@ -675,7 +687,11 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
             "_source": [
                 "createTime"
             ]
-        })
+        } """ % (span, span2, clientDomain, str(topx))
+
+    # Get top 10 attacked countries
+    try:
+        res2 = es.search(index=relevantIndex, body=esquery2)
 
         monthData = (datetime.date.today()+ relativedelta(months=-(int(monthOffset)))).strftime('%Y-%m')
         return [ res["aggregations"]["communityfilter"]["countries"]["buckets"], monthOffset, monthData, res2["aggregations"]["communityfilter"]["countries"]["buckets"] ]
@@ -966,7 +982,8 @@ def formatAlertsJson(alertslist):
                 'destLat' : destlatlong[0],
                 'destLng' : destlatlong[1],
                 'analyzerType': alert['_source']['peerType'],
-                'requestString': '%s' % requestStringOut
+                'requestString': '%s' % requestStringOut,
+                'clientDomain' : alert['_source']['clientDomain']
             }
 
             jsonarray.append(jsondata)
@@ -1261,6 +1278,30 @@ def retrieveIPs():
             setCache(request.url, returnResult, 60, "url")
             return Response(returnResult, mimetype='text/xml')
 
+@app.route("/alert/retrieveIPs15m", methods=['POST'])
+@app.route("/ews-0.1/alert/retrieveIPs15m", methods=['POST'])
+@authentication_required
+def retrieveIPs15m():
+    """ Retrieve IPs from the last 15mins from ElasticSearch and return formatted XML or JSON with IPs """
+
+    if request.args.get('out') and request.args.get('out') == 'json':
+        getCacheResult = getCache(request.url, "url")
+        if getCacheResult is not False:
+            return jsonify(getCacheResult)
+        else:
+            returnResult = formatBadIP(
+                queryBadIPs(15, checkCommunityIndex(request), getRelevantIndices(2)), 'json')
+            setCache(request.url, returnResult, 60, "url")
+            return jsonify(returnResult)
+    else:
+        getCacheResult = getCache(request.url, "url")
+        if getCacheResult is not False:
+            return Response(getCacheResult, mimetype='text/xml')
+        else:
+            returnResult = formatBadIP(
+                queryBadIPs(15, checkCommunityIndex(request), getRelevantIndices(2)), 'xml')
+            setCache(request.url, returnResult, 60, "url")
+            return Response(returnResult, mimetype='text/xml')
 
 # Routes with JSON output
 

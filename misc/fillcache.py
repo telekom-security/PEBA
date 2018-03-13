@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # script to fill peba caches
-# v0.3
+# v0.5
 
 import xml.etree.ElementTree as ET
 import defusedxml.ElementTree as ETdefused
@@ -25,7 +25,7 @@ es = Elasticsearch(["192.168.1.64"])
 
 def init():
     ''' Make sure to match the memcached IPs/ports to your environment !!! '''
-    for i in range(8):
+    for i in range(12):
         caches.append([
                     pylibmc.Client(["192.168.1.64:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
                     pylibmc.Client(["192.168.1.173:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
@@ -38,7 +38,7 @@ def init():
 
 def inittest():
     ''' testing function '''
-    for i in range(8):
+    for i in range(12):
         caches.append([
                     pylibmc.Client(["127.0.0.1:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
                     pylibmc.Client(["127.0.0.1:11222"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
@@ -78,10 +78,12 @@ def setCache(cacheItem, cacheValue, cacheTimeout, cacheIndex, cacheType):
 def checkCommunityIndex(request):
     """check if request is agains community index or production index"""
     if not request.args.get('ci'):
-        return True
+        return "true"
     elif request.args.get('ci') == "0":
-        return False
-    return True
+        return "false"
+    elif request.args.get('ci') == "-1":
+        return "true, false"
+    return "true"
 
 def getRelevantIndices(dayIndices):
     """calculate the relevant indices to be queried in days
@@ -101,11 +103,12 @@ def getRelevantIndices(dayIndices):
 
 def queryAlertsWithoutIP(maxAlerts, clientDomain, relevantIndex):
     """ Get IP addresses from alerts in elasticsearch """
-    try:
-        res = es.search(index=relevantIndex, body={
+
+    esquery="""
+    {
             "query": {
-                "match": {
-                    "clientDomain": clientDomain
+                "terms": {
+                    "clientDomain": [ %s ]
                 }
             },
             "sort": {
@@ -113,7 +116,7 @@ def queryAlertsWithoutIP(maxAlerts, clientDomain, relevantIndex):
                     "order": "desc"
                     }
                 },
-            "size": maxAlerts,
+            "size": %s,
             "_source": [
                 "createTime",
                 "peerType",
@@ -126,9 +129,13 @@ def queryAlertsWithoutIP(maxAlerts, clientDomain, relevantIndex):
                 "recievedTime",
                 "username",
                 "password",
-                "login"
+                "login",
+                "clientDomain"
                 ]
-            })
+            }""" % (clientDomain, maxAlerts)
+
+    try:
+        res = es.search(index=relevantIndex, body=esquery)
         return res["hits"]["hits"]
     except ElasticsearchException as err:
         print('ElasticSearch error: %s' % err)
@@ -190,7 +197,9 @@ def formatAlertsJson(alertslist):
                 'destLat' : destlatlong[0],
                 'destLng' : destlatlong[1],
                 'analyzerType': alert['_source']['peerType'],
-                'requestString': '%s' % requestStringOut
+                'requestString': '%s' % requestStringOut,
+                'clientDomain': alert['_source']['clientDomain']
+
             }
 
             jsonarray.append(jsondata)
@@ -213,7 +222,7 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
     # use top10 default
     if topX is None:
         topx = 10
-    # check if months is a number
+    # check if topx is a number
     elif topX.isdecimal():
         topx = topX
     else:
@@ -221,30 +230,27 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
             'Non numeric value in topCountriesAttacks topX. Must be decimal number.')
         return False
 
-
-    # Get top 10 attacker countries
-    try:
-        res = es.search(index=relevantIndex, body={
+    esquery="""{
           "query": {
             "range": {
               "recievedTime": {
-                "gte": span,
-                "lt": span2
+                "gte": "%s",
+                "lt": "%s"
               }
             }
           },
             "aggs": {
                 "communityfilter": {
                     "filter": {
-                        "term": {
-                            "clientDomain": clientDomain
+                        "terms": {
+                            "clientDomain": [ %s ]
                         }
                     },
                     "aggs": {
             "countries": {
               "terms": {
                 "field": "country.keyword",
-                "size" : str(topx)
+                "size" : %s
               },
               "aggs": {
                 "country": {
@@ -261,26 +267,28 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
             }
           },
           "size": 0
-        })
+        }"""% (span, span2, clientDomain, str(topx))
+
+    # Get top 10 attacker countries
+    try:
+        res = es.search(index=relevantIndex, body=esquery)
     except ElasticsearchException as err:
         print('ElasticSearch error: %s' % err)
 
-    # Get top 10 attacked countries
-    try:
-        res2 = es.search(index=relevantIndex, body={
+    esquery2="""{
             "query": {
                 "range": {
                     "recievedTime": {
-                        "gte": span,
-                        "lt": span2
+                        "gte": "%s",
+                        "lt": "%s"
                     }
                 }
             },
             "aggs": {
                 "communityfilter": {
                     "filter": {
-                        "term": {
-                            "clientDomain": clientDomain
+                        "terms": {
+                            "clientDomain": [ %s ]
                         }
                     },
 
@@ -288,7 +296,7 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
                 "countries": {
                     "terms": {
                         "field": "targetCountry.keyword",
-                        "size": str(topx)
+                        "size" : %s
                     },
                     "aggs": {
                         "country": {
@@ -308,7 +316,12 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
             "_source": [
                 "createTime"
             ]
-        })
+        } """ % (span, span2, clientDomain, str(topx))
+
+
+    # Get top 10 attacked countries
+    try:
+        res2 = es.search(index=relevantIndex, body=esquery2)
 
         monthData = (datetime.date.today()+ relativedelta(months=-(int(monthOffset)))).strftime('%Y-%m')
         return [ res["aggregations"]["communityfilter"]["countries"]["buckets"], monthOffset, monthData, res2["aggregations"]["communityfilter"]["countries"]["buckets"] ]
@@ -360,42 +373,44 @@ def formatTopCountriesAttacks(retrieveTopCountryAttacksArr):
 
 def queryAlertStats(clientDomain,relevantIndex):
     """ Get combined statistics from elasticsearch """
+    esquery = """{
+               "aggs": {
+                   "communityfilter": {
+                       "filter": {
+                           "terms": {
+                               "clientDomain": [ %s ]
+                           }
+                       },
+               "aggs": {
+               "ctr": {
+                 "range": {
+                   "field": "recievedTime",
+                   "ranges": [
+                     {
+                       "key": "1d",
+                       "from": "now-1440m"
+                     },
+                     {
+                       "key": "1h",
+                       "from": "now-60m"
+                     },
+                     {
+                       "key": "5m",
+                       "from": "now-5m"
+                     },
+                     {
+                       "key": "1m",
+                       "from": "now-1m"
+                     }
+                   ]
+                 }
+               }}}
+             },
+             "size": 0
+           }""" % clientDomain
+
     try:
-        res = es.search(index=relevantIndex, body={
-            "aggs": {
-                "communityfilter": {
-                    "filter": {
-                        "term": {
-                            "clientDomain": clientDomain
-                        }
-                    },
-            "aggs": {
-            "ctr": {
-              "range": {
-                "field": "recievedTime",
-                "ranges": [
-                  {
-                    "key": "1d",
-                    "from": "now-1440m"
-                  },
-                  {
-                    "key": "1h",
-                    "from": "now-60m"
-                  },
-                  {
-                    "key": "5m",
-                    "from": "now-5m"
-                  },
-                  {
-                    "key": "1m",
-                    "from": "now-1m"
-                  }
-                ]
-              }
-            }}}
-          },
-          "size": 0
-        })
+        res = es.search(index=relevantIndex, body=esquery)
         return res['aggregations']['communityfilter']['ctr']['buckets']
     except ElasticsearchException as err:
         print('ElasticSearch error: %s' % err)
@@ -426,20 +441,20 @@ def queryAlertsCountWithType(timeframe, clientDomain, relevantIndex):
         print('Non numeric value in retrieveAlertsCountWithType timespan. Must be decimal number (in minutes) or string "day"')
         return False
 
-    try:
-        res = es.search(index=relevantIndex, body={
+    esquery=""" 
+    {
           "query": {
             "range": {
-              "createTime": {
-                  "gte": str(span)
+              "recievedTime": {
+                  "gte": "%s"
               }
             }
           },
           "aggs": {
             "communityfilter": {
               "filter": {
-                "term": {
-                  "clientDomain": clientDomain
+                "terms": {
+                  "clientDomain": [ %s ] 
                 }
               },
               "aggs": {
@@ -452,13 +467,16 @@ def queryAlertsCountWithType(timeframe, clientDomain, relevantIndex):
             }
           },
           "size": 0
-        })
+        }
+    """ % (span, clientDomain)
+
+    try:
+        res = es.search(index=relevantIndex, body=esquery)
         return res
     except ElasticsearchException as err:
         print('ElasticSearch error: %s' %  err)
 
     return False
-
 
 def formatAlertsCountWithType(numberofalerts):
     if numberofalerts:
@@ -483,12 +501,16 @@ def formatAlertsCountWithType(numberofalerts):
 domain = "https://community.sicherheitstacho.eu"
 itemRetrieveAlertsJsonCommunity="/alert/retrieveAlertsJson?ci=1&topx=35"
 itemRetrieveAlertsJson="/alert/retrieveAlertsJson?ci=0&topx=35"
+itemRetrieveAlertsJsonAll="/alert/retrieveAlertsJson?ci=-1&topx=35"
 itemTopCountriesAttacksCommunity="/alert/topCountriesAttacks?ci=1"
 itemTopCountriesAttacks="/alert/topCountriesAttacks?ci=0"
+itemTopCountriesAttacksAll="/alert/topCountriesAttacks?ci=-1"
 itemRetrieveAlertStatsCommunity="/alert/retrieveAlertStats?ci=1"
 itemRetrieveAlertStats="/alert/retrieveAlertStats?ci=0"
+itemRetrieveAlertStatsAll="/alert/retrieveAlertStats?ci=-1"
 itemAlertsCountWithTypeCommunity="/alert/retrieveAlertsCountWithType?time=1&ci=1"
 itemAlertsCountWithType="/alert/retrieveAlertsCountWithType?time=1&ci=0"
+itemAlertsCountWithTypeAll="/alert/retrieveAlertsCountWithType?time=1&ci=-1"
 
 
 ########################
@@ -501,12 +523,15 @@ def fillCacheRetrieveAlertsJson(sleeptime, cachetime, community):
     while True:
         numAlerts = 35
         returnResult = formatAlertsJson(queryAlertsWithoutIP(numAlerts, community, getRelevantIndices(2)))
-        if community == False:
+        if community == 0:
             cacheItem=domain+itemRetrieveAlertsJson
             cacheIndex=0
-        else:
+        elif community == 1:
             cacheItem=domain+itemRetrieveAlertsJsonCommunity
             cacheIndex = 1
+        elif community == -1:
+            cacheItem=domain+itemRetrieveAlertsJsonAll
+            cacheIndex=8
         settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex, "url")
         sleep(sleeptime)
 
@@ -514,12 +539,15 @@ def fillCacheRetrieveAlertsJson(sleeptime, cachetime, community):
 def fillCacheTopCountriesAttacks(sleeptime, cachetime, community):
     while True:
         returnResult = formatTopCountriesAttacks(queryTopCountriesAttacks(None, None, community, getRelevantIndices(0)))
-        if community == False:
+        if community == 0:
             cacheItem=domain+itemTopCountriesAttacks
             cacheIndex = 2
-        else:
+        elif community == 1:
             cacheItem=domain+itemTopCountriesAttacksCommunity
             cacheIndex = 3
+        elif community == -1:
+            cacheItem=domain+itemTopCountriesAttacksAll
+            cacheIndex = 9
         settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex, "url")
         sleep(sleeptime)
 
@@ -528,26 +556,31 @@ def fillCacheTopCountriesAttacks(sleeptime, cachetime, community):
 def fillRetrieveAlertStats(sleeptime, cachetime, community):
     while True:
         returnResult = formatAlertStats(queryAlertStats(community, getRelevantIndices(2)))
-        if community == False:
+        if community == 0:
             cacheItem=domain+itemRetrieveAlertStats
             cacheIndex = 4
-        else:
+        elif community == 1:
             cacheItem=domain+itemRetrieveAlertStatsCommunity
             cacheIndex = 5
+        elif community == -1:
+            cacheItem=domain+itemRetrieveAlertStatsAll
+            cacheIndex = 10
         settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex, "url")
         sleep(sleeptime)
 
 ## /retrieveAlertsCountWithType
 def fillRetrieveAlertsCountWithType(sleeptime, cachetime, community):
     while True:
-        returnResult = formatAlertsCountWithType(
-            queryAlertsCountWithType("1", community, getRelevantIndices(2)))
-        if community == False:
+        returnResult = formatAlertsCountWithType(queryAlertsCountWithType("1", community, getRelevantIndices(2)))
+        if community == 0:
             cacheItem = domain + itemAlertsCountWithType
             cacheIndex = 6
-        else:
+        elif community == 1:
             cacheItem = domain + itemAlertsCountWithTypeCommunity
             cacheIndex = 7
+        elif community == -1:
+            cacheItem = domain + itemAlertsCountWithTypeAll
+            cacheIndex = 11
         settingResult=setCache(cacheItem, returnResult, cachetime, cacheIndex, "url")
         sleep(sleeptime)
 
@@ -561,7 +594,8 @@ if __name__ == '__main__':
     init()
 
     # for local testing
-    #inittest()
+
+    # inittest()
 
     print("******** FILLING PEBA CACHE **********")
 
@@ -575,27 +609,37 @@ if __name__ == '__main__':
 
 
     ## /retrieveAlertsJson
-    tRetrieveAlertsJsonCommunity = threading.Thread(target=fillCacheRetrieveAlertsJson, args=(10,60,True,))
+    tRetrieveAlertsJsonCommunity = threading.Thread(target=fillCacheRetrieveAlertsJson, args=(10,60,1,))
     tRetrieveAlertsJsonCommunity.start()
-    tRetrieveAlertsJson = threading.Thread(target=fillCacheRetrieveAlertsJson, args=(10,60,False,))
+    tRetrieveAlertsJson = threading.Thread(target=fillCacheRetrieveAlertsJson, args=(10,60,0,))
     tRetrieveAlertsJson.start()
+    tRetrieveAlertsJsonAll = threading.Thread(target=fillCacheRetrieveAlertsJson, args=(10,60,-1,))
+    tRetrieveAlertsJsonAll.start()
 
     ## /topCountriesAttacks
-    tTopCountriesAttacksCommunity = threading.Thread(target=fillCacheTopCountriesAttacks, args=(10,60,True,))
+    tTopCountriesAttacksCommunity = threading.Thread(target=fillCacheTopCountriesAttacks, args=(10,60,1,))
     tTopCountriesAttacksCommunity.start()
-    tTopCountriesAttacks = threading.Thread(target=fillCacheTopCountriesAttacks, args=(10,60,False,))
+    tTopCountriesAttacks = threading.Thread(target=fillCacheTopCountriesAttacks, args=(10,60,0,))
     tTopCountriesAttacks.start()
+    tTopCountriesAttacksAll = threading.Thread(target=fillCacheTopCountriesAttacks, args=(10, 60, -1,))
+    tTopCountriesAttacksAll.start()
 
     ## /retrieveAlertStats
-    tRetrieveAlertStatsCommunity = threading.Thread(target=fillRetrieveAlertStats, args=(10,60,True,))
+    tRetrieveAlertStatsCommunity = threading.Thread(target=fillRetrieveAlertStats, args=(10,60,1,))
     tRetrieveAlertStatsCommunity.start()
-    tRetrieveAlertStats = threading.Thread(target=fillRetrieveAlertStats, args=(10,60,False,))
+    tRetrieveAlertStats = threading.Thread(target=fillRetrieveAlertStats, args=(10,60,0,))
     tRetrieveAlertStats.start()
+    tRetrieveAlertStatsAll = threading.Thread(target=fillRetrieveAlertStats, args=(10,60,-1,))
+    tRetrieveAlertStatsAll.start()
+
 
     ## /retrieveAlertsCountWithType
-    tRetrieveAlertsCountWithTypeCommunity = threading.Thread(target=fillRetrieveAlertsCountWithType, args=(10,60,True,))
+    tRetrieveAlertsCountWithTypeCommunity = threading.Thread(target=fillRetrieveAlertsCountWithType, args=(10,60,1,))
     tRetrieveAlertsCountWithTypeCommunity.start()
-    tRetrieveAlertsCountWithType = threading.Thread(target=fillRetrieveAlertsCountWithType, args=(10,60,False,))
+    tRetrieveAlertsCountWithType = threading.Thread(target=fillRetrieveAlertsCountWithType, args=(10,60,0,))
     tRetrieveAlertsCountWithType.start()
+    tRetrieveAlertsCountWithTypeAll = threading.Thread(target=fillRetrieveAlertsCountWithType, args=(10,60,-1,))
+    tRetrieveAlertsCountWithTypeAll.start()
+
 
     print(str(threading.active_count()) + " Threads started. Filling cache...")
