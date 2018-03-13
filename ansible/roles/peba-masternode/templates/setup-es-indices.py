@@ -1,24 +1,35 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 
-host="127.0.0.1"
-port=9200
+from elasticsearch import Elasticsearch
+import json, sys
+import time
 
-indexAlertsAlias="ews2017.1"
-indexCve="ewscve"
-indexPackets="packets"
+host = "{{ ELASTIC_IP }}"
+port = {{ ELASTIC_PORT }}
+indexAlertAlias = "{{ ELASTIC_INDEX }}"
+indexCve = "ewscve"
+indexPackets = "packets"
 
-#
-# Create alerts index
-#
 
-curl -XPUT "http://"$host":"$port"/%3Cews-%7Bnow%2Fd%7D-1%3E?pretty" -H 'Content-Type: application/json' -d'
-{
-    "settings" : {
-        "number_of_shards" : 5,
-        "number_of_replicas" : 1
+###
+
+es = Elasticsearch([{'host': host, 'port': port}])
+
+def getTargetIds(jsonData):
+    data = json.loads(jsonData)
+    if 'error' in data:
+        return "fail"
+    if 'data' not in data['to']:
+        return "success"
+
+
+settings = {
+    "settings": {
+        "number_of_shards": 5,
+        "number_of_replicas": 1
     },
     "aliases": {
-        "'$indexAlertsAlias'": {}
+        indexAlertAlias: {}
     },
     "mappings": {
         "Alert": {
@@ -50,21 +61,21 @@ curl -XPUT "http://"$host":"$port"/%3Cews-%7Bnow%2Fd%7D-1%3E?pretty" -H 'Content
         }
     }
 }
-'
+
+if es.indices.exists(index=indexAlertAlias):
+    print("Alias %s already exists. Skipping!"% indexAlertAlias)
+else:
+    # create index
+    res = es.indices.create(index="<ews-{now/d}-1>", ignore=400, body=settings)
+    print("Result for Alert mapping")
+    print(res)
 
 
 
-#
-# Create cve index
-#
-
-curl -XPUT "http://"$host":"$port"/"$indexCve"?pretty" -H 'Content-Type: application/json' -d'
-{
-    "settings" : {
-        "index" : {
-            "number_of_shards" : 5,
-            "number_of_replicas" : 1
-        }
+settings2 = {
+    "settings": {
+        "number_of_shards": 5,
+        "number_of_replicas": 1
     },
     "mappings": {
         "CVE": {
@@ -96,19 +107,21 @@ curl -XPUT "http://"$host":"$port"/"$indexCve"?pretty" -H 'Content-Type: applica
         }
     }
 }
-'
 
-#
-# Create packet index
-#
+if es.indices.exists(index=indexCve):
+    print("Index %s already exists. Skipping!"% indexCve)
+else:
+    # create index for cve
+    res = es.indices.create(index=indexCve, ignore=400, body=settings2)
+    print("Result for CVE mapping")
+    print(res)
 
-curl -XPUT "http://"$host":"$port"/"$indexPackets"?pretty" -H 'Content-Type: application/json' -d'
-{
-    "settings" : {
-        "index" : {
-            "number_of_shards" : 5,
-            "number_of_replicas" : 1
-        }
+
+
+settingsPackets = {
+    "settings": {
+        "number_of_shards": 5,
+        "number_of_replicas": 1
     },
     "mappings": {
         "Packet": {
@@ -117,11 +130,18 @@ curl -XPUT "http://"$host":"$port"/"$indexPackets"?pretty" -H 'Content-Type: app
                         "type": "date",
                         "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
                     },
-                    "initialIP": {
+                     "initialIP": {
                         "type": "ip"
                     }
             }
         }
     }
 }
-'
+if es.indices.exists(index=indexPackets):
+    print("Index %s already exists. Skipping!"% indexPackets)
+else:
+    # create index for packets
+    res = es.indices.create(index=indexPackets, ignore=400, body=settingsPackets)
+    print("Result for Packet mapping")
+    print(res)
+

@@ -1,12 +1,25 @@
 from elasticsearch import Elasticsearch
-import json
+import json, sys
+import time
 
+
+##############################################################
+##############################################################
+
+#     NOTE to myself: ALL Changes must be reflected in
+#     /ansible/peba-masternode/templates/setup-es-indices.py
+
+##############################################################
+##############################################################
 
 host = "127.0.0.1"
 port = 9200
-indexAlerts = "ews2017.1"
+indexAlertAlias= "ews2017.1"
 indexCve= "ewscve"
 indexPackets = "packets"
+
+
+###
 
 es = Elasticsearch([{'host': host, 'port': 9200}])
 
@@ -22,6 +35,9 @@ settings = {
     "settings": {
         "number_of_shards": 5,
         "number_of_replicas": 1
+    },
+    "aliases": {
+        indexAlertAlias: {}
     },
     "mappings": {
         "Alert": {
@@ -54,12 +70,13 @@ settings = {
     }
 }
 
-# create index
-res = es.indices.create(index=indexAlerts, ignore=400, body=settings)
-print("Result for Alert mapping")
-print(res)
-
-
+if es.indices.exists(index=indexAlertAlias):
+    print("Alias %s already exists. Skipping!"% indexAlertAlias)
+else:
+    # create index
+    res = es.indices.create(index="<ews-{now/d}-1>", ignore=400, body=settings)
+    print("Result for Alert mapping")
+    print(res)
 
 
 
@@ -99,10 +116,13 @@ settings2 = {
     }
 }
 
-# create index for cve
-res = es.indices.create(index=indexCve, ignore=400, body=settings2)
-print("Result for CVE mapping")
-print(res)
+if es.indices.exists(index=indexCve):
+    print("Index %s already exists. Skipping!"% indexCve)
+else:
+    # create index for cve
+    res = es.indices.create(index=indexCve, ignore=400, body=settings2)
+    print("Result for CVE mapping")
+    print(res)
 
 
 
@@ -125,9 +145,11 @@ settingsPackets = {
         }
     }
 }
-
-# create index for packets
-res = es.indices.create(index=indexPackets, ignore=400, body=settingsPackets)
-print("Result for Packet mapping")
-print(res)
+if es.indices.exists(index=indexPackets):
+    print("Index %s already exists. Skipping!"% indexPackets)
+else:
+    # create index for packets
+    res = es.indices.create(index=indexPackets, ignore=400, body=settingsPackets)
+    print("Result for Packet mapping")
+    print(res)
 

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # script to fill peba caches
-# v0.2
+# v0.3
 
 import xml.etree.ElementTree as ET
 import defusedxml.ElementTree as ETdefused
@@ -18,11 +18,13 @@ from time import sleep
 import threading
 
 caches = []
+
+# Make sure to match the IP to your environment !!!
 es = Elasticsearch(["192.168.1.64"])
-esindex="ews2017.1"
 
 
 def init():
+    ''' Make sure to match the memcached IPs/ports to your environment !!! '''
     for i in range(8):
         caches.append([
                     pylibmc.Client(["192.168.1.64:11211"], binary=False, behaviors={"tcp_nodelay": True, "ketama": True, "connect_timeout": 200}),
@@ -81,10 +83,26 @@ def checkCommunityIndex(request):
         return False
     return True
 
-def queryAlertsWithoutIP(maxAlerts, clientDomain):
+def getRelevantIndices(dayIndices):
+    """calculate the relevant indices to be queried in days
+        use ews-* if false
+    """
+    if not dayIndices:
+        return "ews-*"
+    else:
+        allDates=""
+        currentDay = "<ews-{now/d}-*>"
+        allDates+=currentDay
+        for i in range (1, dayIndices):
+            prevDay= "<ews-{now/d-"+str(i)+"d}-*>"
+            allDates+=","+prevDay
+        return allDates
+
+
+def queryAlertsWithoutIP(maxAlerts, clientDomain, relevantIndex):
     """ Get IP addresses from alerts in elasticsearch """
     try:
-        res = es.search(index=esindex, body={
+        res = es.search(index=relevantIndex, body={
             "query": {
                 "match": {
                     "clientDomain": clientDomain
@@ -178,7 +196,7 @@ def formatAlertsJson(alertslist):
             jsonarray.append(jsondata)
         return ({'alerts': jsonarray})
 
-def queryTopCountriesAttacks(monthOffset, topX, clientDomain):
+def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
     # use THIS month
     if monthOffset is None or monthOffset == "0" :
         span = "now/M"
@@ -206,7 +224,7 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain):
 
     # Get top 10 attacker countries
     try:
-        res = es.search(index=esindex, body={
+        res = es.search(index=relevantIndex, body={
           "query": {
             "range": {
               "recievedTime": {
@@ -249,7 +267,7 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain):
 
     # Get top 10 attacked countries
     try:
-        res2 = es.search(index=esindex, body={
+        res2 = es.search(index=relevantIndex, body={
             "query": {
                 "range": {
                     "recievedTime": {
@@ -340,10 +358,10 @@ def formatTopCountriesAttacks(retrieveTopCountryAttacksArr):
                         }
         return ([countryStats])
 
-def queryAlertStats(clientDomain):
+def queryAlertStats(clientDomain,relevantIndex):
     """ Get combined statistics from elasticsearch """
     try:
-        res = es.search(index=esindex, body={
+        res = es.search(index=relevantIndex, body={
             "aggs": {
                 "communityfilter": {
                     "filter": {
@@ -354,7 +372,7 @@ def queryAlertStats(clientDomain):
             "aggs": {
             "ctr": {
               "range": {
-                "field": "createTime",
+                "field": "recievedTime",
                 "ranges": [
                   {
                     "key": "1d",
@@ -396,7 +414,7 @@ def formatAlertStats(retrieveAlertStat):
     else:
         return ""
 
-def queryAlertsCountWithType(timeframe, clientDomain):
+def queryAlertsCountWithType(timeframe, clientDomain, relevantIndex):
     """ Get number of Alerts in timeframe in elasticsearch """
 
     # check if timespan = d or number
@@ -409,7 +427,7 @@ def queryAlertsCountWithType(timeframe, clientDomain):
         return False
 
     try:
-        res = es.search(index=esindex, body={
+        res = es.search(index=relevantIndex, body={
           "query": {
             "range": {
               "createTime": {
@@ -460,6 +478,8 @@ def formatAlertsCountWithType(numberofalerts):
 ########################
 ### string variables
 ########################
+# variables for sicherheitstacho.eu requests
+
 domain = "https://community.sicherheitstacho.eu"
 itemRetrieveAlertsJsonCommunity="/alert/retrieveAlertsJson?ci=1&topx=35"
 itemRetrieveAlertsJson="/alert/retrieveAlertsJson?ci=0&topx=35"
@@ -480,7 +500,7 @@ itemAlertsCountWithType="/alert/retrieveAlertsCountWithType?time=1&ci=0"
 def fillCacheRetrieveAlertsJson(sleeptime, cachetime, community):
     while True:
         numAlerts = 35
-        returnResult = formatAlertsJson(queryAlertsWithoutIP(numAlerts, community))
+        returnResult = formatAlertsJson(queryAlertsWithoutIP(numAlerts, community, getRelevantIndices(2)))
         if community == False:
             cacheItem=domain+itemRetrieveAlertsJson
             cacheIndex=0
@@ -493,7 +513,7 @@ def fillCacheRetrieveAlertsJson(sleeptime, cachetime, community):
 ## /topCountriesAttacks
 def fillCacheTopCountriesAttacks(sleeptime, cachetime, community):
     while True:
-        returnResult = formatTopCountriesAttacks(queryTopCountriesAttacks(None, None, community))
+        returnResult = formatTopCountriesAttacks(queryTopCountriesAttacks(None, None, community, getRelevantIndices(0)))
         if community == False:
             cacheItem=domain+itemTopCountriesAttacks
             cacheIndex = 2
@@ -507,7 +527,7 @@ def fillCacheTopCountriesAttacks(sleeptime, cachetime, community):
 ## /retrieveAlertStats
 def fillRetrieveAlertStats(sleeptime, cachetime, community):
     while True:
-        returnResult = formatAlertStats(queryAlertStats(community))
+        returnResult = formatAlertStats(queryAlertStats(community, getRelevantIndices(2)))
         if community == False:
             cacheItem=domain+itemRetrieveAlertStats
             cacheIndex = 4
@@ -521,7 +541,7 @@ def fillRetrieveAlertStats(sleeptime, cachetime, community):
 def fillRetrieveAlertsCountWithType(sleeptime, cachetime, community):
     while True:
         returnResult = formatAlertsCountWithType(
-            queryAlertsCountWithType("1", community))
+            queryAlertsCountWithType("1", community, getRelevantIndices(2)))
         if community == False:
             cacheItem = domain + itemAlertsCountWithType
             cacheIndex = 6

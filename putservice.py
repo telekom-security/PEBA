@@ -247,7 +247,7 @@ def handleAlerts(tree, tenant, es, cache):
             if (app.config['USESLACK']):
                 if len(str(app.config['SLACKTOKEN'])) > 10:
                     if len(str(vulnid)) > 4:
-                        if (elastic.cveExisting(vulnid, app.config['ELASTICINDEX'], es, app.config['DEVMODE'])):
+                        if (elastic.cveExisting(vulnid, "ewscve", es, app.config['DEVMODE'])):
                             communication.sendSlack("cve", app.config['SLACKTOKEN'], "CVE (" + vulnid + ") found.", app.config['DEVMODE'])
 
     app.logger.debug("Info: Added " + str(counter) + " entries")

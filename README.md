@@ -147,7 +147,13 @@ In production environments PEBA needs a [reverse proxy](http://flask.pocoo.org/d
 
 For convenience, the application can be deployed via ansible on a debian (tested: stretch) / ubuntu (tested 16.04) system and started using a systemd script. 
 
-As mentioned before, PEBA relies on an Elasticsearch and memcache installation which needs to be configured separately. Having both up and running, adjust `ansible/hosts` with the correct paramters (hostname and following operational values), then deploy via:
+As mentioned before, PEBA relies on an Elasticsearch and memcache installation which needs to be configured separately. Having both up and running, adjust `ansible/hosts` with the correct paramters (hostname and following operational values).
+
+You may have multiple nodes running PEBA. However, there must be one "Master Node" which contains cron jobs and takes care of the precaching for certain requests. Make sure you fill the master node section in `ansible/hosts`, too. 
+
+Make sure you review the `misc/fillcache.py` to match your environment (ES&memcached IPs) before you deploy!
+
+Then deploy via:
 
     ./ansible/deploy.sh <prod|test>
 
