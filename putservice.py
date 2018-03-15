@@ -8,7 +8,11 @@ import urllib.request, urllib.parse, urllib.error
 import elastic, communication
 import ipaddress
 import datetime
+import base64
 from dateutil.relativedelta import relativedelta
+import botocore.session, botocore.client
+from botocore.exceptions import ClientError
+
 
 ################
 # PUT Variables
@@ -75,7 +79,7 @@ def fixUrl(destinationPort, transport, url, peerType):
 
     return url
 
-def handleAlerts(tree, tenant, es, cache):
+def handleAlerts(tree, tenant, es, cache, s3client):
     """
         parse the xml, handle the Alerts and send to es
     """
@@ -213,8 +217,6 @@ def handleAlerts(tree, tenant, es, cache):
                         additionalData["payload_md5"] = child.text
 
 
-
-
         if parsingError is not "":
             app.logger.debug("Skipping incomplete ews xml alert element : " + parsingError)
             skip = True
@@ -240,6 +242,24 @@ def handleAlerts(tree, tenant, es, cache):
                                           analyzerID, peerType, username, password, loginStatus, version, starttime,
                                           endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata)
             counter = counter + 1 - correction
+
+            if s3client and (packetdata is not ""):
+                try:
+                    # check if file exists in bucket
+                    searchFile = s3client.list_objects_v2(Bucket=app.config['S3BUCKET'], Prefix=additionalData["payload_md5"])
+                    if (len(searchFile.get('Contents', []))) == 1 and str(
+                            searchFile.get('Contents', [])[0]['Key']) == additionalData["payload_md5"]:
+                        app.logger.debug(
+                            'Not storing file ({0}) to s3 bucket "{1}" on {2} as it already exists in the bucket.'.format(
+                                additionalData["payload_md5"], app.config['S3BUCKET'], app.config['S3ENDPOINT']))
+                    else:
+                        # upload file to s3
+                        bodydata=base64.decodebytes(packetdata.encode('utf-8'))
+                        s3client.put_object(Bucket=app.config['S3BUCKET'], Body=bodydata, Key=additionalData["payload_md5"])
+                        app.logger.debug('Storing file ({0}) using s3 bucket "{1}" on {2}'.format(additionalData["payload_md5"], app.config['S3BUCKET'], app.config['S3ENDPOINT']))
+
+                except ClientError as e:
+                    app.logger.warning("Received error: %s", e.response['Error']['Message'])
 
             #
             # slack wanted
