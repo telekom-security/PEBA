@@ -59,7 +59,7 @@ The above private endpoints cannot be queried using the community credentials (1
  
 **Data domain:**
 
-By default, querying the above endpoints, data from the **T-Pot community honeypots** is returned. To retrieve data from the **private domain honeypots**, add a GET parameter *ci=0*. 
+By default, querying the above endpoints, data from the **T-Pot community honeypots** is returned. To retrieve data from the **private domain honeypots**, add a GET parameter *ci=0*. To retrieve data from both domains,community and private, use *ci=-1*.
 
 Example:  */alert/retrieveAlertsJson?ci=0* to retrieve the private json data feed. This works both on the public and private endpoints.
 
