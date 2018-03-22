@@ -37,6 +37,8 @@ The authentication can be done using either T-Pot community credentials (1) or d
 ***Private GET endpoints*** using authentication:
 
  - [POST] */alert/retrieveIPs* ==> returning the unique IP addresses of the last attacks in timeframe (default 120 minutes), a "Bad IP List". Can further be parametrized using out=json. Defaults to xml.
+ - [POST] */alert/retrieveIPs15m* ==> returning the unique IP addresses of the last attacks in the last 15 minutes, a shorter "Bad IP List". Can further be parametrized using out=json. Defaults to xml.
+
  - [POST] */alert/retrieveAlertsCyber* ==> returning the last 1000 attacks, including IPs.
  - [POST] */alert/querySingleIP* ==> returns last 1000 attacks from IP. Set IP in GET parameter "ip", e.g. */querySingleIP?ip=8.8.8.8*
 
@@ -57,7 +59,7 @@ The above private endpoints cannot be queried using the community credentials (1
  
 **Data domain:**
 
-By default, querying the above endpoints, data from the **T-Pot community honeypots** is returned. To retrieve data from the **private domain honeypots**, add a GET parameter *ci=0*. 
+By default, querying the above endpoints, data from the **T-Pot community honeypots** is returned. To retrieve data from the **private domain honeypots**, add a GET parameter *ci=0*. To retrieve data from both domains,community and private, use *ci=-1*.
 
 Example:  */alert/retrieveAlertsJson?ci=0* to retrieve the private json data feed. This works both on the public and private endpoints.
 

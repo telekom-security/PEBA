@@ -67,7 +67,7 @@
     name: "rollIndex"
     minute: "0"
     hour: "0"
-    job: "/opt/peba/rollindex_cron.sh"
+    job: "/opt/peba/cron/rollindex_cron.sh"
 
 - name: "Copy cleanupXdays.sh to master node"
   template:

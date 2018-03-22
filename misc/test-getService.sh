@@ -4,12 +4,12 @@
 # CONFIG:
 TEST=http://127.0.0.1:9922
 PROD=https://community.sicherheitstacho.eu:9443
-AUTH=./get-requests/request.xml
+AUTH=./get-requests/request.av.xml
 
 
 
 if [ "$#" -ne 2 ]; then
-    echo "invoke: $0 <test|prod> <private|community>"
+    echo "invoke: $0 <test|prod> <private|community|all>"
     exit 1
 fi
 
@@ -37,6 +37,10 @@ case "$2" in
         DOM="ci=1"
         echo "Testing community domain data."
       ;;
+    all)
+        DOM="ci=-1"
+        echo "Testing all domains data."
+      ;;
     *)
         echo "invoke: $0 <test|prod> <private|community>"
         exit 1
@@ -60,8 +64,15 @@ echo "***** END RETRIEVEIPS *****"
 echo ""
 sleep 3
 
+echo "***** RETRIEVEIPS *****"
+curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND"/alert/retrieveIPs15m?out=json&"$DOM
+echo ""
+echo "***** END RETRIEVEIPS *****"
+echo ""
+sleep 3
+
 echo "***** QUERYSINGLEIP *****"
-curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND"/alert/querySingleIP?ip=1.2.3.4&"$DOM
+curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND"/alert/querySingleIP?ip=5.39.217.84&"$DOM
 echo ""
 echo "***** END QUERYSINGLEIP *****"
 echo ""
@@ -128,6 +139,7 @@ curl "$BIND/alert/retrieveAlertsCountWithType?time=10&$DOM"
 echo "***** END RETRIEVEALERTCOUNTWITHTYPE *****"
 echo ""
 sleep 3
+
 
 
 echo "***** END TESTING GET WEBSERVICE"
