@@ -189,38 +189,70 @@ def getFuzzyHash(packetdata, packetHash):
 
 
 
-def handlePacketData(packetdata, id, createTime, debug, es, sourceip):
+def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport):
     m = hashlib.md5()
     m.update(base64.decodebytes(packetdata.encode('utf-8')))
     packetHash = m.hexdigest()
+    lastSeenTime = createTime
+    fuzzyHashCount=0
+    count=1
 
-    if (packetExisting(packetHash, "packets", es, debug, "hash")):
-        app.logger.debug("Packet with same hash %s already existing."  % packetHash)
-        return 0;
+    # check if packet is existing in index via hash
+    packetContent=packetExisting(packetHash, "packets", es, debug, "hash")
+    # check if packet is existing in index via fuzzyhash
+    fuzzyHash=getFuzzyHash(packetdata, packetHash)
+    fuzzyHashContent = packetExisting(fuzzyHash, "packets", es, debug, "hashfuzzyhttp")
 
-    hashfuzzyhttp = getFuzzyHash(packetdata, packetHash)
+    if packetContent:
+        app.logger.debug("Packet with same md5 hash %s already existing. Adjusting counts."  % packetHash)
+        id = packetContent['_id']
+        destport = packetContent['_source']['initialDestPort']
+        sourceip = packetContent['_source']['initialIP']
+        fuzzyHashCount=packetContent['_source']['fuzzyHashCount']
+        packetHash = packetContent['_source']['hash']
+        # update count and lastseen
+        count=packetContent['_source']['md5count']+1
+        if createTime > packetContent['_source']['createTime']:
+            lastSeenTime = createTime
+            createTime = packetContent['_source']['createTime']
+        else:
+            createTime = packetContent['_source']['createTime']
+            lastSeenTime = packetContent['_source']['lastSeen']
 
-    if (packetHash == hashfuzzyhttp):
-        dummy = ""
-    else:
-        if (packetExisting(hashfuzzyhttp, "packets", es, debug, "hashfuzzyhttp")):
-            app.logger.debug("Packet with same hash %s already existing."  % packetHash)
-            return 0;
+    elif fuzzyHashContent:
+        app.logger.debug("Packet with same fuzzyHash %s already existing. Adjusting counts."  % fuzzyHash)
+        id = fuzzyHashContent['_id']
+        destport = fuzzyHashContent['_source']['initialDestPort']
+        sourceip = fuzzyHashContent['_source']['initialIP']
+        count = fuzzyHashContent['_source']['md5count']
+        packetHash = fuzzyHashContent['_source']['hash']
+
+        # update count and lastseen
+        fuzzyHashCount=fuzzyHashContent['_source']['fuzzyHashCount']+1
+        if createTime > fuzzyHashContent['_source']['createTime']:
+            lastSeenTime = createTime
+            createTime = fuzzyHashContent['_source']['createTime']
+        else:
+            lastSeenTime = fuzzyHashContent['_source']['lastSeen']
+            createTime = fuzzyHashContent['_source']['createTime']
 
     packet = {
         "data" : packetdata,
         "createTime" : createTime,
+        "lastSeen" : lastSeenTime,
         "hash" : packetHash,
-        "hashfuzzyhttp": hashfuzzyhttp,
-        "initialIP" : sourceip
+        "hashfuzzyhttp": fuzzyHash,
+        "initialIP" : sourceip,
+        "md5count" : count,
+        "fuzzyHashCount": fuzzyHashCount,
+        "initialDestPort" : destport
     }
-
     if debug:
         app.logger.debug("Not sending out " + "Packet" + ": " + str(packet))
         return 0
 
     try:
-        res = es.index(index="packets", doc_type="Packet", id=id, body=packet)
+        res = es.index(index="packets", doc_type="Packet", id=id, body=packet, refresh=True)
         return 0
 
     except:
@@ -252,14 +284,13 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
     currentTime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
 
-    if (len(str(packetdata)) > 1024):
+    if (len(str(packetdata)) > 0):
 
         if (len(str(packetdata)) <= 10240):
 
             if ("honeytrap" in peerType or "dionaea" in peerType):
-
                 if ("ewscve" not in index):
-                    handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip)
+                    handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip, destinationPort)
 
 
 
@@ -379,7 +410,7 @@ def packetExisting(hash, index, es, debug, hashType):
     res = es.search(index=index, doc_type="Packet", body=query)
 
     for hit in res['hits']['hits']:
-        return True
+        return(hit)
 
     return False
 
