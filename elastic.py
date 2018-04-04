@@ -247,6 +247,7 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport):
         "fuzzyHashCount": fuzzyHashCount,
         "initialDestPort" : destport
     }
+
     if debug:
         app.logger.debug("Not sending out " + "Packet" + ": " + str(packet))
         return 0
@@ -381,10 +382,6 @@ def cveExisting(cve, index, es, debug):
 
 def packetExisting(hash, index, es, debug, hashType):
     """ check if packet already exists in index """
-
-    if debug:
-        app.logger.debug("Pretending as if %s was existing in index." % str(hash))
-        return True
 
     query = {
         "query": {
