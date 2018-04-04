@@ -658,7 +658,7 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
                   "top_hits": {
                     "size": 1,
                     "_source": {
-                      "include": [
+                      "includes": [
                         "countryName"
                       ]
                     }
@@ -704,7 +704,7 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
                             "top_hits": {
                                 "size": 1,
                                 "_source": {
-                                    "include": [
+                                    "includes": [
                                         "targetCountryName"
                                     ]
                                 }
