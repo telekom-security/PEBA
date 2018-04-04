@@ -4,6 +4,7 @@ import hashlib
 import ipaddress
 import base64
 import json
+import magic
 
 
 from flask_elasticsearch import FlaskElasticsearch
@@ -196,6 +197,10 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport):
     lastSeenTime = createTime
     fuzzyHashCount=0
     count=1
+    fileMagic="unknown"
+
+    with magic.Magic(flags=magic.MAGIC_MIME_TYPE) as m:
+        fileMagic=(m.id_buffer(base64.decodebytes(packetdata.encode('utf-8'))))
 
     # check if packet is existing in index via hash
     packetContent=packetExisting(packetHash, "packets", es, debug, "hash")
@@ -245,7 +250,8 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport):
         "initialIP" : sourceip,
         "md5count" : count,
         "fuzzyHashCount": fuzzyHashCount,
-        "initialDestPort" : destport
+        "initialDestPort" : destport,
+        "fileMagic" : fileMagic
     }
 
     if debug:
