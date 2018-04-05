@@ -192,7 +192,13 @@ def getFuzzyHash(packetdata, packetHash):
 
 def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport):
     m = hashlib.md5()
-    m.update(base64.decodebytes(packetdata.encode('utf-8')))
+    try:
+        decodedPayload = base64.decodebytes(packetdata.encode('utf-8'))
+    except:
+        app.logger.debug("Could not base64-decode payload from alert id %s." % id)
+        return 1
+
+    m.update(decodedPayload)
     packetHash = m.hexdigest()
     lastSeenTime = createTime
     fuzzyHashCount=0
@@ -200,7 +206,10 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport):
     fileMagic="unknown"
 
     with magic.Magic(flags=magic.MAGIC_MIME_TYPE) as m:
-        fileMagic=(m.id_buffer(base64.decodebytes(packetdata.encode('utf-8'))))
+        try:
+            fileMagic=(m.id_buffer(decodedPayload))
+        except:
+            app.logger.debug("Could not determine MIME for payload %s." % packetHash)
 
     # check if packet is existing in index via hash
     packetContent=packetExisting(packetHash, "packets", es, debug, "hash")
