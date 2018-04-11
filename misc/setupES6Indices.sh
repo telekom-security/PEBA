@@ -117,6 +117,10 @@ curl -XPUT "http://"$host":"$port"/"$indexPackets"?pretty" -H 'Content-Type: app
                         "type": "date",
                         "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
                     },
+                    "lastSeen": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    },
                     "initialIP": {
                         "type": "ip"
                     }
