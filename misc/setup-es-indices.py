@@ -179,6 +179,6 @@ if es.indices.exists(index=indexNotifications):
     print("Index %s already exists. Skipping!"% indexNotifications)
 else:
     # create index for packets
-    res = es.indices.create(index=indexPackets, ignore=400, body=settingsNotifications)
+    res = es.indices.create(index=indexNotifications, ignore=400, body=settingsNotifications)
     print("Result for Notification mapping")
     print(res)
