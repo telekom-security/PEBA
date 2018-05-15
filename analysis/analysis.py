@@ -8,6 +8,7 @@ import datetime, sys
 from elasticsearch import Elasticsearch, ElasticsearchException
 import ipaddress
 import argparse
+import json
 
 
 
@@ -16,7 +17,7 @@ import argparse
 ### INIT
 #######################
 
-esindex="ews2017.1"
+esindex="ews-*"
 
 es = Elasticsearch(
         ['127.0.0.1'],
@@ -285,6 +286,73 @@ def getNumberAlerts(timeframe, clientDomain):
 
     return False
 
+def getAlertsPerHoneypotType(timeframe, clientDomain):
+    ''' retrieves number of alerts from index in timeframe (minutes)'''
+
+    esquery="""
+    {
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "range": {
+                    "recievedTime": {
+                        "gte": "now-%sm" 
+                    }
+                  }
+                },
+                {
+                  "terms": {
+                      "clientDomain": [ %s ]
+                    }
+                }
+              ]
+            }
+          },
+          "aggs": {
+            "peerType": {
+              "terms": {
+                "field": "peerType.keyword",
+                "size": 1000
+              }
+            }
+          },
+          "size": 0
+        }"""% (timeframe, str(clientDomain).lower())
+
+    try:
+        res = es.search(index=esindex, body=esquery)
+        return res
+
+
+    except ElasticsearchException as err:
+        print('ElasticSearch error: %s' % err)
+
+    return True
+
+def getAlertStatsJson():
+    communityPeerStats=getAlertsPerHoneypotType(args.minutes, True)
+    peerStats=getAlertsPerHoneypotType(args.minutes, False)
+
+    privateJson={}
+    privateJson['total'] = peerStats['hits']['total']
+    privateJson['peerTypes'] = dict()
+    for peerType in peerStats['aggregations']['peerType']['buckets']:
+        privateJson['peerTypes'][peerType['key']] = peerType['doc_count']
+
+    communityJson={}
+    communityJson['total'] = communityPeerStats['hits']['total']
+    communityJson['peerTypes'] = dict()
+    for peerType in communityPeerStats['aggregations']['peerType']['buckets']:
+        communityJson['peerTypes'][peerType['key']] = peerType['doc_count']
+
+    jsonResult = {}
+    jsonResult['private'] = privateJson
+    jsonResult['community'] = communityJson
+    print(json.dumps(jsonResult, indent=4, sort_keys=True))
+
+
+
 ########################
 ### Functions to SET data
 ########################
@@ -327,8 +395,12 @@ if __name__ == '__main__':
     print("Retrieving statistics for the last " + str(args.minutes)+ " minute(s):")
 
     # DTAG
-    handleHoneypotAlerts(args.minutes, False)
+   # handleHoneypotAlerts(args.minutes, False)
 
 
     # Community
-    handleHoneypotAlerts(args.minutes, True)
+    #handleHoneypotAlerts(args.minutes, True)
+
+
+    # test
+    print(getAlertStatsJson())
