@@ -9,6 +9,7 @@ from elasticsearch import Elasticsearch, ElasticsearchException
 import ipaddress
 import argparse
 import json
+import time
 
 
 
@@ -124,7 +125,8 @@ def getNumberHoneypotsAndAlerts(timeframe, clientDomain, type):
                 numHoneypotDaemons+=len(res['aggregations']['hostnames']['buckets'][i]['peerIdents']['buckets'])
 
             numHoneypots=len(res['aggregations']['hostnames']['buckets'])
-            print("COMMUNITY >= 17.10 --> " + str(numHoneypots) + " T-Pot installations with a total of " + str(numHoneypotDaemons) + " honeypot daemons, accounting for " +str(res['hits']['total'])+ " alerts.")
+            if args.verbose:
+                print("COMMUNITY >= 17.10 --> " + str(numHoneypots) + " T-Pot installations with a total of " + str(numHoneypotDaemons) + " honeypot daemons, accounting for " +str(res['hits']['total'])+ " alerts.")
 
 
             # Find older Honeypots via dest_ip
@@ -195,10 +197,12 @@ def getNumberHoneypotsAndAlerts(timeframe, clientDomain, type):
                     numHoneypotDaemonsOld+=len(res2['aggregations']['hostnames']['buckets'][i]['peerIdents']['buckets'])
 
             numHoneypotsOld=len(res2['aggregations']['hostnames']['buckets'])
-            print("COMMUNITY < 17.10 --> " + str(numHoneypotsOld) + " T-Pot installations with a total of " + str(numHoneypotDaemonsOld) + " honeypot daemons, accounting for " + str(res2['hits']['total'])+ " alerts -  including " + str(internalDocker) + " hosts with internal docker ip (might be counted only once)")
+            if args.verbose:
+                print("COMMUNITY < 17.10 --> " + str(numHoneypotsOld) + " T-Pot installations with a total of " + str(numHoneypotDaemonsOld) + " honeypot daemons, accounting for " + str(res2['hits']['total'])+ " alerts -  including " + str(internalDocker) + " hosts with internal docker ip (might be counted only once)")
 
             # total sum
-            print("COMMUNITY TOTAL : " + str(numHoneypots+numHoneypotsOld) + " T-Pot installations, with a total of " + str(numHoneypotDaemons+numHoneypotDaemonsOld) + " honeypot daemons, accounting for " + str(res['hits']['total']+res2['hits']['total']) + " alerts." )
+            if args.verbose:
+                    print("COMMUNITY TOTAL : " + str(numHoneypots+numHoneypotsOld) + " T-Pot installations, with a total of " + str(numHoneypotDaemons+numHoneypotDaemonsOld) + " honeypot daemons, accounting for " + str(res['hits']['total']+res2['hits']['total']) + " alerts." )
 
             if args.verbose:
                 print(listoutput)
@@ -241,7 +245,8 @@ def getNumberHoneypotsAndAlerts(timeframe, clientDomain, type):
                   "size": 0
                 })
 
-            print("DTAG TOTAL --> " + str(len(res['aggregations']['communityfilter']['hostnames']['buckets'])) + " honeypot daemons, accounting for " +  str(res['aggregations']['communityfilter']['doc_count']) + " alerts.")
+            if args.verbose:
+                print("DTAG TOTAL --> " + str(len(res['aggregations']['communityfilter']['hostnames']['buckets'])) + " honeypot daemons, accounting for " +  str(res['aggregations']['communityfilter']['doc_count']) + " alerts.")
 
             for i in res['aggregations']['communityfilter']['hostnames']['buckets']:
                 listoutput+="[DTAG][" + i['key'] + "] : " + str(i['doc_count']) + "\n"
@@ -249,10 +254,207 @@ def getNumberHoneypotsAndAlerts(timeframe, clientDomain, type):
             if args.verbose:
                 print(listoutput)
 
-            return "unknown",len(res['aggregations']['communityfilter']['hostnames']['buckets']),res['aggregations']['communityfilter']['doc_count']
+            return 0,len(res['aggregations']['communityfilter']['hostnames']['buckets']),res['aggregations']['communityfilter']['doc_count']
         except ElasticsearchException as err:
             print('ElasticSearch error: %s' % err)
     return False
+
+def getNumberHoneypotTypes(timeframe, clientDomain, type):
+    ''' retrieves destinct number of honeypots from index'''
+    type=0 # all honeypot types
+    numHoneypotDaemons = 0
+    numHoneypotDaemonsOld = 0
+    numHoneypots = 0
+    numHoneypotsOld = 0 # pre 17.10
+    internalDocker = 0
+    listoutput=""
+    daemonCount = dict()
+
+    if clientDomain:
+        try:
+            # find all 17.10 T-Pots
+            res = es.search(index=esindex, body={
+              "query": {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "clientDomain": clientDomain
+                      }
+                    },
+                    {
+                      "exists": {
+                        "field": "hostname.keyword"
+                      }
+                    }
+                  ],
+                  "must_not": [
+                    {
+                      "term": {
+                        "hostname.keyword": "undefined"
+                      }
+                    }
+                  ],
+                  "filter": {
+                    "range": {
+                      "recievedTime": {
+                        "gte": "now-" + str(timeframe) + "m"
+                      }
+                    }
+                  }
+                }
+              },
+              "size": 0,
+              "aggs": {
+                "hostnames": {
+                  "terms": {
+                    "field": "hostname.keyword",
+                    "size": 100000
+                  },
+                    "aggs": {
+                        "peerTypes": {
+                            "terms": {
+                                "field": "peerType.keyword",
+                                "size": 100000
+                            }
+                       }
+                    }
+                }
+              }
+            })
+
+
+            for peerIdent in res['aggregations']['hostnames']['buckets']:
+                for peerType in peerIdent['peerTypes']['buckets']:
+                    if peerType['key'] in daemonCount:
+                        daemonCount[peerType['key']]+=1
+                    else:
+                        daemonCount[peerType['key']]=1
+
+
+            # Find older Honeypots via dest_ip
+            res2 = es.search(index=esindex, body={
+                "query": {
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    "clientDomain": clientDomain
+                                }
+                            },
+                            {
+                                "exists": {
+                                    "field": "hostname.keyword"
+                                }
+                            },
+                            {
+                                "term": {
+                                    "hostname.keyword": "undefined"
+                                }
+                            }
+                        ],
+                        "must_not": [
+                            {
+                                "term": {
+                                    "hostname.keyword": ""
+                                }
+                            }
+                        ],
+                        "filter": {
+                            "range": {
+                                "recievedTime": {
+                                    "gte": "now-" + str(timeframe) + "m"
+                                }
+                            }
+                        }
+                    }
+                },
+                "size": 0,
+                "aggs": {
+                    "hostnames": {
+                        "terms": {
+                            "field": "targetEntryIp",
+                            "size": 100000
+                        },
+                        "aggs": {
+                            "peerTypes": {
+                                "terms": {
+                                    "field": "peerType.keyword",
+                                    "size": 100000
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+
+            for peerIdent in res2['aggregations']['hostnames']['buckets']:
+                for peerType in peerIdent['peerTypes']['buckets']:
+                    if peerType['key'] in daemonCount:
+                        daemonCount[peerType['key']] += 1
+                    else:
+                        daemonCount[peerType['key']] = 1
+
+            return daemonCount
+
+        except ElasticsearchException as err:
+            print('ElasticSearch error: %s' % err)
+    else:
+        listoutput+="\n ------ detailed DTAG honeypot statistics ------\n\n"
+
+        try:
+            res = es.search(index=esindex, body={
+              "query": {
+                "bool": {
+                  "must": [
+                    {
+                      "term": {
+                        "clientDomain": clientDomain
+                      }
+                    }
+                  ],
+                  "filter": {
+                    "range": {
+                      "recievedTime": {
+                        "gte": "now-" + str(timeframe) + "m"
+                      }
+                    }
+                  }
+                }
+              },
+              "size": 0,
+              "aggs": {
+                "peerIdent": {
+                  "terms": {
+                    "field": "peerIdent.keyword",
+                    "size": 100000
+                  },
+                    "aggs": {
+                        "peerTypes": {
+                            "terms": {
+                                "field": "peerType.keyword",
+                                "size": 100000
+                            }
+                       }
+                    }
+                }
+              }
+            })
+
+
+            for peerIdent in res['aggregations']['peerIdent']['buckets']:
+                for peerType in peerIdent['peerTypes']['buckets']:
+                    if peerType['key'] in daemonCount:
+                        daemonCount[peerType['key']] += 1
+                    else:
+                        daemonCount[peerType['key']] = 1
+
+            return daemonCount
+
+        except ElasticsearchException as err:
+            print('ElasticSearch error: %s' % err)
+    return False
+
 
 def getNumberAlerts(timeframe, clientDomain):
     ''' retrieves number of alerts from index in timeframe (minutes)'''
@@ -330,27 +532,50 @@ def getAlertsPerHoneypotType(timeframe, clientDomain):
 
     return True
 
+
 def getAlertStatsJson():
     communityPeerStats=getAlertsPerHoneypotType(args.minutes, True)
     peerStats=getAlertsPerHoneypotType(args.minutes, False)
+    communityInstallations = getNumberHoneypotsAndAlerts(args.minutes, True, 0)
+    peerInstallations = getNumberHoneypotsAndAlerts(args.minutes, False, 0)
+    communityDaemons = getNumberHoneypotTypes(args.minutes, True,0)
+    peerDaemons = getNumberHoneypotTypes(args.minutes, False,0)
+
+    timeNow = datetime.datetime.utcnow()
+    timeFrom = timeNow + datetime.timedelta(0, -args.minutes * 60)
 
     privateJson={}
-    privateJson['total'] = peerStats['hits']['total']
-    privateJson['peerTypes'] = dict()
+    privateJson['totalNumberAlerts'] = peerStats['hits']['total']
+    privateJson['totalNumberHoneypots'] = peerInstallations[0]
+    privateJson['totalNumberDaemons'] = peerInstallations[1]
+    privateJson['numberAlertsPerType'] = dict()
     for peerType in peerStats['aggregations']['peerType']['buckets']:
-        privateJson['peerTypes'][peerType['key']] = peerType['doc_count']
+        privateJson['numberAlertsPerType'][peerType['key']] = peerType['doc_count']
+    privateJson['numberHoneypotsPerType'] = dict()
+    for peerType in peerDaemons:
+        privateJson['numberHoneypotsPerType'][peerType] = peerDaemons.get(peerType)
 
     communityJson={}
-    communityJson['total'] = communityPeerStats['hits']['total']
-    communityJson['peerTypes'] = dict()
+    communityJson['totalNumberAlerts'] = communityPeerStats['hits']['total']
+    communityJson['totalNumberHoneypots'] = communityInstallations[0]
+    communityJson['totalNumberDaemons'] = communityInstallations[1]
+    communityJson['numberAlertsPerType'] = dict()
     for peerType in communityPeerStats['aggregations']['peerType']['buckets']:
-        communityJson['peerTypes'][peerType['key']] = peerType['doc_count']
+        communityJson['numberAlertsPerType'][peerType['key']] = peerType['doc_count']
+    communityJson['numberHoneypotsPerType'] = dict()
+    for peerType in communityDaemons:
+        communityJson['numberHoneypotsPerType'][peerType] = communityDaemons.get(peerType)
 
     jsonResult = {}
-    jsonResult['private'] = privateJson
-    jsonResult['community'] = communityJson
-    print(json.dumps(jsonResult, indent=4, sort_keys=True))
+    jsonResult['privateHoneypots'] = privateJson
+    jsonResult['communityHoneypots'] = communityJson
+    jsonResult['UTCtimeFrom'] = str(timeFrom)
+    jsonResult['UTCtimeTo'] = str(timeNow)
 
+
+    print(json.dumps(jsonResult, indent=4, sort_keys=True))
+    with open("./stats.json", "w") as fh:
+        fh.write(json.dumps(jsonResult, indent=4, sort_keys=True))
 
 
 ########################
@@ -364,7 +589,7 @@ def setAlertsOverTime(timeframe, numberTpots, numberHoneypots, numberAlerts, cin
     honeypot_count=numberHoneypots
     tpot_count=numberTpots
     domain=cindex
-    # print("timeframe: " + str(span) + "min | number of alerts: " +  str(alert_count)+ " | determined number of T-Pot installations: " + str(tpot_count) + " | number of honeypot daemons: " + str(honeypot_count) + " | community: " + str(cindex))
+    #print("timeframe: " + str(span) + "min | number of alerts: " +  str(alert_count)+ " | determined number of T-Pot installations: " + str(tpot_count) + " | number of honeypot daemons: " + str(honeypot_count) + " | community: " + str(cindex))
 
     # TODO: Store data in DB
 
@@ -394,13 +619,5 @@ if __name__ == '__main__':
 
     print("Retrieving statistics for the last " + str(args.minutes)+ " minute(s):")
 
-    # DTAG
-   # handleHoneypotAlerts(args.minutes, False)
-
-
-    # Community
-    #handleHoneypotAlerts(args.minutes, True)
-
-
-    # test
-    print(getAlertStatsJson())
+    # generate statistical data
+    getAlertStatsJson()

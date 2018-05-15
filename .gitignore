@@ -34,3 +34,5 @@ var/lib/GeoIP/GeoIPASNum.dat
 var/lib/GeoIP/GeoLiteCity.dat
 
 misc/get-requests/request.av.xml
+
+analysis/stats.json
