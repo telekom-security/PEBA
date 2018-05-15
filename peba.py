@@ -963,8 +963,10 @@ def formatAlertsJson(alertslist):
             latlong = alert['_source']['location'].split(' , ')
             destlatlong = alert['_source']['locationDestination'].split(' , ')
 
-            # kippo attack details
-            if alert['_source']['peerType'] == "SSH/console(cowrie)" and alert['_source']['originalRequestString'] == "":
+            # cowrie/heralding attack details
+            if (("SSH/console(cowrie)" in alert['_source']['peerType']
+                 or "Passwords(heralding)" in alert['_source']['peerType'] )
+                    and alert['_source']['originalRequestString'] == ""):
                 requestString =  ""
                 if alert['_source']['username'] is not None:
                     requestString+= "Username: \"" + str(urllib.parse.unquote(alert['_source']['username'])) + "\""
@@ -974,7 +976,8 @@ def formatAlertsJson(alertslist):
                     requestString+= " | Password: \"" + str(urllib.parse.unquote(alert['_source']['password'])) + "\""
                 else:
                     requestString += " | Password: <none>"
-                if alert['_source']['login'] is not None:
+                # only show login status for cowrie
+                if "SSH/console(cowrie)" in alert['_source']['peerType'] and alert['_source']['login'] is not None:
                     requestString+= " | Status: "+ str(alert['_source']['login'])
                 requestStringOut = html.escape(requestString)
             else:
