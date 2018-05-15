@@ -8,6 +8,7 @@ import urllib.request, urllib.parse, urllib.error
 import elastic, communication
 import ipaddress
 import datetime
+import base64
 from dateutil.relativedelta import relativedelta
 
 ################
@@ -27,7 +28,9 @@ peerIdents = ["WebHoneypot", "Webpage",
               ".ht", "Network(honeytrap)",
               "vnclowpot", "VNC(vnclowpot)",
               "rdpy", "RDP(rdpy)",
-              "mailoney", "E-Mail(mailoney)"
+              "mailoney", "E-Mail(mailoney)",
+              "heralding", "Passwords(heralding)",
+              "ciscoasa", "Network(cisco-asa)"
               "", ""]
 
 ################
@@ -84,7 +87,7 @@ def handleAlerts(tree, tenant, es, cache):
         # default values
         parsingError = ""
         skip = False
-        additionalData, packetdata, peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime, externalIP, internalIP, hostname, sourceTransport = "", "","Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", "", "1.1.1.1", "1.1.1.1", "undefined", ""
+        additionalData, packetdata, peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime, externalIP, internalIP, hostname, sourceTransport, rawhttp = {}, "","Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", "", "1.1.1.1", "1.1.1.1", "undefined", "", "-"
         for child in node:
             childName = child.tag
 
@@ -146,14 +149,18 @@ def handleAlerts(tree, tenant, es, cache):
                     else:
                         parsingError += "| packetdata = NONE "
 
+                if (type == "raw"):
+                    if child.text is not None:
+                        rawhttp = base64.b64decode(child.text).decode("UTF-8")
+                    else:
+                        parsingError +="| httpraw = NONE "
+
                 # if peertype could not be identified by the identifier of the honeypot, try to use the
                 # description field
                 if (type == "description" and peerType == ""):
                     peerType = getPeerType(child.text)
 
             if (childName == "AdditionalData"):
-
-                additionalData = {}
 
                 meaning = child.attrib.get('meaning')
 
@@ -207,12 +214,20 @@ def handleAlerts(tree, tenant, es, cache):
 
                 # Todo: add additional data from ewsposter fields as json structure.
 
+                # for heralding
+                if (meaning == "protocol"):
+                    if child.text is not None:
+                        additionalData["protocol"] = child.text
 
+                # for cisco-asa
+                if (meaning == "payload"):
+                    if child.text is not None:
+                        additionalData["payload"] = urllib.parse.unquote(child.text)
+
+                # for dionaea binaries/honeytrap payloads/glastopf rfis
                 if (meaning == "payload_md5"):
                     if child.text is not None:
                         additionalData["payload_md5"] = child.text
-
-
 
 
         if parsingError is not "":
@@ -230,7 +245,7 @@ def handleAlerts(tree, tenant, es, cache):
                                               tenant, url,
                                               analyzerID, peerType, username, password, loginStatus, version, starttime,
                                               endtime, sourcePort, destinationPort, externalIP, internalIP, hostname,
-                                              sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata)
+                                              sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp)
                 url = "(" + vulnid + ") " + url
 
             #
@@ -238,7 +253,7 @@ def handleAlerts(tree, tenant, es, cache):
             #
             correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
                                           analyzerID, peerType, username, password, loginStatus, version, starttime,
-                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata)
+                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp)
             counter = counter + 1 - correction
 
             #

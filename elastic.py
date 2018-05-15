@@ -276,20 +276,20 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport):
         return 1
 
 
-def putVuln(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata):
+def putVuln(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata, rawhttp):
 
     if (cveExisting(vulnid, index, es, debug)):
         return 1
     else:
-        return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "CVE", packetdata)
+        return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "CVE", packetdata, rawhttp)
         return 0
 
 
-def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata):
-    return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "Alert", packetdata)
+def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata, rawhttp):
+    return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "Alert", packetdata, rawhttp)
 
 
-def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, docType, packetdata):
+def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, docType, packetdata, rawhttp):
     """stores an alarm in the index"""
     m = hashlib.md5()
     m.update((createTime + sourceip + destinationip + url + analyzerID + docType).encode())
@@ -307,7 +307,6 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
             if ("honeytrap" in peerType or "dionaea" in peerType):
                 if ("ewscve" not in index):
                     handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip, destinationPort)
-
 
 
     alert = {
@@ -341,7 +340,8 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
         "recievedTime": currentTime,
         "externalIP": externalIP,
         "internalIP": internalIP,
-        "hostname": hostname
+        "hostname": hostname,
+        "rawhttp": rawhttp
     }
 
     if debug:
