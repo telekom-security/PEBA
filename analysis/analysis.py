@@ -254,7 +254,7 @@ def getNumberHoneypotsAndAlerts(timeframe, clientDomain, type):
             if args.verbose:
                 print(listoutput)
 
-            return 0,len(res['aggregations']['communityfilter']['hostnames']['buckets']),res['aggregations']['communityfilter']['doc_count']
+            return len(res['aggregations']['communityfilter']['hostnames']['buckets']),len(res['aggregations']['communityfilter']['hostnames']['buckets']),res['aggregations']['communityfilter']['doc_count']
         except ElasticsearchException as err:
             print('ElasticSearch error: %s' % err)
     return False
