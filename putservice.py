@@ -30,7 +30,9 @@ peerIdents = ["WebHoneypot", "Webpage",
               "rdpy", "RDP(rdpy)",
               "mailoney", "E-Mail(mailoney)",
               "heralding", "Passwords(heralding)",
-              "ciscoasa", "Network(cisco-asa)"
+              "ciscoasa", "Network(cisco-asa)",
+              "elasticpot", "Webpage",
+              "suricata", "Network(suricata)"
               "", ""]
 
 ################
@@ -143,15 +145,22 @@ def handleAlerts(tree, tenant, es, cache):
                     else:
                         parsingError += "| url = NONE "
 
-                if (type == "binary"):
+                if (type == "raw" or type == "binary"):
                     if child.text is not None:
-                        packetdata = child.text
-                    else:
-                        parsingError += "| packetdata = NONE "
+                        try:
+                            rawhttpcand = base64.b64decode(child.text).decode("UTF-8")
+                            httpMethods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'CONNECT', 'HEAD', 'OPTIONS', 'TRACE']
+                            if any(x in rawhttpcand.split(" ")[0] for x in httpMethods):
+                                app.logger.debug("PeerType: %s - Storing HTTP RAW data from RAW / BINARY payload (plain) in httpraw: %s" % (peerType, str(base64.b64decode(child.text))[0:50]+"..."))
+                                rawhttp = rawhttpcand
+                                packetdata = child.text
+                            else:
+                                app.logger.debug("PeerType: %s - Storing ASCII data from RAW / BINARY payload (base64) in packetdata: %s" % (peerType, str(base64.b64decode(child.text))[0:50]+"..."))
+                                packetdata = child.text
+                        except:
+                            app.logger.debug("PeerType: %s - Storing BINARY from  RAW / BINARY payload (base64) in packetdata: %s" % (peerType, str(base64.b64decode(child.text))[0:50]+"..."))
+                            packetdata = child.text
 
-                if (type == "raw"):
-                    if child.text is not None:
-                        rawhttp = base64.b64decode(child.text).decode("UTF-8")
                     else:
                         parsingError +="| httpraw = NONE "
 

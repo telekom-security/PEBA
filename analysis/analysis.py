@@ -38,6 +38,7 @@ def testElasticsearch():
 
 def testDataStore():
     try:
+        # stub for connection test data store
         return True
     except:
         return False
