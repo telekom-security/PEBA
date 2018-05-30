@@ -12,6 +12,7 @@ import base64
 from dateutil.relativedelta import relativedelta
 import botocore.session, botocore.client
 from botocore.exceptions import ClientError
+import hashlib
 
 
 ################
@@ -151,18 +152,27 @@ def handleAlerts(tree, tenant, es, cache, s3client):
                 if (type == "raw" or type == "binary"):
                     if child.text is not None:
                         try:
+                            m=hashlib.md5()
+                            m.update(base64.b64decode(child.text.encode()))
+                            md5sum=m.hexdigest()
                             rawhttpcand = base64.b64decode(child.text).decode("UTF-8")
                             httpMethods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'CONNECT', 'HEAD', 'OPTIONS', 'TRACE']
+
                             if any(x in rawhttpcand.split(" ")[0] for x in httpMethods):
                                 app.logger.debug("PeerType: %s - Storing HTTP RAW data from RAW / BINARY payload (plain) in httpraw: %s" % (peerType, str(base64.b64decode(child.text))[0:50]+"..."))
                                 rawhttp = rawhttpcand
                                 packetdata = child.text
+                                additionalData["payload_md5"] = md5sum
+
                             else:
                                 app.logger.debug("PeerType: %s - Storing ASCII data from RAW / BINARY payload (base64) in packetdata: %s" % (peerType, str(base64.b64decode(child.text))[0:50]+"..."))
                                 packetdata = child.text
+                                additionalData["payload_md5"] = md5sum
+
                         except:
                             app.logger.debug("PeerType: %s - Storing BINARY from  RAW / BINARY payload (base64) in packetdata: %s" % (peerType, str(base64.b64decode(child.text))[0:50]+"..."))
                             packetdata = child.text
+                            additionalData["payload_md5"] = md5sum
 
                     else:
                         parsingError +="| httpraw = NONE "
@@ -274,17 +284,17 @@ def handleAlerts(tree, tenant, es, cache, s3client):
                     searchFile = s3client.list_objects_v2(Bucket=app.config['S3BUCKET'], Prefix=additionalData["payload_md5"])
                     if (len(searchFile.get('Contents', []))) == 1 and str(
                             searchFile.get('Contents', [])[0]['Key']) == additionalData["payload_md5"]:
-                        app.logger.debug(
+                        app.logger.error(
                             'Not storing file ({0}) to s3 bucket "{1}" on {2} as it already exists in the bucket.'.format(
                                 additionalData["payload_md5"], app.config['S3BUCKET'], app.config['S3ENDPOINT']))
                     else:
                         # upload file to s3
                         bodydata=base64.decodebytes(packetdata.encode('utf-8'))
                         s3client.put_object(Bucket=app.config['S3BUCKET'], Body=bodydata, Key=additionalData["payload_md5"])
-                        app.logger.debug('Storing file ({0}) using s3 bucket "{1}" on {2}'.format(additionalData["payload_md5"], app.config['S3BUCKET'], app.config['S3ENDPOINT']))
+                        app.logger.error('Storing file ({0}) using s3 bucket "{1}" on {2}'.format(additionalData["payload_md5"], app.config['S3BUCKET'], app.config['S3ENDPOINT']))
 
                 except ClientError as e:
-                    app.logger.warning("Received error: %s", e.response['Error']['Message'])
+                    app.logger.error("Received error: %s", e.response['Error']['Message'])
 
             #
             # slack wanted
