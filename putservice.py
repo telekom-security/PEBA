@@ -31,7 +31,11 @@ peerIdents = ["WebHoneypot", "Webpage",
               ".ht", "Network(honeytrap)",
               "vnclowpot", "VNC(vnclowpot)",
               "rdpy", "RDP(rdpy)",
-              "mailoney", "E-Mail(mailoney)"
+              "mailoney", "E-Mail(mailoney)",
+              "heralding", "Passwords(heralding)",
+              "ciscoasa", "Network(cisco-asa)",
+              "elasticpot", "Webpage",
+              "suricata", "Network(suricata)"
               "", ""]
 
 ################
@@ -88,7 +92,7 @@ def handleAlerts(tree, tenant, es, cache, s3client):
         # default values
         parsingError = ""
         skip = False
-        additionalData, packetdata, peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime, externalIP, internalIP, hostname, sourceTransport = "", "","Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", "", "1.1.1.1", "1.1.1.1", "undefined", ""
+        additionalData, packetdata, peerType, vulnid, source, sourcePort, destination, destinationPort, createTime, url, analyzerID, username, password, loginStatus, version, starttime, endtime, externalIP, internalIP, hostname, sourceTransport, rawhttp = {}, "","Unclassified", "", "","", "", "", "-", "", "", "", "", "", "", "", "", "1.1.1.1", "1.1.1.1", "undefined", "", "-"
         for child in node:
             childName = child.tag
 
@@ -144,11 +148,24 @@ def handleAlerts(tree, tenant, es, cache, s3client):
                     else:
                         parsingError += "| url = NONE "
 
-                if (type == "binary"):
+                if (type == "raw" or type == "binary"):
                     if child.text is not None:
-                        packetdata = child.text
+                        try:
+                            rawhttpcand = base64.b64decode(child.text).decode("UTF-8")
+                            httpMethods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'CONNECT', 'HEAD', 'OPTIONS', 'TRACE']
+                            if any(x in rawhttpcand.split(" ")[0] for x in httpMethods):
+                                app.logger.debug("PeerType: %s - Storing HTTP RAW data from RAW / BINARY payload (plain) in httpraw: %s" % (peerType, str(base64.b64decode(child.text))[0:50]+"..."))
+                                rawhttp = rawhttpcand
+                                packetdata = child.text
+                            else:
+                                app.logger.debug("PeerType: %s - Storing ASCII data from RAW / BINARY payload (base64) in packetdata: %s" % (peerType, str(base64.b64decode(child.text))[0:50]+"..."))
+                                packetdata = child.text
+                        except:
+                            app.logger.debug("PeerType: %s - Storing BINARY from  RAW / BINARY payload (base64) in packetdata: %s" % (peerType, str(base64.b64decode(child.text))[0:50]+"..."))
+                            packetdata = child.text
+
                     else:
-                        parsingError += "| packetdata = NONE "
+                        parsingError +="| httpraw = NONE "
 
                 # if peertype could not be identified by the identifier of the honeypot, try to use the
                 # description field
@@ -156,8 +173,6 @@ def handleAlerts(tree, tenant, es, cache, s3client):
                     peerType = getPeerType(child.text)
 
             if (childName == "AdditionalData"):
-
-                additionalData = {}
 
                 meaning = child.attrib.get('meaning')
 
@@ -211,7 +226,17 @@ def handleAlerts(tree, tenant, es, cache, s3client):
 
                 # Todo: add additional data from ewsposter fields as json structure.
 
+                # for heralding
+                if (meaning == "protocol"):
+                    if child.text is not None:
+                        additionalData["protocol"] = child.text
 
+                # for cisco-asa
+                if (meaning == "payload"):
+                    if child.text is not None:
+                        additionalData["payload"] = urllib.parse.unquote(child.text)
+
+                # for dionaea binaries/honeytrap payloads/glastopf rfis
                 if (meaning == "payload_md5"):
                     if child.text is not None:
                         additionalData["payload_md5"] = child.text
@@ -232,7 +257,7 @@ def handleAlerts(tree, tenant, es, cache, s3client):
                                               tenant, url,
                                               analyzerID, peerType, username, password, loginStatus, version, starttime,
                                               endtime, sourcePort, destinationPort, externalIP, internalIP, hostname,
-                                              sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata)
+                                              sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp)
                 url = "(" + vulnid + ") " + url
 
             #
@@ -240,7 +265,7 @@ def handleAlerts(tree, tenant, es, cache, s3client):
             #
             correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
                                           analyzerID, peerType, username, password, loginStatus, version, starttime,
-                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata)
+                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp)
             counter = counter + 1 - correction
 
             if s3client and (packetdata is not ""):

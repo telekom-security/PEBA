@@ -9,6 +9,7 @@ port = {{ ELASTIC_PORT }}
 indexAlertAlias = "{{ ELASTIC_INDEX }}"
 indexCve = "ewscve"
 indexPackets = "packets"
+indexNotifications = "ews-notifications"
 
 
 ###
@@ -130,6 +131,10 @@ settingsPackets = {
                         "type": "date",
                         "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
                     },
+                    "lastSeen": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    },
                      "initialIP": {
                         "type": "ip"
                     }
@@ -145,3 +150,26 @@ else:
     print("Result for Packet mapping")
     print(res)
 
+settingsNotifications = {
+    "settings": {
+        "number_of_shards": 5,
+        "number_of_replicas": 1
+    },
+    "mappings": {
+        "Notification": {
+            "properties":  {
+                    "createTime": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    }
+            }
+        }
+    }
+}
+if es.indices.exists(index=indexNotifications):
+    print("Index %s already exists. Skipping!"% indexNotifications)
+else:
+    # create index for packets
+    res = es.indices.create(index=indexNotifications, ignore=400, body=settingsNotifications)
+    print("Result for Notification mapping")
+    print(res)

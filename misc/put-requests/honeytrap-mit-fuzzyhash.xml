@@ -1,0 +1,152 @@
+<EWS-SimpleMessage version="3.0">
+  <Authentication>
+    <username>community-01-user</username>
+    <token>foth{a5maiCee8fineu7</token>
+  </Authentication>
+<Alert>
+    <Analyzer id="honeytrap-community-01"/>
+    <CreateTime tz="+0000">2018-01-10 03:42:17</CreateTime>
+    <Source category="ipv4" port="48584" protocol="tcp">2.49.203.42</Source>
+    <Target category="ipv4" port="81" protocol="tcp">192.168.1.120</Target>
+    <Request type="binary">R0VUIC8gSFRUUC8xLjENCkhvc3Q6IDgwLjE1OC4xNy4zNTo4MQ0KVXNlci1BZ2VudDogTW96aWxs
+YS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTFfNikgQXBwbGVXZWJLaXQvNjAx
+LjcuNyAoS0hUTUwsIGxpa2UgR2Vja28pIFZlcnNpb24vOS4xLjIgU2FmYXJpLzYwMS43LjcNCkNv
+bnRlbnQtTGVuZ3RoOiAwDQoNCg==</Request>
+    <Request type="description">NetworkHoneypot Honeytrap v1.1</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="payload_md5" type="string">c56ffce64590e1e41f3675f00dc35a48</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="honeytrap-community-01"/>
+    <CreateTime tz="+0000">2018-01-10 06:03:18</CreateTime>
+    <Source category="ipv4" port="42020" protocol="tcp">111.11.1.1</Source>
+    <Target category="ipv4" port="60" protocol="tcp">192.168.1.120</Target>
+        <Request type="binary">R0VUIC8gSFRUUC8xLjENCkhvc3Q6IDgwLjE1OC4xNy4xOQ0KVXNlci1BZ2VudDogTW96aWxsYS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTFfNikgQXBwbGVXZWJLaXQvNjAxLjcuNyAoS0hUTUwsIGxpa2UgR2Vja28pIFZlcnNpb24vOS4xLjIgU2FmYXJpLzYwMS43LjcNCkJsYTogMA0KDQo=</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="payload_md5" type="string">9b1969af179c327951cdcb3502a1807b</AdditionalData>
+  </Alert>
+<Alert>
+    <Analyzer id="honeytrap-community-01"/>
+    <CreateTime tz="+0000">2018-01-01 06:03:18</CreateTime>
+    <Source category="ipv4" port="42020" protocol="tcp">185.129.148.164</Source>
+    <Target category="ipv4" port="60" protocol="tcp">192.168.1.120</Target>
+    <Request type="description">NetworkHoneypot Honeytrap v1.1</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="payload_md5" type="string">9b1969af179c327951cdcb3502a1807b</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="honeytrap-community-01"/>
+    <CreateTime tz="+0000">2018-01-10 06:03:18</CreateTime>
+    <Source category="ipv4" port="42020" protocol="tcp">185.129.148.164</Source>
+    <Target category="ipv4" port="60" protocol="tcp">192.168.1.120</Target>
+    <Request type="description">NetworkHoneypot Honeytrap v1.1</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="payload_md5" type="string">9b1969af179c327951cdcb3502a1807b</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="honeytrap-community-01"/>
+    <CreateTime tz="+0000">2018-03-10 03:42:22</CreateTime>
+    <Source category="ipv4" port="48584" protocol="tcp">2.49.223.43</Source>
+    <Target category="ipv4" port="83" protocol="tcp">192.168.1.121</Target>
+    <Request type="binary">R0VUIC8gSFRUUC8xLjENCkhvc3Q6IDgwLjE1OC4xNy4zNTo4MQ0KVXNlci1BZ2VudDogTW96aWxs
+YS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTFfNikgQXBwbGVXZWJLaXQvNjAx
+LjcuNyAoS0hUTUwsIGxpa2UgR2Vja28pIFZlcnNpb24vOS4xLjIgU2FmYXJpLzYwMS43LjcNCkNv
+bnRlbnQtTGVuZ3RoOiAwDQoNCg==</Request>
+    <Request type="description">NetworkHoneypot Honeytrap v1.1</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="payload_md5" type="string">c56ffce64590e1e41f3675f00dc35a48</AdditionalData>
+  </Alert>
+    <Alert>
+    <Analyzer id="honeytrap-community-01"/>
+    <CreateTime tz="+0000">2017-03-10 03:42:12</CreateTime>
+    <Source category="ipv4" port="48584" protocol="tcp">2.49.223.44</Source>
+    <Target category="ipv4" port="84" protocol="tcp">192.168.1.121</Target>
+    <Request type="binary">R0VUIC8gSFRUUC8xLjENCkhvc3Q6IDgwLjE1OC4xNy4zNTo4MQ0KVXNlci1BZ2VudDogTW96aWxs
+YS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTFfNikgQXBwbGVXZWJLaXQvNjAx
+LjcuNyAoS0hUTUwsIGxpa2UgR2Vja28pIFZlcnNpb24vOS4xLjIgU2FmYXJpLzYwMS43LjcNCkNv
+bnRlbnQtTGVuZ3RoOiAwDQoNCg==</Request>
+    <Request type="description">NetworkHoneypot Honeytrap v1.1</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="payload_md5" type="string">c56ffce64590e1e41f3675f00dc35a48</AdditionalData>
+      </Alert>
+    <Alert>
+    <Analyzer id="honeytrap-community-01"/>
+    <CreateTime tz="+0000">2018-05-21 13:42:12</CreateTime>
+    <Source category="ipv4" port="48584" protocol="tcp">132.49.223.44</Source>
+    <Target category="ipv4" port="84" protocol="tcp">192.168.1.121</Target>
+    <Request type="binary">R0VUIC8gSFRUUC8xLjENCkhvc3Q6IDgwLjE1OC4xNy45OQ0KVXNlci1BZ2VudDogTW9
+6aWxsYS81LjAgKE1hY2ludG9zaDsgSsa50ZWwgTWFjIE9TIFggMTBfMTFfNikgQXBwbGVXZWJLaXQv
+NjAxLjcuNyAoS0hUTUwsIGxpa2UgR2Vja28pIFZlcnNpb24vOS4xLjIgU2FmYXJpLzYwMS43LjcNC
+kNvbnRlbnQtTGVuZ3RoOiAwDQoNCg==</Request>
+    <Request type="description">NetworkHoneypot Honeytrap v1.1</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="payload_md5" type="string">ff59143887155136105185726ad93bd0</AdditionalData>
+  </Alert>
+    <Alert>
+    <Analyzer id="honeytrap-community-01"/>
+    <CreateTime tz="+0000">2018-03-21 13:42:12</CreateTime>
+    <Source category="ipv4" port="48584" protocol="tcp">122.49.223.44</Source>
+    <Target category="ipv4" port="84" protocol="tcp">192.168.1.121</Target>
+    <Request type="binary">R0VUIC8gSFRUUC8xLjENCkhvc3Q6IDgwLjE1OC4xNy45OQ0KVXNlci1BZ2VudDogTW9
+6aWxsYS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTFfNikgQXBwbGVXZWJLaXQv
+NjAxLjcuNyAoS0hUTUwsIGxpa2UgR2Vja28pIFZlcnNpb24vOS4xLjIgU2FmYXJpLzYwMS43LjcNC
+kNvbnRlbnQtTGVuZ3RoOiAwDQoNCg==</Request>
+    <Request type="description">NetworkHoneypot Honeytrap v1.1</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="payload_md5" type="string">ff59143887155136105185726ad93bd0</AdditionalData>
+ </Alert>
+    <Alert>
+    <Analyzer id="honeytrap-community-01"/>
+    <CreateTime tz="+0000">2014-03-21 13:42:12</CreateTime>
+    <Source category="ipv4" port="48584" protocol="tcp">222.49.223.44</Source>
+    <Target category="ipv4" port="84" protocol="tcp">192.168.1.121</Target>
+    <Request type="binary">R0VUIC8gSFRUUC8xLjENCkhvc3Q6IDgwLjE1OC4xNy4xOQ0KVXNlci1BZ2VudDogTW96aWxsYS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTFfNikgQXBwbGVXZWJLaXQvNjAxLjcuNyAoS0hUTUwsIGxpa2UgR2Vja28pIFZlcnNpb24vOS4xLjIgU2FmYXJpLzYwMS43LjcNCkNvbnRlbnQtTGVuZ3RoOiAwDQoNCg==</Request>
+    <Request type="description">NetworkHoneypot Honeytrap v1.1</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="payload_md5" type="string">9aa3b7566defac9d3407afd13b004716</AdditionalData>
+  </Alert>
+    <Alert>
+    <Analyzer id="honeytrap-community-01"/>
+    <CreateTime tz="+0000">2018-04-23 13:37:12</CreateTime>
+    <Source category="ipv4" port="48584" protocol="tcp">100.49.223.44</Source>
+    <Target category="ipv4" port="84" protocol="tcp">192.168.1.121</Target>
+    <Request type="binary">R0VUIC8gSFRUUC8xLjENCkhvc3Q6IDgwLjE1OC4xNy45OQ0KVXNlci1BZ2VudDogTW9
+6aWxsYS81LjAgKE1hY2ludG9zaDsgSsa50ZWwgTWFjIE9TIFggMTBfMTFfNikgQXBwbGVXZWJLaXQv
+NjAxLjcuNyAoS0hUTUwsIGxpa2UgR2Vja28pIFZlcnNpb24vOS4xLjIgU2FmYXJpLzYwMS43LjcNC
+kNvbnRlbnQtTGVuZ3RoOiAwDQoNCgx==</Request>
+    <Request type="description">NetworkHoneypot Honeytrap v1.1</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="payload_md5" type="string">ca440d61a1dab5447d71141c2e0c7bc7</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="honeytrap-community-01"/>
+    <CreateTime tz="+0000">2018-09-23 16:03:18</CreateTime>
+    <Source category="ipv4" port="42020" protocol="tcp">222.22.2.2</Source>
+    <Target category="ipv4" port="92" protocol="tcp">192.168.1.120</Target>
+        <Request type="binary">R0VUIC8gSFRUUC8xLjENCkhvc3Q6IDgwLjE1OC4xNy4yMg0KVXNlci1BZ2VudDogTW96aWxsYS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTFfNikgQXBwbGVXZWJLaXQvNjAxLjcuNyAoS0hUTUwsIGxpa2UgR2Vja28pIFZlcnNpb24vOS4xLjIgU2FmYXJpLzYwMS43LjcNCkJsYTogMA0KDQo=</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="payload_md5" type="string">9b1969af179c327x51cdcb3502a1807b</AdditionalData>
+  </Alert>
+</EWS-SimpleMessage>

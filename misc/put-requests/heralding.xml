@@ -1,0 +1,58 @@
+<EWS-SimpleMessage version="3.0">
+  <Authentication>
+    <username>community-01-user</username>
+    <token>foth{a5maiCee8fineu7</token>
+  </Authentication>
+  <Alert>
+    <Analyzer id="heralding-community-01"/>
+    <CreateTime tz="+0200">2018-04-24 14:12:29</CreateTime>
+    <Source category="ipv4" port="43288" protocol="tcp">172.21.0.1</Source>
+    <Target category="ipv4" port="22" protocol="tcp">87.150.238.182</Target>
+    <Request type="description">Heralding Honeypot</Request>
+    <AdditionalData meaning="username" type="string">root</AdditionalData>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="protocol" type="string">ssh</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="password" type="string">1337</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="heralding-community-01"/>
+    <CreateTime tz="+0200">2018-04-24 14:12:34</CreateTime>
+    <Source category="ipv4" port="43288" protocol="tcp">172.21.0.1</Source>
+    <Target category="ipv4" port="22" protocol="tcp">87.150.238.182</Target>
+    <Request type="description">Heralding Honeypot</Request>
+    <AdditionalData meaning="username" type="string">root</AdditionalData>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="protocol" type="string">ssh</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="password" type="string">iamwithstupid</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="heralding-community-01"/>
+    <CreateTime tz="+0200">2018-04-24 14:12:38</CreateTime>
+    <Source category="ipv4" port="43288" protocol="tcp">172.21.0.1</Source>
+    <Target category="ipv4" port="22" protocol="tcp">87.150.238.182</Target>
+    <Request type="description">Heralding Honeypot</Request>
+    <AdditionalData meaning="username" type="string">root</AdditionalData>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="protocol" type="string">ssh</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="password" type="string">passw0rd</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="heralding-community-01"/>
+    <CreateTime tz="+0200">2018-04-24 14:12:54</CreateTime>
+    <Source category="ipv4" port="50800" protocol="tcp">172.21.0.1</Source>
+    <Target category="ipv4" port="21" protocol="tcp">87.150.238.182</Target>
+    <Request type="description">Heralding Honeypot</Request>
+    <AdditionalData meaning="username" type="string">john</AdditionalData>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.4</AdditionalData>
+    <AdditionalData meaning="protocol" type="string">ftp</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="password" type="string">doe</AdditionalData>
+  </Alert>
+</EWS-SimpleMessage>
