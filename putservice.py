@@ -284,14 +284,14 @@ def handleAlerts(tree, tenant, es, cache, s3client):
                     searchFile = s3client.list_objects_v2(Bucket=app.config['S3BUCKET'], Prefix=additionalData["payload_md5"])
                     if (len(searchFile.get('Contents', []))) == 1 and str(
                             searchFile.get('Contents', [])[0]['Key']) == additionalData["payload_md5"]:
-                        app.logger.error(
+                        app.logger.debug(
                             'Not storing file ({0}) to s3 bucket "{1}" on {2} as it already exists in the bucket.'.format(
                                 additionalData["payload_md5"], app.config['S3BUCKET'], app.config['S3ENDPOINT']))
                     else:
                         # upload file to s3
                         bodydata=base64.decodebytes(packetdata.encode('utf-8'))
                         s3client.put_object(Bucket=app.config['S3BUCKET'], Body=bodydata, Key=additionalData["payload_md5"])
-                        app.logger.error('Storing file ({0}) using s3 bucket "{1}" on {2}'.format(additionalData["payload_md5"], app.config['S3BUCKET'], app.config['S3ENDPOINT']))
+                        app.logger.debug('Storing file ({0}) using s3 bucket "{1}" on {2}'.format(additionalData["payload_md5"], app.config['S3BUCKET'], app.config['S3ENDPOINT']))
 
                 except ClientError as e:
                     app.logger.error("Received error: %s", e.response['Error']['Message'])
