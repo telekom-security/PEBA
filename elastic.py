@@ -253,7 +253,7 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
             createTime = fuzzyHashContent['_source']['createTime']
 
     # store to s3
-    if not packetContent and s3client:
+    if s3client and (not packetContent):
         try:
             # upload file to s3
             s3client.put_object(Bucket=app.config['S3BUCKET'], Body=decodedPayload, Key=packetHash)
@@ -264,6 +264,8 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
 
         except ClientError as e:
             app.logger.error("Received error: %s", e.response['Error']['Message'])
+    else:
+        app.logger.debug("Not storing md5 {0} as it is already stored.".format(packetHash))
 
     packet = {
         "data" : packetdata,
