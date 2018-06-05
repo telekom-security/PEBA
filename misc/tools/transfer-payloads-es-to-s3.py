@@ -38,19 +38,11 @@ def retrieve_md5(page):
 
 def upload_hash(hash,data):
     try:
-        # check if file exists in bucket
-        searchFile = s3client.list_objects_v2(Bucket="artefacts", Prefix=hash)
-        if (len(searchFile.get('Contents', []))) == 1 and str(
-                searchFile.get('Contents', [])[0]['Key']) == hash:
-            print(
-                'Not storing file ({0}) to s3 bucket "{1}" on {2} as it already exists in the bucket.'.format(
-                    hash, "artefacts", os.environ.get('S3ENDPOINT')))
-        else:
-            # upload file to s3
-            bodydata = base64.decodebytes(data.encode('utf-8'))
-            s3client.put_object(Bucket="artefacts", Body=bodydata, Key=hash)
-            print('Storing file ({0}) using s3 bucket "{1}" on {2}'.format(
-                    hash, "artefacts", os.environ.get('S3ENDPOINT')))
+        # upload file to s3
+        bodydata = base64.decodebytes(data.encode('utf-8'))
+        s3client.put_object(Bucket="artefacts", Body=bodydata, Key=hash)
+        print('Storing file ({0}) using s3 bucket "{1}" on {2}'.format(
+                hash, "artefacts", os.environ.get('S3ENDPOINT')))
 
     except ClientError as e:
         print("Received error: %s", e.response['Error']['Message'])

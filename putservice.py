@@ -10,8 +10,6 @@ import ipaddress
 import datetime
 import base64
 from dateutil.relativedelta import relativedelta
-import botocore.session, botocore.client
-from botocore.exceptions import ClientError
 import hashlib
 
 
@@ -267,7 +265,7 @@ def handleAlerts(tree, tenant, es, cache, s3client):
                                               tenant, url,
                                               analyzerID, peerType, username, password, loginStatus, version, starttime,
                                               endtime, sourcePort, destinationPort, externalIP, internalIP, hostname,
-                                              sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp)
+                                              sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp,s3client)
                 url = "(" + vulnid + ") " + url
 
             #
@@ -275,26 +273,9 @@ def handleAlerts(tree, tenant, es, cache, s3client):
             #
             correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
                                           analyzerID, peerType, username, password, loginStatus, version, starttime,
-                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp)
+                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp, s3client)
             counter = counter + 1 - correction
 
-            if s3client and (packetdata is not ""):
-                try:
-                    # check if file exists in bucket
-                    searchFile = s3client.list_objects_v2(Bucket=app.config['S3BUCKET'], Prefix=additionalData["payload_md5"])
-                    if (len(searchFile.get('Contents', []))) == 1 and str(
-                            searchFile.get('Contents', [])[0]['Key']) == additionalData["payload_md5"]:
-                        app.logger.debug(
-                            'Not storing file ({0}) to s3 bucket "{1}" on {2} as it already exists in the bucket.'.format(
-                                additionalData["payload_md5"], app.config['S3BUCKET'], app.config['S3ENDPOINT']))
-                    else:
-                        # upload file to s3
-                        bodydata=base64.decodebytes(packetdata.encode('utf-8'))
-                        s3client.put_object(Bucket=app.config['S3BUCKET'], Body=bodydata, Key=additionalData["payload_md5"])
-                        app.logger.debug('Storing file ({0}) using s3 bucket "{1}" on {2}'.format(additionalData["payload_md5"], app.config['S3BUCKET'], app.config['S3ENDPOINT']))
-
-                except ClientError as e:
-                    app.logger.error("Received error: %s", e.response['Error']['Message'])
 
             #
             # slack wanted
