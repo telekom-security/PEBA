@@ -252,6 +252,12 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
             lastSeenTime = fuzzyHashContent['_source']['lastSeen']
             createTime = fuzzyHashContent['_source']['createTime']
 
+    # if fuzzyHashContent:
+    #     app.logger.error('FuzzyHash known, not storing attack')
+    #
+    # if packetContent:
+    #     app.logger.error('MD5 known, not storing attack')
+
     # store to s3
     if s3client and (not packetContent and not fuzzyHashContent):
         try:
@@ -265,7 +271,7 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
         except ClientError as e:
             app.logger.error("Received error: %s", e.response['Error']['Message'])
     else:
-        app.logger.debug("Not storing md5 {0} as it is already stored.".format(packetHash))
+        app.logger.debug("Not storing md5 {0} / FuzzyHash {1} as it is already stored.".format(packetHash, fuzzyHash))
 
     packet = {
         "data" : packetdata,
