@@ -253,7 +253,7 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
             createTime = fuzzyHashContent['_source']['createTime']
 
     # store to s3
-    if s3client and (not packetContent):
+    if s3client and (not packetContent and not fuzzyHashContent):
         try:
             # upload file to s3
             s3client.put_object(Bucket=app.config['S3BUCKET'], Body=decodedPayload, Key=packetHash)
