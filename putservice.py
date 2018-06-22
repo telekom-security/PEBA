@@ -35,7 +35,7 @@ peerIdents = ["WebHoneypot", "Webpage",
               "ciscoasa", "Network(cisco-asa)",
               "elasticpot", "Webpage",
               "suricata", "Network(suricata)",
-              "tanner", "Webpage"
+              "tanner", "Webpage",
               "", ""]
 
 ################
