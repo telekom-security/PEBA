@@ -10,6 +10,8 @@ import ipaddress
 import datetime
 import base64
 from dateutil.relativedelta import relativedelta
+import hashlib
+
 
 ################
 # PUT Variables
@@ -32,7 +34,8 @@ peerIdents = ["WebHoneypot", "Webpage",
               "heralding", "Passwords(heralding)",
               "ciscoasa", "Network(cisco-asa)",
               "elasticpot", "Webpage",
-              "suricata", "Network(suricata)"
+              "suricata", "Network(suricata)",
+              "tanner", "Webpage",
               "", ""]
 
 ################
@@ -80,7 +83,7 @@ def fixUrl(destinationPort, transport, url, peerType):
 
     return url
 
-def handleAlerts(tree, tenant, es, cache):
+def handleAlerts(tree, tenant, es, cache, s3client):
     """
         parse the xml, handle the Alerts and send to es
     """
@@ -148,18 +151,27 @@ def handleAlerts(tree, tenant, es, cache):
                 if (type == "raw" or type == "binary"):
                     if child.text is not None:
                         try:
+                            m=hashlib.md5()
+                            m.update(base64.b64decode(child.text.encode()))
+                            md5sum=m.hexdigest()
                             rawhttpcand = base64.b64decode(child.text).decode("UTF-8")
                             httpMethods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'CONNECT', 'HEAD', 'OPTIONS', 'TRACE']
+
                             if any(x in rawhttpcand.split(" ")[0] for x in httpMethods):
                                 app.logger.debug("PeerType: %s - Storing HTTP RAW data from RAW / BINARY payload (plain) in httpraw: %s" % (peerType, str(base64.b64decode(child.text))[0:50]+"..."))
                                 rawhttp = rawhttpcand
                                 packetdata = child.text
+                                additionalData["payload_md5"] = md5sum
+
                             else:
                                 app.logger.debug("PeerType: %s - Storing ASCII data from RAW / BINARY payload (base64) in packetdata: %s" % (peerType, str(base64.b64decode(child.text))[0:50]+"..."))
                                 packetdata = child.text
+                                additionalData["payload_md5"] = md5sum
+
                         except:
                             app.logger.debug("PeerType: %s - Storing BINARY from  RAW / BINARY payload (base64) in packetdata: %s" % (peerType, str(base64.b64decode(child.text))[0:50]+"..."))
                             packetdata = child.text
+                            additionalData["payload_md5"] = md5sum
 
                     else:
                         parsingError +="| httpraw = NONE "
@@ -254,7 +266,7 @@ def handleAlerts(tree, tenant, es, cache):
                                               tenant, url,
                                               analyzerID, peerType, username, password, loginStatus, version, starttime,
                                               endtime, sourcePort, destinationPort, externalIP, internalIP, hostname,
-                                              sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp)
+                                              sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp,s3client)
                 url = "(" + vulnid + ") " + url
 
             #
@@ -262,8 +274,9 @@ def handleAlerts(tree, tenant, es, cache):
             #
             correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
                                           analyzerID, peerType, username, password, loginStatus, version, starttime,
-                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp)
+                                          endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp, s3client)
             counter = counter + 1 - correction
+
 
             #
             # slack wanted

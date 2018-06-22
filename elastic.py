@@ -5,6 +5,8 @@ import ipaddress
 import base64
 import json
 import magic
+import botocore.session, botocore.client
+from botocore.exceptions import ClientError
 
 
 from flask_elasticsearch import FlaskElasticsearch
@@ -190,7 +192,7 @@ def getFuzzyHash(packetdata, packetHash):
 
 
 
-def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport):
+def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, s3client):
     m = hashlib.md5()
     try:
         decodedPayload = base64.decodebytes(packetdata.encode('utf-8'))
@@ -250,6 +252,27 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport):
             lastSeenTime = fuzzyHashContent['_source']['lastSeen']
             createTime = fuzzyHashContent['_source']['createTime']
 
+    # if fuzzyHashContent:
+    #     app.logger.error('FuzzyHash known, not storing attack')
+    #
+    # if packetContent:
+    #     app.logger.error('MD5 known, not storing attack')
+
+    # store to s3
+    if s3client and (not packetContent and not fuzzyHashContent):
+        try:
+            # upload file to s3
+            s3client.put_object(Bucket=app.config['S3BUCKET'], Body=decodedPayload, Key=packetHash)
+            app.logger.debug(
+                'Storing file ({0}) using s3 bucket "{1}" on {2}'.format(packetHash,
+                                                                         app.config['S3BUCKET'],
+                                                                         app.config['S3ENDPOINT']))
+
+        except ClientError as e:
+            app.logger.error("Received error: %s", e.response['Error']['Message'])
+    else:
+        app.logger.debug("Not storing md5 {0} / FuzzyHash {1} as it is already stored.".format(packetHash, fuzzyHash))
+
     packet = {
         "data" : packetdata,
         "createTime" : createTime,
@@ -276,20 +299,20 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport):
         return 1
 
 
-def putVuln(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata, rawhttp):
+def putVuln(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata, rawhttp, s3client):
 
     if (cveExisting(vulnid, index, es, debug)):
         return 1
     else:
-        return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "CVE", packetdata, rawhttp)
+        return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "CVE", packetdata, rawhttp, s3client)
         return 0
 
 
-def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata, rawhttp):
-    return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "Alert", packetdata, rawhttp)
+def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata, rawhttp, s3client):
+    return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "Alert", packetdata, rawhttp, s3client)
 
 
-def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, docType, packetdata, rawhttp):
+def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, docType, packetdata, rawhttp, s3client):
     """stores an alarm in the index"""
     m = hashlib.md5()
     m.update((createTime + sourceip + destinationip + url + analyzerID + docType).encode())
@@ -302,11 +325,10 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
 
     if (len(str(packetdata)) > 0):
 
-        if (len(str(packetdata)) <= 10240):
-
-            if ("honeytrap" in peerType or "dionaea" in peerType):
+        if (len(str(packetdata)) <= 102400):
+            if ("honeytrap" in peerType or "Dionaea" in peerType or "Webpage" in peerType):
                 if ("ewscve" not in index):
-                    handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip, destinationPort)
+                    handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip, destinationPort, s3client)
 
 
     alert = {

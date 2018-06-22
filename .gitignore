@@ -36,3 +36,5 @@ var/lib/GeoIP/GeoLiteCity.dat
 misc/get-requests/request.av.xml
 
 analysis/stats.json
+
+misc/tools/export s3.txt

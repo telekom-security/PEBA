@@ -26,6 +26,9 @@ from functools import wraps
 import putservice
 from werkzeug.contrib.cache import MemcachedCache
 import ipaddress
+import botocore.session, botocore.client
+from botocore.exceptions import ClientError
+
 
 ###################
 ### Initialization
@@ -41,6 +44,18 @@ es = FlaskElasticsearch(app,
 )
 
 cache = MemcachedCache([app.config['MEMCACHE']])
+
+s3client=False
+if app.config['USES3']:
+    s3session = botocore.session.get_session()
+    s3session.set_credentials(app.config['S3AWSACCESSKEYID'], app.config['S3AWSSECRETACCESSKEY'])
+    s3client = s3session.create_client(
+        's3',
+        endpoint_url=app.config['S3ENDPOINT'],
+        region_name=app.config['S3REGION'],
+        config=botocore.config.Config(signature_version=app.config['S3SIGNATUREVERSION'])
+    )
+
 
 ###############
 ### Functions
@@ -1524,7 +1539,7 @@ def postSimpleMessage():
     if request.data:
         tree = putservice.checkPostData(request.data)
         if tree:
-            putservice.handleAlerts(tree, checkCommunityUser(), es, cache)
+            putservice.handleAlerts(tree, checkCommunityUser(), es, cache, s3client)
             message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
             return Response(message, mimetype='text/xml')
     return app.config['DEFAULTRESPONSE']
