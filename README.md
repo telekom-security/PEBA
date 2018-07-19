@@ -55,8 +55,9 @@ The above private endpoints cannot be queried using the community credentials (1
  - [GET] */alert/topCountriesAttacks* ==> Returns information on the Top 10 attacker countries and top 10 attacked countries. use GET parameter "offset" and "topx" to determine the offset from this month (default: this month) and how many results shall be returned (default: top10)
  - [GET] */alert/retrieveLatLonAttacks* ==> Returns top X count on Lat and Lng. use GET parameter "offset" and "topx" to determine the offset from now in days (default: last 24h) and how many results shall be returned (default: top10). Use parameter "direction" to determine if source or destination location is given.
  - [GET] */alert/retrieveAlertsCountWithType* ==> returns the number of attacks within timespan in minutes or since the beginning of the current day, grouped by Type, e.g. */retrieveAlertsCountWithType?time=10* or */retrieveAlertsCountWithType?time=day*. Returns json.
+ - [GET] */alert/TpotStats* ==> Returns statistics on T-Pot community installations. Parameter: *day=YYYYMMDD*, e.g. */alert/TpotStats?day=20180317* 
 
- 
+  
 **Data domain:**
 
 By default, querying the above endpoints, data from the **T-Pot community honeypots** is returned. To retrieve data from the **private domain honeypots**, add a GET parameter *ci=0*. To retrieve data from both domains,community and private, use *ci=-1*.

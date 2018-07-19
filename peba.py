@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # PEBA (Python EWS Backend API)
-# v0.8.3 2018-03-13
+# v0.8.5 2018-07-19
 # Authors: @vorband & @schmalle
 
 import xml.etree.ElementTree as ET
@@ -28,6 +28,7 @@ from werkzeug.contrib.cache import MemcachedCache
 import ipaddress
 import botocore.session, botocore.client
 from botocore.exceptions import ClientError
+from tpotstats import getTPotAlertStatsJson
 
 
 ###################
@@ -1527,6 +1528,38 @@ def retrieveLatLonAttacks():
         returnResult=formatLatLonAttacks(queryLatLonAttacks(direction, topx, offset, checkCommunityIndex(request),getRelevantIndices(0)))
         setCache(request.url, returnResult, 60, "url")
         return jsonify(returnResult)
+
+@app.route("/alert/TpotStats", methods=['GET'])
+def tpotstats():
+    """ Retrieve statistics on tpot community installations.
+    """
+    today = str(datetime.date.today()).replace("-","")
+
+    # get result from cache
+    getCacheResult = getCache(request.url, "url")
+    if getCacheResult is not False:
+        return jsonify(getCacheResult)
+
+    # query ES
+    else:
+
+        if not request.args.get('day'):
+            # Using default : today
+            offset = None
+        else:
+            offset = request.args.get('day')
+
+        returnResult = getTPotAlertStatsJson(app, es, getRelevantIndices(0), offset)
+
+        if not returnResult:
+            return app.config['DEFAULTRESPONSE']
+
+        if not request.args.get('day') == today:
+            setCache(request.url, returnResult, 60*1440*28, "url")
+            return jsonify(returnResult)
+        else:
+            return jsonify(returnResult)
+
 
 # PUT Service
 
