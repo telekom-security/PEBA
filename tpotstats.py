@@ -82,7 +82,6 @@ def getNumberHoneypotsAndAlerts(app, clientDomain, es, esindex, utcTimeFrom, utc
 
             numHoneypots=len(res['aggregations']['hostnames']['buckets'])
 
-
             # Find older Honeypots via dest_ip
             res2 = es.search(index=esindex, body="""{
                 "query": {
@@ -137,7 +136,7 @@ def getNumberHoneypotsAndAlerts(app, clientDomain, es, esindex, utcTimeFrom, utc
                         }
                     }
                 }
-            }""" % (str(clientDomain).lower(), utcTimeTo, utcTimeFrom))
+            }""" % (str(clientDomain).lower(), utcTimeFrom, utcTimeTo))
             for i in range(len(res2['aggregations']['hostnames']['buckets'])):
                 for j in res2['aggregations']['hostnames']['buckets'][i]['peerIdents']['buckets']:
                     listoutput+=("[" + res2['aggregations']['hostnames']['buckets'][i]['key'] + "]" + "[" + j['key'] + "] : " + str(j['doc_count']) + "\n")
@@ -467,7 +466,6 @@ def getTPotAlertStatsJson(app, es, index, sdate):
         communityJson['numberHoneypotsPerType'][peerType] = communityDaemons.get(peerType)
 
     jsonResult = {}
-    jsonResult['communityHoneypots'] = communityJson
     jsonResult['communityHoneypots'] = communityJson
     jsonResult['UTCtimeFrom'] = str(utcTimeFrom)
     jsonResult['UTCtimeTo'] = str(utcTimeTo)
