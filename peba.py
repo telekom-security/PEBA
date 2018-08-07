@@ -996,6 +996,9 @@ def formatAlertsJson(alertslist):
                 if "SSH/console(cowrie)" in alert['_source']['peerType'] and alert['_source']['login'] is not None:
                     requestString+= " | Status: "+ str(alert['_source']['login'])
                 requestStringOut = html.escape(requestString)
+            elif ("SSH/console(cowrie)" in alert['_source']['peerType']
+                    and alert['_source']['originalRequestString'] is not ""):
+                    requestStringOut = html.escape(alert['_source']['originalRequestString']).replace("\n", "; " )[2:]
             else:
                 requestStringOut = html.escape(urllib.parse.unquote(alert['_source']['originalRequestString']))
 

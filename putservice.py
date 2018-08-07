@@ -219,7 +219,7 @@ def handleAlerts(tree, tenant, es, cache, s3client):
                 # input (cowrie) not necessarily set, might be an empty session
                 if (meaning == "input"):
                     if child.text is not None:
-                        url = urllib.parse.unquote(child.text).replace('\n', '; ')[2:]
+                        url = urllib.parse.unquote(child.text)
 
                 if (meaning == "externalIP"):
                     if child.text is not None:
