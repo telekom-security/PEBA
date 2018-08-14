@@ -92,7 +92,7 @@ PEBA requires an installation of Elasticsearch (5.4, 5.5 and 6.01 tested).
 	sudo cp *.dat /var/lib/GeoIP/
 
 *Note:*  When installing on MacOS, you need to install the following additional packets: 
-`brew install libmemcached` and `pip3 install pylibmc`
+`brew install libmemcached`, `brew install libmagic` and `pip3 install pylibmc`
 
 *Note:* If you use Elasticsearch 6, please change the requirements.txt
 as follows
