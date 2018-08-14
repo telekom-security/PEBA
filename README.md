@@ -68,7 +68,7 @@ Example:  */alert/retrieveAlertsJson?ci=0* to retrieve the private json data fee
 
 **Preconditions:** 
 
-PEBA requires an installation of Elasticsearch (5.4, 5.5 and 6.01 tested).
+PEBA requires an installation of Elasticsearch (5.4, 5.5 and 6.2.4 tested).
 
 **Installation:** (on Debian/Ubuntu)
 
