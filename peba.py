@@ -1575,9 +1575,16 @@ def postSimpleMessage():
     if request.data:
         tree = putservice.checkPostData(request.data)
         if tree:
-            putservice.handleAlerts(tree, checkCommunityUser(), es, cache, s3client)
-            message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
-            return Response(message, mimetype='text/xml')
+            status = putservice.handleAlerts(tree, checkCommunityUser(), es, cache, s3client)
+            message = "<Result><StatusCode>Handling failed</StatusCode><Text></Text></Result>"
+            statusHTTP = 503
+
+            if (status):
+                message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
+                statusHTTP = 200
+
+            return Response(message, mimetype='text/xml', status=statusHTTP)
+
     return app.config['DEFAULTRESPONSE']
 
 
