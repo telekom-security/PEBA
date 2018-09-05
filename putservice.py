@@ -33,9 +33,10 @@ peerIdents = ["WebHoneypot", "Webpage",
               "mailoney", "E-Mail(mailoney)",
               "heralding", "Passwords(heralding)",
               "ciscoasa", "Network(cisco-asa)",
-              "elasticpot", "Webpage",
+              "elasticpot", "Service(ES)",
               "suricata", "Network(suricata)",
               "tanner", "Webpage",
+              "medpot", "Service(Medicine)"
               "", ""]
 
 ################
@@ -88,6 +89,8 @@ def handleAlerts(tree, tenant, es, cache, s3client):
         parse the xml, handle the Alerts and send to es
     """
     counter = 0
+    error = True
+
     for node in tree.findall('.//Alert'):
         # default values
         parsingError = ""
@@ -262,21 +265,26 @@ def handleAlerts(tree, tenant, es, cache, s3client):
             # persist CVE
             #
             if (len(str(vulnid)) > 2):
-                elastic.putVuln(vulnid, "ewscve", source, destination, createTime,
+                status = elastic.putVuln(vulnid, "ewscve", source, destination, createTime,
                                               tenant, url,
                                               analyzerID, peerType, username, password, loginStatus, version, starttime,
                                               endtime, sourcePort, destinationPort, externalIP, internalIP, hostname,
                                               sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp,s3client)
                 url = "(" + vulnid + ") " + url
 
+                if status is False:
+                    error = False
+
             #
             # store attack itself
             #
-            correction = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
+            status = elastic.putAlarm(vulnid, app.config['ELASTICINDEX'], source, destination, createTime, tenant, url,
                                           analyzerID, peerType, username, password, loginStatus, version, starttime,
                                           endtime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, app.config['DEVMODE'], es, cache, packetdata, rawhttp, s3client)
-            counter = counter + 1 - correction
-
+            if (status):
+                counter = counter + 1
+            else:
+                error = False
 
             #
             # slack wanted
@@ -288,7 +296,8 @@ def handleAlerts(tree, tenant, es, cache, s3client):
                             communication.sendSlack("cve", app.config['SLACKTOKEN'], "CVE (" + vulnid + ") found.", app.config['DEVMODE'])
 
     app.logger.debug("Info: Added " + str(counter) + " entries")
-    return True
+
+    return error
 
 def testIPAddress(ip):
     ''' test if it is an ipv4 address'''

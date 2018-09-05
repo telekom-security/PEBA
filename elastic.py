@@ -138,7 +138,6 @@ def ipExisting(ip, index, es):
     res = es.search(index=index, doc_type="IP", body=query)
 
     for hit in res['hits']['hits']:
-
         return True
 
     return False
@@ -158,15 +157,15 @@ def putIP(ip, esindex, country, countryname, asn, debug, es):
 
     if debug:
         app.logger.debug("Not storing ip: " + str(ip))
-        return 0
+        return True
 
     try:
         res = es.index(index=esindex, doc_type='IP', id=m.hexdigest(), body=vuln)
-        return 0
+        return True
 
     except:
         app.logger.error("Error when persisting IP: " + str(ip))
-        return 1
+        return False
 
 
 
@@ -198,7 +197,7 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
         decodedPayload = base64.decodebytes(packetdata.encode('utf-8'))
     except:
         app.logger.debug("Could not base64-decode payload from alert id %s." % id)
-        return 1
+        return False
 
     m.update(decodedPayload)
     packetHash = m.hexdigest()
@@ -214,13 +213,19 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
             app.logger.debug("Could not determine MIME for payload %s." % packetHash)
 
     # check if packet is existing in index via hash
-    packetContent=packetExisting(packetHash, "packets", es, debug, "hash")
+    statusContent, packetContent = packetExisting(packetHash, "packets", es, debug, "hash")
+
     # check if packet is existing in index via fuzzyhash
     fuzzyHash=getFuzzyHash(packetdata, packetHash)
-    fuzzyHashContent = packetExisting(fuzzyHash, "packets", es, debug, "hashfuzzyhttp")
+    statusFuzzy, fuzzyHashContent = packetExisting(fuzzyHash, "packets", es, debug, "hashfuzzyhttp")
 
-    if packetContent:
+    if not(statusContent or statusFuzzy):
+        app.logger.debug("Unable to work with ES (handlePacketData)")
+        return False;
+
+    if (packetContent and statusContent):
         app.logger.debug("Packet with same md5 hash %s already existing. Adjusting counts."  % packetHash)
+
         id = packetContent['_id']
         destport = packetContent['_source']['initialDestPort']
         sourceip = packetContent['_source']['initialIP']
@@ -235,8 +240,9 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
             createTime = packetContent['_source']['createTime']
             lastSeenTime = packetContent['_source']['lastSeen']
 
-    elif fuzzyHashContent:
+    elif (fuzzyHashContent and statusFuzzy):
         app.logger.debug("Packet with same fuzzyHash %s already existing. Adjusting counts."  % fuzzyHash)
+
         id = fuzzyHashContent['_id']
         destport = fuzzyHashContent['_source']['initialDestPort']
         sourceip = fuzzyHashContent['_source']['initialIP']
@@ -251,6 +257,9 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
         else:
             lastSeenTime = fuzzyHashContent['_source']['lastSeen']
             createTime = fuzzyHashContent['_source']['createTime']
+
+
+
 
     # if fuzzyHashContent:
     #     app.logger.error('FuzzyHash known, not storing attack')
@@ -288,24 +297,25 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
 
     if debug:
         app.logger.debug("Not sending out " + "Packet" + ": " + str(packet))
-        return 0
+        return True
 
     try:
+        app.logger.debug("Trying to store packet (handlePacketData)")
+
         res = es.index(index="packets", doc_type="Packet", id=id, body=packet, refresh=True)
-        return 0
+        return True
 
     except:
         app.logger.error("Error persisting packet in ES: " + str(packet))
-        return 1
+        return False
 
-
+""" true on ok, false on error """
 def putVuln(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata, rawhttp, s3client):
 
     if (cveExisting(vulnid, index, es, debug)):
-        return 1
+        return True
     else:
         return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "CVE", packetdata, rawhttp, s3client)
-        return 0
 
 
 def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata, rawhttp, s3client):
@@ -314,6 +324,7 @@ def putAlarm(vulnid, index, sourceip, destinationip, createTime, tenant, url, an
 
 def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, docType, packetdata, rawhttp, s3client):
     """stores an alarm in the index"""
+
     m = hashlib.md5()
     m.update((createTime + sourceip + destinationip + url + analyzerID + docType).encode())
 
@@ -328,7 +339,9 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
         if (len(str(packetdata)) <= 102400):
             if ("honeytrap" in peerType or "Dionaea" in peerType or "Webpage" in peerType):
                 if ("ewscve" not in index):
-                    handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip, destinationPort, s3client)
+                    status = handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip, destinationPort, s3client)
+                    if (status == False):
+                        return False
 
 
     alert = {
@@ -368,15 +381,18 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
 
     if debug:
         app.logger.debug("Not sending out " + docType + ": " + str(alert))
-        return 0
+        return True
 
     try:
         res = es.index(index=index, doc_type=docType, id=m.hexdigest(), body=alert)
-        return 0
+
+        # TODO Abbildung von handlePacketData
+
+        return True
 
     except:
         app.logger.error("Error persisting alert in ES: " + str(alert))
-        return 1
+        return False
 
 
 def cveExisting(cve, index, es, debug):
@@ -408,13 +424,17 @@ def cveExisting(cve, index, es, debug):
         "aggs": {}
     }
 
-    res = es.search(index=index, doc_type="CVE", body=query)
+    try:
+        res = es.search(index=index, doc_type="CVE", body=query)
 
-    for hit in res['hits']['hits']:
-        return True
+        for hit in res['hits']['hits']:
+            return True
 
+        return False
 
-    return False
+    except:
+        app.logger.error("Error querying ES for CVE %s" % str(cve))
+        return False
 
 
 def packetExisting(hash, index, es, debug, hashType):
@@ -441,11 +461,16 @@ def packetExisting(hash, index, es, debug, hashType):
         "aggs": {}
     }
 
-    res = es.search(index=index, doc_type="Packet", body=query)
+    try:
 
-    for hit in res['hits']['hits']:
-        return(hit)
+        res = es.search(index=index, doc_type="Packet", body=query)
 
-    return False
+        for hit in res['hits']['hits']:
+            return True, (hit)
+    except:
+        app.logger.error("Error querying ES for packet with hash %s" % str(hash))
+        return False, False
+
+    return True, False
 
 
