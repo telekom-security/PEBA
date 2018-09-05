@@ -312,7 +312,9 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
 """ true on ok, false on error """
 def putVuln(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, packetdata, rawhttp, s3client):
 
-    if (cveExisting(vulnid, index, es, debug)):
+    status, content = cveExisting(vulnid, index, es, debug)
+
+    if (status):
         return True
     else:
         return putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, analyzerID, peerType, username, password, loginStatus, version, startTime, endTime, sourcePort, destinationPort, externalIP, internalIP, hostname, sourceTransport, additionalData, debug, es, cache, "CVE", packetdata, rawhttp, s3client)
@@ -428,13 +430,13 @@ def cveExisting(cve, index, es, debug):
         res = es.search(index=index, doc_type="CVE", body=query)
 
         for hit in res['hits']['hits']:
-            return True
+            return True, (hit)
 
-        return False
+        return True, False
 
     except:
         app.logger.error("Error querying ES for CVE %s" % str(cve))
-        return False
+        return False, False
 
 
 def packetExisting(hash, index, es, debug, hashType):
