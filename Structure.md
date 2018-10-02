@@ -78,7 +78,7 @@ Similar to the alert index (see above), only exception is the "rawhttp"-field wh
 {
 	"getOnly" :			"Unkown",
 	"community" :			"Unkown",
-	"peerName" :			"Unkown"
+	"peerName" :			"Unkown",
 	"email" :			"Unkown",
 	"token" :			"Unkown"
 }
