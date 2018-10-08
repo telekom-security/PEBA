@@ -280,7 +280,7 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
         except ClientError as e:
             app.logger.error("Received error: %s", e.response['Error']['Message'])
     else:
-        app.logger.debug("Not storing md5 {0} / FuzzyHash {1} as it is already stored.".format(packetHash, fuzzyHash))
+        app.logger.debug("Not storing md5 {0} / FuzzyHash {1} to s3 as it is already present in packets index.".format(packetHash, fuzzyHash))
 
     packet = {
         "data" : packetdata,
@@ -300,13 +300,13 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
         return True
 
     try:
-        app.logger.debug("Trying to store packet (handlePacketData)")
+        app.logger.debug("Storing/Updating packet in index packets (handlePacketData)")
 
         res = es.index(index="packets", doc_type="Packet", id=id, body=packet, refresh=True)
         return True
 
     except:
-        app.logger.error("Error persisting packet in ES: " + str(packet))
+        app.logger.error("Error persisting packet in ES packet index: " + str(packet))
         return False
 
 """ true on ok, false on error """
@@ -403,16 +403,16 @@ def cveExisting(cve, index, es, debug):
 
     if debug:
         app.logger.debug("Pretending as if %s was existing in index." % str(cve))
-        return True
+        return True, False
 
-    query = {
+    query = """{
         "query": {
             "bool": {
                 "must": [
                     {
                         "query_string": {
                             "default_field": "vulnid",
-                            "query": cve
+                            "query": "%s"
                         }
                     }
                 ],
@@ -424,7 +424,7 @@ def cveExisting(cve, index, es, debug):
         "size": 10,
         "sort": [],
         "aggs": {}
-    }
+    }""" % cve
 
     try:
         res = es.search(index=index, doc_type="CVE", body=query)
@@ -435,21 +435,21 @@ def cveExisting(cve, index, es, debug):
         return True, False
 
     except:
-        app.logger.error("Error querying ES for CVE %s" % str(cve))
+        app.logger.error("Error querying ES for CVE vulnid: %s" % str(cve))
         return False, False
 
 
 def packetExisting(hash, index, es, debug, hashType):
     """ check if packet already exists in index """
 
-    query = {
+    query = """{
         "query": {
             "bool": {
                 "must": [
                     {
                         "query_string": {
-                            "default_field": hashType,
-                            "query": hash
+                            "default_field": "%s",
+                            "query": "%s"
                         }
                     }
                 ],
@@ -461,7 +461,7 @@ def packetExisting(hash, index, es, debug, hashType):
         "size": 10,
         "sort": [],
         "aggs": {}
-    }
+    }""" % (hashType, hash)
 
     try:
 

@@ -29,7 +29,7 @@ failed=false
 
 for i in $(ls put-requests/*.xml); do 
     echo "***** SENDING $i *****"
-    PAYLOAD=./put-requests/alarm.xml
+    PAYLOAD=$i
     res=$(curl -s -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$PAYLOAD $BIND/ews-0.1/alert/postSimpleMessage)
     if $(echo $res|grep -iqF ok); 
     then
