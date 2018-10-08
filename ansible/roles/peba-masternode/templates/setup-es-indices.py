@@ -318,7 +318,7 @@ index_body_cve = {
                 },
                  "vulnid": {
                     "type" : "keyword",
-                    "index" : "false"
+                    "index" : "true"
                 }
             }
         }
@@ -369,7 +369,7 @@ index_body_packets = {
                 },
                 "hashfuzzyhttp" : {
                     "type" : "keyword",
-                    "index" : "false"
+                    "index" : "true"
                 },
                 "initalDestPort" : {
                     "type": "keyword",
