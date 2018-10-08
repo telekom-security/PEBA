@@ -55,7 +55,7 @@ index_body_alerts = {
                     "index" : "false"
                 },
                 "clientDomain" : {
-                    "type": "bool",
+                    "type": "boolean",
                     "index": "true"
                 },
                 "clientVersion" : {
@@ -72,7 +72,8 @@ index_body_alerts = {
                 },
                 "createTime" : {
                     "type": "date",
-                    "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+                    "index": "true"
                 },
                 "externalIP" : {
                     "type" : "ip",
@@ -121,7 +122,7 @@ index_body_alerts = {
                 "recievedTime":{
                     "type": "date",
                     "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
-                    "index" : "yes"
+                    "index" : "true"
                 },
                  "sessionEnd" : {
                     "type" : "keyword",
@@ -208,7 +209,7 @@ index_body_cve = {
                     "index" : "false"
                 },
                 "clientDomain" : {
-                    "type": "bool",
+                    "type": "boolean",
                     "index": "true"
                 },
                 "clientVersion" : {
@@ -225,7 +226,8 @@ index_body_cve = {
                 },
                 "createTime" : {
                     "type": "date",
-                    "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+                    "index": "true"
                 },
                 "externalIP" : {
                     "type" : "ip",
@@ -270,7 +272,7 @@ index_body_cve = {
                 "recievedTime":{
                     "type": "date",
                     "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
-                    "index" : "yes"
+                    "index" : "true"
                 },
                  "sessionEnd" : {
                     "type" : "keyword",
