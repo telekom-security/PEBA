@@ -6,10 +6,10 @@ import time
 
 host = "{{ ELASTIC_IP }}"
 port = {{ ELASTIC_PORT }}
-indexAlertAlias = "{{ ELASTIC_INDEX }}"
-indexCve = "ewscve"
-indexPackets = "packets"
-indexNotifications = "ews-notifications"
+index_alias_alert = "{{ ELASTIC_INDEX }}"
+index_name_cve = "ewscve"
+index_name_packets = "packets"
+index_name_notifications = "ews-notifications"
 
 
 ###
@@ -382,7 +382,7 @@ index_body_packets = {
 
 # Create Packet index if not present
 if es.indices.exists(index=index_name_packets):
-    print("Index %s already exists. Skipping!"% index_name_notif)
+    print("Index %s already exists. Skipping!"% index_name_packets)
 else:
     res = es.indices.create(index=index_name_packets, ignore=400, body=index_body_packets)
     print("Result for Packet mapping")

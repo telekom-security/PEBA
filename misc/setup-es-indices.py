@@ -389,7 +389,7 @@ index_body_packets = {
 
 # Create Packet index if not present
 if es.indices.exists(index=index_name_packets):
-    print("Index %s already exists. Skipping!"% index_name_notif)
+    print("Index %s already exists. Skipping!"% index_name_packets)
 else:
     res = es.indices.create(index=index_name_packets, ignore=400, body=index_body_packets)
     print("Result for Packet mapping")
