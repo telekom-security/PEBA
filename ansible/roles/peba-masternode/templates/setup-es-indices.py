@@ -23,6 +23,11 @@ def getTargetIds(jsonData):
     if 'data' not in data['to']:
         return "success"
 
+
+
+###### Alert Index
+
+
 index_body_alerts = {
     "settings": {
         "number_of_shards" : 5,
@@ -176,13 +181,14 @@ else:
     print("Result for Alert mapping")
     print(res)
 
-index_body_alerts = {
+
+###### CVE Index
+
+
+index_body_cve = {
     "settings": {
         "number_of_shards" : 5,
         "number_of_replicas" : 1
-    },
-    "aliases" : {
-        index_alias_alert : {}
     },
      "mappings": {
         "Alert": {
@@ -325,6 +331,11 @@ else:
     print("Result for CVE mapping")
     print(res)
 
+
+
+###### Packets Index
+
+
 index_body_packets = {
     "settings" : {
         "number_of_shards" : 5,
@@ -387,6 +398,11 @@ else:
     res = es.indices.create(index=index_name_packets, ignore=400, body=index_body_packets)
     print("Result for Packet mapping")
     print(res)
+
+
+
+###### Notification Index
+
 
 index_body_notifications = {
     "settings" : {
