@@ -24,7 +24,7 @@ curl -XPOST {{ ELASTIC_IP }}:{{ ELASTIC_PORT }}/{{ ELASTIC_INDEX }}'/_rollover?p
                "index":"false"
             },
             "clientDomain":{
-               "type":"bool",
+               "type":"boolean",
                "index":"true"
             },
             "clientVersion":{
@@ -41,7 +41,8 @@ curl -XPOST {{ ELASTIC_IP }}:{{ ELASTIC_PORT }}/{{ ELASTIC_INDEX }}'/_rollover?p
             },
             "createTime":{
                "type":"date",
-               "format":"yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+               "format":"yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+               "index":"true"
             },
             "externalIP":{
                "type":"ip",
@@ -90,7 +91,7 @@ curl -XPOST {{ ELASTIC_IP }}:{{ ELASTIC_PORT }}/{{ ELASTIC_INDEX }}'/_rollover?p
             "recievedTime":{
                "type":"date",
                "format":"yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
-               "index":"yes"
+               "index":"true"
             },
             "sessionEnd":{
                "type":"keyword",
