@@ -11,3 +11,4 @@ slackclient
 pygeoip
 filemagic
 botocore
+python-memcached
