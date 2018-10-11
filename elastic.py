@@ -262,10 +262,12 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
 
 
     # if fuzzyHashContent:
-    #     app.logger.error('FuzzyHash known, not storing attack')
-    #
-    # if packetContent:
-    #     app.logger.error('MD5 known, not storing attack')
+    #     app.logger.error('FuzzyHash known, not storing attack: %s' % fuzzyHash)
+    # elif packetContent:
+    #     app.logger.error('MD5 known, not storing attack from %s : %s' % (sourceip, packetHash))
+    # else:
+    #     app.logger.error("Found new payload from %s : %s" % (sourceip, packetHash))
+
 
     # store to s3
     if s3client and (not packetContent and not fuzzyHashContent):
@@ -427,7 +429,7 @@ def cveExisting(cve, index, es, debug):
 
         for hit in res['hits']['hits']:
             return True, (hit)
-        return False, False
+        return True, False
 
     except Exception as e:
         app.logger.error("Error querying ES for CVE vulnid: %s - Exception: %s" % (str(cve), str(e)))
@@ -458,7 +460,7 @@ def packetExisting(hash, index, es, debug, hashType):
         res = es.search(index=index, doc_type="Packet", body=query)
         for hit in res['hits']['hits']:
             return True, (hit)
-        return False, False
+        return True, False
 
     except Exception as e:
         app.logger.error("Error querying ES for packet with hash %s - Exception: %s" % (str(hash), str(e)))
