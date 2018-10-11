@@ -213,11 +213,11 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
             app.logger.debug("Could not determine MIME for payload %s." % packetHash)
 
     # check if packet is existing in index via hash
-    statusContent, packetContent = packetExisting(packetHash, "packets", es, debug, "hash")
+    statusContent, packetContent = packetExisting(packetHash, "payloads", es, debug, "hash")
 
     # check if packet is existing in index via fuzzyhash
     fuzzyHash=getFuzzyHash(packetdata, packetHash)
-    statusFuzzy, fuzzyHashContent = packetExisting(fuzzyHash, "packets", es, debug, "hashfuzzyhttp")
+    statusFuzzy, fuzzyHashContent = packetExisting(fuzzyHash, "payloads", es, debug, "hashfuzzyhttp")
 
     if not(statusContent or statusFuzzy):
         app.logger.debug("Unable to work with ES (handlePacketData)")
@@ -262,10 +262,12 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
 
 
     # if fuzzyHashContent:
-    #     app.logger.error('FuzzyHash known, not storing attack')
-    #
-    # if packetContent:
-    #     app.logger.error('MD5 known, not storing attack')
+    #     app.logger.error('FuzzyHash known, not storing attack: %s' % fuzzyHash)
+    # elif packetContent:
+    #     app.logger.error('MD5 known, not storing attack from %s : %s' % (sourceip, packetHash))
+    # else:
+    #     app.logger.error("Found new payload from %s : %s" % (sourceip, packetHash))
+
 
     # store to s3
     if s3client and (not packetContent and not fuzzyHashContent):
@@ -280,10 +282,10 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
         except ClientError as e:
             app.logger.error("Received error: %s", e.response['Error']['Message'])
     else:
-        app.logger.debug("Not storing md5 {0} / FuzzyHash {1} as it is already stored.".format(packetHash, fuzzyHash))
+        app.logger.debug("Not storing md5 {0} / FuzzyHash {1} to s3 as it is already present in packets index.".format(packetHash, fuzzyHash))
 
     packet = {
-        "data" : packetdata,
+        "data" : "raw payload in s3",
         "createTime" : createTime,
         "lastSeen" : lastSeenTime,
         "hash" : packetHash,
@@ -300,13 +302,13 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
         return True
 
     try:
-        app.logger.debug("Trying to store packet (handlePacketData)")
+        app.logger.debug("Storing/Updating packet in index packets (handlePacketData)")
 
-        res = es.index(index="packets", doc_type="Packet", id=id, body=packet, refresh=True)
+        res = es.index(index="payloads", doc_type="Packet", id=id, body=packet, refresh=True)
         return True
 
     except:
-        app.logger.error("Error persisting packet in ES: " + str(packet))
+        app.logger.error("Error persisting packet in ES packet index: " + str(packet))
         return False
 
 """ true on ok, false on error """
@@ -337,8 +339,8 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
 
 
     if (len(str(packetdata)) > 0):
-
-        if (len(str(packetdata)) <= 102400):
+        # process payloads up to 5MB
+        if (len(str(packetdata)) <= 5242880):
             if ("honeytrap" in peerType or "Dionaea" in peerType or "Webpage" in peerType):
                 if ("ewscve" not in index):
                     status = handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip, destinationPort, s3client)
@@ -400,79 +402,68 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
 def cveExisting(cve, index, es, debug):
     """ check if cve already exists in index """
 
+    # if debug:
+    #     app.logger.debug("Pretending as if %s was existing in index." % str(cve))
+    #     return True, False
 
-    if debug:
-        app.logger.debug("Pretending as if %s was existing in index." % str(cve))
-        return True
-
-    query = {
+    query = """{
         "query": {
             "bool": {
                 "must": [
                     {
-                        "query_string": {
-                            "default_field": "vulnid",
-                            "query": cve
-                        }
+                        "term": {
+                            "vulnid.keyword": "%s"                        }
                     }
-                ],
-                "must_not": [],
-                "should": []
+                ]
             }
         },
         "from": 0,
-        "size": 10,
+        "size": 1,
         "sort": [],
         "aggs": {}
-    }
+    }""" % cve
+
 
     try:
         res = es.search(index=index, doc_type="CVE", body=query)
 
         for hit in res['hits']['hits']:
             return True, (hit)
-
         return True, False
 
-    except:
-        app.logger.error("Error querying ES for CVE %s" % str(cve))
+    except Exception as e:
+        app.logger.error("Error querying ES for CVE vulnid: %s - Exception: %s" % (str(cve), str(e)))
         return False, False
 
 
 def packetExisting(hash, index, es, debug, hashType):
     """ check if packet already exists in index """
-
-    query = {
+    query = """{
         "query": {
             "bool": {
                 "must": [
                     {
-                        "query_string": {
-                            "default_field": hashType,
-                            "query": hash
+                        "term": {
+                            "%s" : "%s"
                         }
                     }
-                ],
-                "must_not": [],
-                "should": []
+                ]
             }
         },
         "from": 0,
-        "size": 10,
+        "size": 1,
         "sort": [],
         "aggs": {}
-    }
+    }""" % (hashType, hash)
 
     try:
-
         res = es.search(index=index, doc_type="Packet", body=query)
-
         for hit in res['hits']['hits']:
             return True, (hit)
-    except:
-        app.logger.error("Error querying ES for packet with hash %s" % str(hash))
-        return False, False
+        return True, False
 
-    return True, False
+    except Exception as e:
+        app.logger.error("Error querying ES for packet with hash %s - Exception: %s" % (str(hash), str(e)))
+        return False, False
 
 

@@ -6,10 +6,10 @@ import time
 
 host = "{{ ELASTIC_IP }}"
 port = {{ ELASTIC_PORT }}
-indexAlertAlias = "{{ ELASTIC_INDEX }}"
-indexCve = "ewscve"
-indexPackets = "packets"
-indexNotifications = "ews-notifications"
+index_alias_alert = "{{ ELASTIC_INDEX }}"
+index_name_cve = "ewscve"
+index_name_packets = "packets"
+index_name_notifications = "ews-notifications"
 
 
 ###
@@ -24,152 +24,422 @@ def getTargetIds(jsonData):
         return "success"
 
 
-settings = {
+
+###### Alert Index
+
+
+index_body_alerts = {
     "settings": {
-        "number_of_shards": 5,
-        "number_of_replicas": 1
+        "number_of_shards" : 5,
+        "number_of_replicas" : 1
     },
-    "aliases": {
-        indexAlertAlias: {}
+    "aliases" : {
+        index_alias_alert : {}
     },
-    "mappings": {
+     "mappings": {
         "Alert": {
             "properties": {
-                "createTime": {
+                "additionalData" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "client" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "clientDomain" : {
+                    "type": "boolean",
+                    "index": "true"
+                },
+                "clientVersion" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "country" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "countryName" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "createTime" : {
                     "type": "date",
-                    "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+                    "index": "true"
                 },
-                "recievedTime": {
+                "externalIP" : {
+                    "type" : "ip",
+                    "index" : "false"
+                },
+                "hostname" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "internalIP" : {
+                    "type" : "ip",
+                    "index" : "false"
+                },
+                "location" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "locationDestination" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                 "login" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "originalRequestString" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "password" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "peerIdent" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "peerType" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "rawhttp" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "recievedTime":{
                     "type": "date",
-                    "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+                    "index" : "true"
                 },
-                "sourceEntryIp": {
-                    "type": "ip"
+                 "sessionEnd" : {
+                    "type" : "keyword",
+                    "index" : "false"
                 },
-                "targetEntryIp": {
-                    "type": "ip"
+                "sessionStart" : {
+                    "type" : "keyword",
+                    "index" : "false"
                 },
-                "clientDomain": {
-                    "type": "boolean"
+                 "sourceEntryAS" : {
+                    "type" : "keyword",
+                    "index" : "true"
                 },
-                "externalIP": {
-                    "type": "ip"
+                "sourceEntryIp" : {
+                    "type" : "ip",
+                    "index" : "true"
                 },
-                 "internalIP": {
-                    "type": "ip"
+                "sourceEntryPort" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "targetCountry" : {
+                    "type" : "keyword",
+                    "index" : "no"
+                },
+                "targetCountryName" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "targetEntryAS" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "targetEntryIp" : {
+                    "type" : "ip",
+                    "index" : "true"
+                },
+                "targetEntryPort" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                 "targetport":{
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "username": {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                 "vulnid": {
+                    "type" : "keyword",
+                    "index" : "false"
                 }
             }
         }
     }
 }
 
-if es.indices.exists(index=indexAlertAlias):
-    print("Alias %s already exists. Skipping!"% indexAlertAlias)
+# Create Alert index if not present
+if es.indices.exists(index=index_alias_alert):
+    print("Alias %s already exists. Skipping!"% index_alias_alert)
 else:
-    # create index
-    res = es.indices.create(index="<ews-{now/d}-1>", ignore=400, body=settings)
+    res = es.indices.create(index="<ews-{now/d}-1>", ignore=400, body=index_body_alerts)
     print("Result for Alert mapping")
     print(res)
 
 
+###### CVE Index
 
-settings2 = {
+
+index_body_cve = {
     "settings": {
-        "number_of_shards": 5,
-        "number_of_replicas": 1
+        "number_of_shards" : 5,
+        "number_of_replicas" : 1
     },
-    "mappings": {
-        "CVE": {
-            "properties":  {
-                    "createTime": {
-                        "type": "date",
-                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
-                    },
-                    "recievedTime": {
-                        "type": "date",
-                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
-                    },
-                    "sourceEntryIp": {
-                        "type": "ip"
-                    },
-                    "targetEntryIp": {
-                        "type": "ip"
-                    },
-                    "clientDomain": {
-                        "type": "boolean"
-                    },
-                    "externalIP": {
-                        "type": "ip"
-                    },
-                     "internalIP": {
-                        "type": "ip"
-                    }
+     "mappings": {
+        "Alert": {
+            "properties": {
+                "additionalData" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "client" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "clientDomain" : {
+                    "type": "boolean",
+                    "index": "true"
+                },
+                "clientVersion" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "country" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "countryName" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "createTime" : {
+                    "type": "date",
+                    "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+                    "index": "true"
+                },
+                "externalIP" : {
+                    "type" : "ip",
+                    "index" : "false"
+                },
+                "hostname" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "internalIP" : {
+                    "type" : "ip",
+                    "index" : "false"
+                },
+                "location" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "locationDestination" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                 "login" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "originalRequestString" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "password" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "peerIdent" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "peerType" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "recievedTime":{
+                    "type": "date",
+                    "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+                    "index" : "true"
+                },
+                 "sessionEnd" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "sessionStart" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                 "sourceEntryAS" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "sourceEntryIp" : {
+                    "type" : "ip",
+                    "index" : "true"
+                },
+                "sourceEntryPort" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "targetCountry" : {
+                    "type" : "keyword",
+                    "index" : "no"
+                },
+                "targetCountryName" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "targetEntryAS" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "targetEntryIp" : {
+                    "type" : "ip",
+                    "index" : "true"
+                },
+                "targetEntryPort" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                 "targetport":{
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                "username": {
+                    "type" : "keyword",
+                    "index" : "false"
+                },
+                 "vulnid": {
+                    "type" : "keyword",
+                    "index" : "true"
+                }
             }
         }
     }
 }
 
-if es.indices.exists(index=indexCve):
-    print("Index %s already exists. Skipping!"% indexCve)
+# Create CVE index if not present
+if es.indices.exists(index=index_name_cve):
+    print("Index %s already exists. Skipping!"% index_name_cve)
 else:
-    # create index for cve
-    res = es.indices.create(index=indexCve, ignore=400, body=settings2)
+    res = es.indices.create(index=index_name_cve, ignore=400, body=index_body_cve)
     print("Result for CVE mapping")
     print(res)
 
 
 
-settingsPackets = {
-    "settings": {
-        "number_of_shards": 5,
-        "number_of_replicas": 1
+###### Packets Index
+
+
+index_body_packets = {
+    "settings" : {
+        "number_of_shards" : 5,
+        "number_of_replicas" : 1
     },
-    "mappings": {
-        "Packet": {
-            "properties":  {
-                    "createTime": {
-                        "type": "date",
-                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
-                    },
-                    "lastSeen": {
-                        "type": "date",
-                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
-                    },
-                     "initialIP": {
-                        "type": "ip"
-                    }
+    "mappings" : {
+        "Packet" : {
+            "properties" :  {
+                "createTime" : {
+                    "type" : "date",
+                    "format" : "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+                    "index" : "false"
+                },
+                "data" : {
+                    "type" : "keyword",
+                    "index" : "no"
+                },
+                "fileMagic" : {
+                    "type" : "keyword",
+                    "index" : "no"
+                },
+                "fuzzyHashCount" : {
+                    "type": "keyword",
+                    "index": "true"
+                },
+                "hash" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "hashfuzzyhttp" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "initalDestPort" : {
+                    "type": "keyword",
+                    "index": "false"
+                },
+                "initialIP" : {
+                    "type" : "ip",
+                    "index" : "false"
+                },
+                "lastSeen" : {
+                    "type" : "date",
+                    "format" : "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+                    "index" : "false"
+                },
+                "md5count" : {
+                    "type" : "keyword",
+                    "index" : "false"
+                }
             }
         }
     }
 }
-if es.indices.exists(index=indexPackets):
-    print("Index %s already exists. Skipping!"% indexPackets)
+
+# Create Packet index if not present
+if es.indices.exists(index=index_name_packets):
+    print("Index %s already exists. Skipping!"% index_name_packets)
 else:
-    # create index for packets
-    res = es.indices.create(index=indexPackets, ignore=400, body=settingsPackets)
+    res = es.indices.create(index=index_name_packets, ignore=400, body=index_body_packets)
     print("Result for Packet mapping")
     print(res)
 
-settingsNotifications = {
-    "settings": {
-        "number_of_shards": 5,
-        "number_of_replicas": 1
+
+
+###### Notification Index
+
+
+index_body_notifications = {
+    "settings" : {
+        "number_of_shards" : 5,
+        "number_of_replicas" : 1
     },
-    "mappings": {
-        "Notification": {
-            "properties":  {
-                    "createTime": {
-                        "type": "date",
-                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
-                    }
+    "mappings" : {
+        "Notification" : {
+            "properties" :  {
+                "as" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                },
+                "createTime" : {
+                    "type" : "date",
+                    "format" : "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+                    "index" : "true"
+                },
+                "email" : {
+                    "type" : "keyword",
+                    "index" : "true"
+                }
             }
         }
     }
 }
-if es.indices.exists(index=indexNotifications):
-    print("Index %s already exists. Skipping!"% indexNotifications)
+
+# Create Notifications index if not present
+if es.indices.exists(index=index_name_notifications):
+    print("Index %s already exists. Skipping!"% index_name_notifications)
 else:
-    # create index for packets
-    res = es.indices.create(index=indexNotifications, ignore=400, body=settingsNotifications)
+    res = es.indices.create(index=index_name_notifications, ignore=400, body=index_body_notifications)
     print("Result for Notification mapping")
     print(res)
+
+
+# Create User index
+# This is done using "/misc/add-user.py"

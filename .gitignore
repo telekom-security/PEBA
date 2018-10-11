@@ -38,3 +38,7 @@ misc/get-requests/request.av.xml
 analysis/stats.json
 
 misc/tools/export s3.txt
+
+ansible/hosts
+
+etc/ews/peba.cfg

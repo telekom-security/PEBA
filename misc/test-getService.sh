@@ -6,7 +6,32 @@ TEST=http://127.0.0.1:9922
 PROD=https://community.sicherheitstacho.eu:9443
 AUTH=./get-requests/request.av.xml
 
+# List all public and private endpoints and determine how much output to show
+# format: 
+# url : lines of data to display
 
+privateEndpoints=(
+  "/alert/retrieveAlertsCyber?topx=3&$DOM":34
+  "/alert/retrieveIPs?$DOM":18
+  "/alert/retrieveIPs15m?out=json&$DOM":21
+  "/alert/retrieveIPs15m?out=xml&$DOM":22
+  "/alert/querySingleIP?ip=5.39.217.84&$DOM":30
+  )
+
+publicEndpoints=(
+  "/alert/retrieveAlertsCount?time=10&":100
+  "/alert/retrieveAlertsCount?time=10&out=json&":100
+  "/heartbeat":100
+  "/alert/retrieveAlertsJson?":50
+  "/alert/datasetAlertsPerMonth?":100
+  "/alert/datasetAlertTypesPerMonth?":1000
+  "/alert/retrieveAlertStats?":100
+  "/alert/topCountriesAttacks?offset=1&topx=4&":100
+  "/alert/retrieveLatLonAttacks?offset=3&direction=src&":100
+  "/alert/retrieveAlertsCountWithType?time=10&":100
+  "/alert/TpotStats?day=20181008&":100
+
+)
 
 if [ "$#" -ne 2 ]; then
     echo "invoke: $0 <test|prod> <private|community|all>"
@@ -47,100 +72,44 @@ case "$2" in
 	;;
 esac
 
+echo '\033[00;33m'"***** TESTING GET WEBSERVICE PUBLIC ENDPOINTS"'\033[0m'
 
+for i in ${publicEndpoints[@]}; 
+do 
+  length=$(echo $i|cut -d ":" -f 2)
+  url=$(echo $i|cut -d ":" -f 1)
+  domain=$BIND$url
+  if [ "${url: -1}" == "&" ] || [ "${url: -1}" == "?" ] 
+  then
+    domain=$domain$DOM
+  fi  
+  echo '\033[00;33m'"***** TESTING $domain *****"'\033[0m'
+  curl -s "$domain" | head -$length
+  echo "***** END RESULT *****\n\n"
+  #sleep 1
+done
 
-echo "***** TESTING GET WEBSERVICE"
-
-echo "***** RETRIEVEALERTCYBER *****"
-curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/alert/retrieveAlertsCyber?$DOM
-echo "***** END RETRIEVEALERTSCYBER *****"
-echo ""
-sleep 3
-
-echo "***** RETRIEVEIPS *****"
-curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/alert/retrieveIPs?$DOM
-echo ""
-echo "***** END RETRIEVEIPS *****"
-echo ""
-sleep 3
-
-echo "***** RETRIEVEIPS *****"
-curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND"/alert/retrieveIPs15m?out=json&"$DOM
-echo ""
-echo "***** END RETRIEVEIPS *****"
-echo ""
-sleep 3
-
-echo "***** QUERYSINGLEIP *****"
-curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND"/alert/querySingleIP?ip=5.39.217.84&"$DOM
-echo ""
-echo "***** END QUERYSINGLEIP *****"
-echo ""
-sleep 3
-
-echo "***** RETRIEVEALERTCOUNT XML  *****"
-curl "$BIND/alert/retrieveAlertsCount?time=10&$DOM"
-echo "***** END RETRIEVEALERTCOUNT XML  *****"
-echo ""
-sleep 3
-
-echo "***** RETRIEVEALERTCOUNT JSON  *****"
-curl "$BIND/alert/retrieveAlertsCount?time=10&out=json&$DOM"
-sleep 3
-echo "***** END RETRIEVEALERTCOUNT  JSON *****"
-echo ""
-sleep 3
-
-echo "***** HEARTBEAT  *****"
-curl "$BIND/heartbeat"
-echo "" 
-echo "***** END HEARTBEAT  *****"
-echo ""
-sleep 3
-
-echo "***** RETRIEVEALERTJSON  *****"
-curl "$BIND/alert/retrieveAlertsJson?$DOM"
-echo "***** END RETRIEVEALERTJSON  *****"
-echo "" 
-sleep 3
-
-echo "***** RETRIEVEALERTSPERMONTH  *****"
-curl "$BIND/alert/datasetAlertsPerMonth?$DOM"
-echo "***** END RETRIEVEALERTSPERMONTH  *****"
-echo ""
-sleep 3 
-
-echo "***** RETRIEVEALERTTYPESSPERMONTH  *****"
-curl "$BIND/alert/datasetAlertTypesPerMonth?$DOM"
-echo "***** END RETRIEVEALERTYPESPERMONTH  *****"
-echo ""
-sleep 3
-
-echo "***** RETRIEVEALERTSTATS  *****"
-curl "$BIND/alert/retrieveAlertStats?$DOM"
-echo "***** END RETRIEVEALERTSTATS  *****"
-echo ""
-sleep 3
-
-echo "***** RETRIEVETOPCOUNTRIES  *****"
-curl "$BIND/alert/topCountriesAttacks?offset=1&topx=4&$DOM"
-echo "***** END RETRIEVETOPCOUNTRIES *****"
-echo ""
-sleep 3
-
-echo "***** RETRIEVELATLONG  *****"
-curl "$BIND/alert/retrieveLatLonAttacks?offset=3&topx=4&direction=src&$DOM"
-echo "***** END RETRIEVELATLONG *****"
-echo ""
-sleep 3
-
-echo "***** RETRIEVEALERTCOUNTWITHTYPE  *****"
-curl "$BIND/alert/retrieveAlertsCountWithType?time=10&$DOM"
-echo "***** END RETRIEVEALERTCOUNTWITHTYPE *****"
-echo ""
-sleep 3
+exit 1
 
 
 
-echo "***** END TESTING GET WEBSERVICE"
+echo '\033[00;33m'"***** TESTING POST WEBSERVICE PRIVATE ENDPOINTS"'\033[0m'
+
+for i in ${privateEndpoints[@]}; 
+do 
+  length=$(echo $i|cut -d ":" -f 2)
+  url=$(echo $i|cut -d ":" -f 1)
+  domain=$BIND$url
+  if [ "${url: -1}" == "&" ] || [ "${url: -1}" == "?" ] 
+  then
+    domain=$domain$DOM
+  fi
+  echo '\033[00;33m'"***** TESTING $domain *****"'\033[0m'
+  curl  -s -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH "$domain" |head -$length;
+  echo "***** END RESULT *****\n\n"
+  # sleep 1
+
+done
+
+echo '\033[00;33m'"***** END TESTING WEBSERVICE ENDPOINTS"'\033[0m'
 exit 0

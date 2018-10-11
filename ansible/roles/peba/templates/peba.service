@@ -1,14 +1,9 @@
-# CHANGES MUST BE MIRRORED IN
-#     /ansible/peba-update/templates/peba.service
-#     /ansible/peba/templates/peba.service
-
-
-
 [Unit]
 Description=Peba
 After=syslog.target
 
 [Service]
+Environment=https_proxy={{https_proxy}}
 Type=simple
 User=peba
 Group=peba

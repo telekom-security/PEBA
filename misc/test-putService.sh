@@ -25,47 +25,30 @@ case "$1" in
 esac
 
 echo "***** TESTING PUT WEBSERVICE"
+failed=false
 
-echo "***** SENDING alarm.xml *****"
-AUTH=./put-requests/alarm.xml
-curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/ews-0.1/alert/postSimpleMessage
-echo "***** END alarm.xml *****"
-echo ""
-sleep 3
+for i in $(ls put-requests/*.xml); do 
+    echo "***** SENDING $i *****"
+    PAYLOAD=$i
+    res=$(curl -s -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$PAYLOAD $BIND/ews-0.1/alert/postSimpleMessage)
+    if $(echo $res|grep -iqF ok); 
+    then
+      echo $res
+    else
+      failed=true 
+      echo $res|egrep --color "\b(OK|failed)\b|$"
+    fi
+    echo "***** END $i *****"
+done
 
-echo "***** SENDING alarmcowrie.xml *****"
-AUTH=./put-requests/alarmcowrie.xml
-curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/ews-0.1/alert/postSimpleMessage
-echo "***** END alarmcowrie.xml *****"
-echo ""
-sleep 3
+RESTORE='\033[0m'
 
-echo "***** SENDING alarmdionaea.xml *****"
-AUTH=./put-requests/alarmdionaea.xml
-curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/ews-0.1/alert/postSimpleMessage
-echo "***** END alarmdionaea.xml *****"
-echo ""
-sleep 3
+RED='\033[00;31m'
+GREEN='\033[00;32m'
 
-echo "***** SENDING alarmht.xml *****"
-AUTH=./put-requests/alarmht.xml
-curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/ews-0.1/alert/postSimpleMessage
-echo "***** END alarmht.xml *****"
-echo ""
-sleep 3
-
-echo "***** SENDING alarmsuricata.xml *****"
-AUTH=./put-requests/alarmsuricata.xml
-curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/ews-0.1/alert/postSimpleMessage
-echo "***** END alarmsuricata.xml *****"
-echo ""
-sleep 3
-
-echo "***** SENDING broken.xml *****"
-AUTH=./put-requests/broken.xml
-curl -X POST --header "Content-Type:text/xml;charset=UTF-8" -d @./$AUTH $BIND/ews-0.1/alert/postSimpleMessage
-echo "***** END broken.xml *****"
-echo ""
-sleep 3
-
-echo "***** END TESTING PUT WEBSERVICE"
+if $failed;
+then
+  echo -e "${RED}***** ERROR DETECTED ***** ${RESTORE} "
+else
+  echo -e "${GREEN}***** EVERYTHING SUCCESSFULLY SUBMITTED ***** ${RESTORE} "
+fi
