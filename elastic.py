@@ -400,79 +400,68 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
 def cveExisting(cve, index, es, debug):
     """ check if cve already exists in index """
 
-
-    if debug:
-        app.logger.debug("Pretending as if %s was existing in index." % str(cve))
-        return True, False
+    # if debug:
+    #     app.logger.debug("Pretending as if %s was existing in index." % str(cve))
+    #     return True, False
 
     query = """{
         "query": {
             "bool": {
                 "must": [
                     {
-                        "query_string": {
-                            "default_field": "vulnid",
-                            "query": "%s"
-                        }
+                        "term": {
+                            "vulnid.keyword": "%s"                        }
                     }
-                ],
-                "must_not": [],
-                "should": []
+                ]
             }
         },
         "from": 0,
-        "size": 10,
+        "size": 1,
         "sort": [],
         "aggs": {}
     }""" % cve
+
 
     try:
         res = es.search(index=index, doc_type="CVE", body=query)
 
         for hit in res['hits']['hits']:
             return True, (hit)
+        return False, False
 
-        return True, False
-
-    except:
-        app.logger.error("Error querying ES for CVE vulnid: %s" % str(cve))
+    except Exception as e:
+        app.logger.error("Error querying ES for CVE vulnid: %s - Exception: %s" % (str(cve), str(e)))
         return False, False
 
 
 def packetExisting(hash, index, es, debug, hashType):
     """ check if packet already exists in index """
-
     query = """{
         "query": {
             "bool": {
                 "must": [
                     {
-                        "query_string": {
-                            "default_field": "%s",
-                            "query": "%s"
+                        "term": {
+                            "%s" : "%s"
                         }
                     }
-                ],
-                "must_not": [],
-                "should": []
+                ]
             }
         },
         "from": 0,
-        "size": 10,
+        "size": 1,
         "sort": [],
         "aggs": {}
     }""" % (hashType, hash)
 
     try:
-
         res = es.search(index=index, doc_type="Packet", body=query)
-
         for hit in res['hits']['hits']:
             return True, (hit)
-    except:
-        app.logger.error("Error querying ES for packet with hash %s" % str(hash))
         return False, False
 
-    return True, False
+    except Exception as e:
+        app.logger.error("Error querying ES for packet with hash %s - Exception: %s" % (str(hash), str(e)))
+        return False, False
 
 

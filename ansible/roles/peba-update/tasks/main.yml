@@ -21,7 +21,7 @@
 
 - name: Install peba.service Unitfile
   template:
-     src: './../../../../etc/systemd/system/peba.service'
+     src: ../roles/peba-update/templates/peba.service
      dest: '/etc/systemd/system/peba.service'
      owner: root
      group: root
