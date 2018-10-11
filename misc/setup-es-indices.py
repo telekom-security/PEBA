@@ -18,7 +18,7 @@ host = "127.0.0.1"
 port = 9200
 index_alias_alert= "ews2017.1"
 index_name_cve= "ewscve"
-index_name_packets = "packets"
+index_name_packets = "payloads"
 index_name_notifications = "ews-notifications"
 
 es = Elasticsearch([{'host': host, 'port': 9200}])

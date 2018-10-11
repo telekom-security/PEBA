@@ -36,7 +36,8 @@ peerIdents = ["WebHoneypot", "Webpage",
               "elasticpot", "Service(ES)",
               "suricata", "Network(suricata)",
               "tanner", "Webpage",
-              "medpot", "Service(Medicine)"
+              "medpot", "Service(Medicine)",
+              "emobility", "Service(emobility)",
               "", ""]
 
 ################

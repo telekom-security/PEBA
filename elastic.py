@@ -213,11 +213,11 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
             app.logger.debug("Could not determine MIME for payload %s." % packetHash)
 
     # check if packet is existing in index via hash
-    statusContent, packetContent = packetExisting(packetHash, "packets", es, debug, "hash")
+    statusContent, packetContent = packetExisting(packetHash, "payloads", es, debug, "hash")
 
     # check if packet is existing in index via fuzzyhash
     fuzzyHash=getFuzzyHash(packetdata, packetHash)
-    statusFuzzy, fuzzyHashContent = packetExisting(fuzzyHash, "packets", es, debug, "hashfuzzyhttp")
+    statusFuzzy, fuzzyHashContent = packetExisting(fuzzyHash, "payloads", es, debug, "hashfuzzyhttp")
 
     if not(statusContent or statusFuzzy):
         app.logger.debug("Unable to work with ES (handlePacketData)")
@@ -285,7 +285,7 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
         app.logger.debug("Not storing md5 {0} / FuzzyHash {1} to s3 as it is already present in packets index.".format(packetHash, fuzzyHash))
 
     packet = {
-        "data" : packetdata,
+        "data" : "raw payload in s3",
         "createTime" : createTime,
         "lastSeen" : lastSeenTime,
         "hash" : packetHash,
@@ -304,7 +304,7 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
     try:
         app.logger.debug("Storing/Updating packet in index packets (handlePacketData)")
 
-        res = es.index(index="packets", doc_type="Packet", id=id, body=packet, refresh=True)
+        res = es.index(index="payloads", doc_type="Packet", id=id, body=packet, refresh=True)
         return True
 
     except:
@@ -339,8 +339,8 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
 
 
     if (len(str(packetdata)) > 0):
-
-        if (len(str(packetdata)) <= 102400):
+        # process payloads up to 5MB
+        if (len(str(packetdata)) <= 5242880):
             if ("honeytrap" in peerType or "Dionaea" in peerType or "Webpage" in peerType):
                 if ("ewscve" not in index):
                     status = handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip, destinationPort, s3client)
