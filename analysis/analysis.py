@@ -82,14 +82,14 @@ def getNumberHoneypotsAndAlerts(timeframe, clientDomain, type):
                     },
                     {
                       "exists": {
-                        "field": "hostname.keyword"
+                        "field": "hostname"
                       }
                     }
                   ],
                   "must_not": [
                     {
                       "term": {
-                        "hostname.keyword": "undefined"
+                        "hostname": "undefined"
                       }
                     }
                   ],
@@ -106,13 +106,13 @@ def getNumberHoneypotsAndAlerts(timeframe, clientDomain, type):
               "aggs": {
                 "hostnames": {
                   "terms": {
-                    "field": "hostname.keyword",
+                    "field": "hostname",
                     "size": 100000
                   },
                     "aggs": {
                         "peerIdents": {
                             "terms": {
-                                "field": "peerIdent.keyword"
+                                "field": "peerIdent"
                             }
                        }
                     }
@@ -142,19 +142,19 @@ def getNumberHoneypotsAndAlerts(timeframe, clientDomain, type):
                             },
                             {
                                 "exists": {
-                                    "field": "hostname.keyword"
+                                    "field": "hostname"
                                 }
                             },
                             {
                                 "term": {
-                                    "hostname.keyword": "undefined"
+                                    "hostname": "undefined"
                                 }
                             }
                         ],
                         "must_not": [
                             {
                                 "term": {
-                                    "hostname.keyword": ""
+                                    "hostname": ""
                                 }
                             }
                         ],
@@ -177,7 +177,7 @@ def getNumberHoneypotsAndAlerts(timeframe, clientDomain, type):
                         "aggs": {
                             "peerIdents": {
                                 "terms": {
-                                    "field": "peerIdent.keyword"
+                                    "field": "peerIdent"
                                 }
                             }
                         }
@@ -236,7 +236,7 @@ def getNumberHoneypotsAndAlerts(timeframe, clientDomain, type):
                       "aggs": {
                         "hostnames": {
                           "terms": {
-                            "field": "peerIdent.keyword",
+                            "field": "peerIdent",
                             "size": 100000
                           }
                         }
@@ -285,14 +285,14 @@ def getNumberHoneypotTypes(timeframe, clientDomain, type):
                     },
                     {
                       "exists": {
-                        "field": "hostname.keyword"
+                        "field": "hostname"
                       }
                     }
                   ],
                   "must_not": [
                     {
                       "term": {
-                        "hostname.keyword": "undefined"
+                        "hostname": "undefined"
                       }
                     }
                   ],
@@ -309,13 +309,13 @@ def getNumberHoneypotTypes(timeframe, clientDomain, type):
               "aggs": {
                 "hostnames": {
                   "terms": {
-                    "field": "hostname.keyword",
+                    "field": "hostname",
                     "size": 100000
                   },
                     "aggs": {
                         "peerTypes": {
                             "terms": {
-                                "field": "peerType.keyword",
+                                "field": "peerType",
                                 "size": 100000
                             }
                        }
@@ -345,19 +345,19 @@ def getNumberHoneypotTypes(timeframe, clientDomain, type):
                             },
                             {
                                 "exists": {
-                                    "field": "hostname.keyword"
+                                    "field": "hostname"
                                 }
                             },
                             {
                                 "term": {
-                                    "hostname.keyword": "undefined"
+                                    "hostname": "undefined"
                                 }
                             }
                         ],
                         "must_not": [
                             {
                                 "term": {
-                                    "hostname.keyword": ""
+                                    "hostname": ""
                                 }
                             }
                         ],
@@ -380,7 +380,7 @@ def getNumberHoneypotTypes(timeframe, clientDomain, type):
                         "aggs": {
                             "peerTypes": {
                                 "terms": {
-                                    "field": "peerType.keyword",
+                                    "field": "peerType",
                                     "size": 100000
                                 }
                             }
@@ -427,13 +427,13 @@ def getNumberHoneypotTypes(timeframe, clientDomain, type):
               "aggs": {
                 "peerIdent": {
                   "terms": {
-                    "field": "peerIdent.keyword",
+                    "field": "peerIdent",
                     "size": 100000
                   },
                     "aggs": {
                         "peerTypes": {
                             "terms": {
-                                "field": "peerType.keyword",
+                                "field": "peerType",
                                 "size": 100000
                             }
                        }
@@ -515,7 +515,7 @@ def getAlertsPerHoneypotType(timeframe, clientDomain):
           "aggs": {
             "peerType": {
               "terms": {
-                "field": "peerType.keyword",
+                "field": "peerType",
                 "size": 1000
               }
             }
