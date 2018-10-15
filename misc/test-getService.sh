@@ -29,7 +29,7 @@ publicEndpoints=(
   "/alert/topCountriesAttacks?offset=1&topx=4&":100
   "/alert/retrieveLatLonAttacks?offset=3&direction=src&":100
   "/alert/retrieveAlertsCountWithType?time=10&":100
-  "/alert/TpotStats?day=20181008&":100
+  "/alert/TpotStats?day=20181013&":100
 
 )
 

@@ -458,7 +458,7 @@ def queryAlertsCountWithType(timeframe, clientDomain, relevantIndex):
               "aggs": {
                 "honeypotTypes": {
                   "terms": {
-                    "field": "peerType.keyword"
+                    "field": "peerType"
                   }
                 }
               }
