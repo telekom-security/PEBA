@@ -67,7 +67,7 @@ Fields are shown in descending alphabetical order
 Similar to the alert index (see above), only exception is the `rawhttp`-field which is missing here
 
 ### Packet Index 
-#### Name: `packets`
+#### Name: `payloads`
 ```json
 {
 	"createTime" :			"date,no",
@@ -78,7 +78,7 @@ Similar to the alert index (see above), only exception is the `rawhttp`-field wh
 	"hashfuzzyhttp" :		"keyword,no",
 	"initalDestPort" :		"keyword,no",
 	"initialIP" :			"ip,no",
-	"lastSeen" :			"date,no",
+	"lastSeen" :			"date,yes",
 	"md5count" :			"keyword,no"
 }
 ``` 

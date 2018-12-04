@@ -42,3 +42,5 @@ misc/tools/export s3.txt
 ansible/hosts
 
 etc/ews/peba.cfg
+
+analysis/daystats.json
