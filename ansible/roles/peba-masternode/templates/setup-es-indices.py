@@ -382,7 +382,7 @@ index_body_packets = {
                 "lastSeen" : {
                     "type" : "date",
                     "format" : "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
-                    "index" : "false"
+                    "index" : "true"
                 },
                 "md5count" : {
                     "type" : "keyword",
