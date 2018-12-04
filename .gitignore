@@ -44,3 +44,5 @@ ansible/hosts
 etc/ews/peba.cfg
 
 analysis/daystats.json
+
+analysis/result.json

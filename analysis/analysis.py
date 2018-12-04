@@ -26,6 +26,7 @@ es = Elasticsearch(
 )
 
 
+
 ########################
 ### Wrapper Functions
 ########################
@@ -534,7 +535,7 @@ def getAlertsPerHoneypotType(timeframe, clientDomain):
     return True
 
 
-def getAlertStatsJson():
+def getAlertStatsJson(writefile):
     communityPeerStats=getAlertsPerHoneypotType(args.minutes, True)
     peerStats=getAlertsPerHoneypotType(args.minutes, False)
     communityInstallations = getNumberHoneypotsAndAlerts(args.minutes, True, 0)
@@ -575,8 +576,197 @@ def getAlertStatsJson():
 
 
     print(json.dumps(jsonResult, indent=4, sort_keys=True))
-    with open("./stats.json", "w") as fh:
-        fh.write(json.dumps(jsonResult, indent=4, sort_keys=True))
+    if writefile:
+        with open(args.outfile, "w") as fh:
+            fh.write(json.dumps(jsonResult, indent=4, sort_keys=True))
+
+
+def getHPStats(peerIdent):
+    for i in range(days):
+
+        esquery = """
+           {
+             "query": {
+               "bool": 
+                   {
+                       "must":
+                       [
+                           {"term":
+                               {"clientDomain" : "false" }
+                           }
+                       ]
+                   }
+             },
+             "from": 0,
+             "size": 0,
+             "sort": [],
+             "aggs": {
+               "peers": {
+                 "terms": {
+                   "field": "peerIdent",
+                   "size": 10000
+                 }
+               }
+               }}
+               """
+
+        try:
+            res = es.search(index=getRelevantIndex(i), body=esquery)
+            print(res["aggregations"]["peers"]["buckets"])
+
+
+        except ElasticsearchException as err:
+            print('ElasticSearch error: %s' % err)
+
+def getRelevantIndices(dayIndices):
+    dayIndices+=1
+    allDates = ""
+    currentDay = "<ews-{now/d}-*>"
+    allDates += currentDay
+    for i in range(1, dayIndices):
+        prevDay = "<ews-{now/d-" + str(i) + "d}-*>"
+        allDates += "," + prevDay
+    return allDates
+
+def getTotalHoneypotCount(days):
+    esquery = """
+    {
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "match_all": {}
+                }
+              ],
+              "must_not": [],
+              "should": []
+            }
+          },
+          "from": 0,
+          "size": 0,
+          "sort": [],
+          "aggs": {
+            "range": {
+              "date_histogram": {
+                "field": "recievedTime",
+                "interval": "day"
+              },
+              "aggs": {
+                "peers": {
+                  "terms": {
+                    "field": "clientDomain"
+                  }
+                }
+              }
+            }
+          }
+        }
+       """
+    try:
+        res = es.search(index=getRelevantIndices(days), body=esquery)
+        return res["aggregations"]["range"]["buckets"]
+
+
+    except ElasticsearchException as err:
+        print('ElasticSearch error: %s' % err)
+        return False
+
+def updateTotalDays(hpstats, writefile):
+    dayJson = {}
+    returnJson = {}
+
+    # zero out the fields
+    for days in hpstats:
+        for peers in days["peers"]["buckets"]:
+           dayJson[peers["key"]] = 0
+
+    # create days with zero fields
+    for days in hpstats:
+        returnJson[days["key_as_string"]] = dict(dayJson)
+
+    # update the fields from the hpstats result
+
+    for days in hpstats:
+        for peers in days["peers"]["buckets"]:
+            returnJson[days["key_as_string"]][peers["key"]] = peers["doc_count"]
+
+    print(json.dumps(returnJson, sort_keys=True,indent=4))
+    if writefile:
+        with open(args.outfile, "a") as fh:
+            fh.write(json.dumps(returnJson, indent=4, sort_keys=True))
+
+
+
+
+def getHoneypotCount(days):
+    esquery = """
+    {
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "term": {
+                "clientDomain": "false"
+              }
+            }
+          ]
+        }
+      },
+      "from": 0,
+      "size": 0,
+      "sort": [],
+      "aggs": {
+        "range": {
+          "date_histogram": {
+            "field": "recievedTime",
+            "interval": "day"
+          },
+          "aggs": {
+            "peers": {
+              "terms": {
+                "field": "peerIdent",
+                "size": 100000
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    """
+    try:
+        res = es.search(index=getRelevantIndices(days), body=esquery)
+        # print(len(res["aggregations"]["peers"]["buckets"]))
+        return res["aggregations"]["range"]["buckets"]
+
+
+    except ElasticsearchException as err:
+        print('ElasticSearch error: %s' % err)
+        return False
+
+def updateDays(hpstats, writefile):
+    dayJson = {}
+    returnJson = {}
+
+    # zero out the fields
+    for days in hpstats:
+        for peers in days["peers"]["buckets"]:
+           dayJson[peers["key"]] = 0
+
+    # create days with zero fields
+    for days in hpstats:
+        returnJson[days["key_as_string"]] = dict(dayJson)
+
+    # update the fields from the hpstats result
+
+    for days in hpstats:
+        for peers in days["peers"]["buckets"]:
+            returnJson[days["key_as_string"]][peers["key"]] = peers["doc_count"]
+
+    print(json.dumps(returnJson, sort_keys=True,indent=4))
+    if writefile:
+        with open(args.outfile, "a") as fh:
+            fh.write(json.dumps(returnJson, indent=4, sort_keys=True))
 
 
 ########################
@@ -603,9 +793,9 @@ def setAlertsOverTime(timeframe, numberTpots, numberHoneypots, numberAlerts, cin
 #######################
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser(description='PEBA Honeypot Statistics.')
     parser.add_argument('minutes', default=5, nargs='?', type=int, help='number of minutes to consider, default: 5')
+    parser.add_argument('outfile', nargs='?', help='name of the json outfile.')
     parser.add_argument('-v',"--verbose",action='store_true',help='verbose: output detailed numbers per honeypot daemon')
     args=parser.parse_args()
 
@@ -621,4 +811,9 @@ if __name__ == '__main__':
     print("Retrieving statistics for the last " + str(args.minutes)+ " minute(s):")
 
     # generate statistical data
-    getAlertStatsJson()
+
+    getAlertStatsJson(True)
+
+    # generate Statistics for each private Honeypot
+    updateDays(getHoneypotCount(7), True)
+    updateTotalDays(getTotalHoneypotCount(7), True)
