@@ -8,8 +8,8 @@ host = "{{ ELASTIC_IP }}"
 port = {{ ELASTIC_PORT }}
 index_alias_alert = "{{ ELASTIC_INDEX }}"
 index_name_cve = "ewscve"
-index_name_packets = "packets"
-index_name_notifications = "ews-notifications"
+index_name_packets = "payloads"
+index_name_notifications = "notifications"
 
 
 ###

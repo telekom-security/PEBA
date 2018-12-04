@@ -5,8 +5,8 @@ port=9200
 
 indexAlertsAlias="ews2017.1"
 indexCve="ewscve"
-indexPackets="packets"
-indexNotifications="ews-notifications"
+indexPackets="payloads"
+indexNotifications="notifications"
 
 
 #
