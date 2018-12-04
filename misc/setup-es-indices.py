@@ -355,7 +355,7 @@ index_body_packets = {
                 "createTime" : {
                     "type" : "date",
                     "format" : "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
-                    "index" : "false"
+                    "index" : "true"
                 },
                 "data" : {
                     "type" : "keyword",
