@@ -31,7 +31,7 @@ Fields are shown in descending alphabetical order
 	"client" :			"keyword,no",
 	"clientDomain" :		"bool,yes",
 	"clientVersion" :		"keyword,no",
-	"country" :			"keyword,no",
+	"country" :			"keyword,yes",
 	"countryName" :			"keyword,yes",
 	"createTime" :			"date,yes",
 	"externalIP" :			"ip,no",
