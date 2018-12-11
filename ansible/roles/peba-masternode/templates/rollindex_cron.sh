@@ -33,7 +33,7 @@ curl -XPOST {{ ELASTIC_IP }}:{{ ELASTIC_PORT }}/{{ ELASTIC_INDEX }}'/_rollover?p
             },
             "country":{
                "type":"keyword",
-               "index":"false"
+               "index":"true"
             },
             "countryName":{
                "type":"keyword",
