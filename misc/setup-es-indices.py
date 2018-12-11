@@ -64,7 +64,7 @@ index_body_alerts = {
                 },
                 "country" : {
                     "type" : "keyword",
-                    "index" : "false"
+                    "index" : "true"
                 },
                 "countryName" : {
                     "type" : "keyword",
