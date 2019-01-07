@@ -651,7 +651,7 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
                     "aggs": {
             "countries": {
               "terms": {
-                "field": "country.keyword",
+                "field": "country",
                 "size" : %s
               },
               "aggs": {
@@ -697,7 +697,7 @@ def queryTopCountriesAttacks(monthOffset, topX, clientDomain, relevantIndex):
                     "aggs": {
                 "countries": {
                     "terms": {
-                        "field": "targetCountry.keyword",
+                        "field": "targetCountry",
                         "size" : %s
                     },
                     "aggs": {
