@@ -51,7 +51,7 @@ Fields are shown in descending alphabetical order
 	"sourceEntryAS" :		"keyword,yes",
 	"sourceEntryIp" :		"ip,yes",
 	"sourceEntryPort" :		"keyword,no",
-	"targetCountry" :		"keyword,no",
+	"targetCountry" :		"keyword,yes",
 	"targetCountryName" :		"keyword,yes",
 	"targetEntryAS" :		"keyword,no",
 	"targetEntryIp" :		"ip,yes",
