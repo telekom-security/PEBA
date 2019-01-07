@@ -136,7 +136,7 @@ curl -XPOST $host:$port/$ews_alias'/_rollover?pretty' -H 'Content-Type: applicat
             },
             "targetCountry":{
                "type":"keyword",
-               "index":"no"
+               "index":"true"
             },
             "targetCountryName":{
                "type":"keyword",
