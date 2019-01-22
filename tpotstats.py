@@ -7,7 +7,7 @@
 import datetime
 from elasticsearch import Elasticsearch, ElasticsearchException
 import ipaddress
-
+from collections import OrderedDict
 
 ########################
 ### Functions to GET data
@@ -471,3 +471,97 @@ def getTPotAlertStatsJson(app, es, index, sdate):
     jsonResult['UTCtimeTo'] = str(utcTimeTo)
 
     return jsonResult
+
+def getStats(app, es, statisticIndex, gte ,lt, queryValue):
+    ''' retrieves statistics from es statistics index in timeframe (minutes)'''
+
+    # HP Statistics per Type
+    HPItems = [ 'E-Mail(mailoney)',
+                'Industrial(conpot)',
+                'Network(cisco-asa)',
+                'Network(Dionaea)',
+                'Network(honeytrap)',
+                'Network(suricata)',
+                'Passwords(heralding)',
+                'RDP(rdpy)',
+                'SSH/console(cowrie)',
+                'Service(ES)',
+                'Service(emobility)',
+                'Service(Medicine)',
+                'VNC(vnclowpot)',
+                'Webpage',
+                'Unclassified'
+                ]
+
+
+    queryValues = ['UTCtimeFrom',
+                   'UTCtimeTo',
+                   'comm_totalNumberAlerts',
+                   'comm_totalNumberHoneypots',
+                   'comm_totalNumberDaemons',
+                   'comm_totalRatio'
+                   ]
+
+    for i in queryValue:
+        if i in HPItems:
+            queryValues.append('comm_totalAlerts_'+i)
+            queryValues.append('comm_totalHPs_'+i)
+            queryValues.append('comm_ratio_'+i)
+        else:
+            app.logger.error("getStats: unrecognized honeypot value: %s" % i)
+    queryString='"'
+    queryString+='","'.join(queryValues)+'"'
+
+    app.logger.debug("getStats: setting gte to : " + gte)
+    app.logger.debug("getStats: setting lt to: " + lt)
+    app.logger.debug("getStats: querying statistic data for %s" %queryString)
+
+    esquery="""
+        {
+          "query": {
+            "bool": {
+              "must": [
+                {
+                  "range": {
+                    "UTCtimeFrom": {
+                      "gte": "%s",
+                      "lte": "%s"
+                    }
+                  }
+                }
+              ],
+              "must_not": [],
+              "should": []
+            }
+          },
+          "from": 0,
+          "size": 5000,
+          "sort": {
+                "UTCtimeFrom": {
+                    "order": "asc"
+                    }
+                },
+          "aggs": {},
+          "_source": [
+                %s
+                ]
+            }
+        }
+    """ % (gte, lt, queryString)
+
+    try:
+        res = es.search(index=statisticIndex, body=esquery)
+
+    except ElasticsearchException as err:
+        app.logger.error('ElasticSearch error: %s' % err)
+        return False
+
+    result = OrderedDict()
+    for days in res['hits']['hits']:
+        datefrom=days['_source']['UTCtimeFrom']
+        res2 = OrderedDict()
+        for stats in days['_source']:
+            res2[stats] = days['_source'][stats]
+        result[datefrom] = res2
+
+    return result

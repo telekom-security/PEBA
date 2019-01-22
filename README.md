@@ -56,6 +56,27 @@ The above private endpoints cannot be queried using the community credentials (1
  - [GET] */alert/retrieveLatLonAttacks* ==> Returns top X count on Lat and Lng. use GET parameter "offset" and "topx" to determine the offset from now in days (default: last 24h) and how many results shall be returned (default: top10). Use parameter "direction" to determine if source or destination location is given.
  - [GET] */alert/retrieveAlertsCountWithType* ==> returns the number of attacks within timespan in minutes or since the beginning of the current day, grouped by Type, e.g. */retrieveAlertsCountWithType?time=10* or */retrieveAlertsCountWithType?time=day*. Returns json.
  - [GET] */alert/TpotStats* ==> Returns statistics on T-Pot community installations. Parameter: *day=YYYYMMDD*, e.g. */alert/TpotStats?day=20180317* 
+ - [GET] */alert/getStats* ==> Returns detailed statistics on T-Pot community data. Parameter:    
+   -  *gte=YYYY-MM-DD HH:MM:SS* => ***from*** timestamp, url-encoded, defaults to last 24h if missing
+   -  *lt=YYYY-MM-DD HH:MM:SS* => ***to*** timestamp, url-encoded, defaults to now() if missing
+   -  *value=<honeypot-type1,honeypot-type2...>* => ***0 .. n*** honeypot types, comma-separated, url-encoded, choose from:
+              
+               - 'E-Mail(mailoney)',
+               - 'Industrial(conpot)',
+               - 'Network(cisco-asa)',
+               - 'Network(Dionaea)',
+               - 'Network(honeytrap)',
+               - 'Network(suricata)',
+               - 'Passwords(heralding)',
+               - 'RDP(rdpy)',
+               - 'SSH/console(cowrie)',
+               - 'Service(ES)',
+               - 'Service(emobility)',
+               - 'Service(Medicine)',
+               - 'VNC(vnclowpot)',
+               - 'Webpage',
+               - 'Unclassified'
+    example:  */alert/getStats?values=Network(Dionaea),Network(honeytrap),SSH%2Fconsole(cowrie),Unclassified&lt=2019-01-22+15%3A24%3A52&gte=2019-01-22+15%3A30%3A07* 
 
   
 **Data domain:**

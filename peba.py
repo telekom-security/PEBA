@@ -28,7 +28,7 @@ from werkzeug.contrib.cache import MemcachedCache
 import ipaddress
 import botocore.session, botocore.client
 from botocore.exceptions import ClientError
-from tpotstats import getTPotAlertStatsJson
+from tpotstats import getTPotAlertStatsJson, getStats
 
 
 ###################
@@ -57,6 +57,7 @@ if app.config['USES3']:
         config=botocore.config.Config(signature_version=app.config['S3SIGNATUREVERSION'])
     )
 
+statisticIndex="statistics"
 
 ###############
 ### Functions
@@ -1562,6 +1563,61 @@ def tpotstats():
             return jsonify(returnResult)
         else:
             return jsonify(returnResult)
+
+
+@app.route("/alert/getStats", methods=['GET'])
+def stats():
+    """ Retrieve detailed statistics of community installations.
+    """
+    # get result from cache
+    getCacheResult = getCache(urllib.parse.quote_plus(request.url), "url")
+    if getCacheResult is not False:
+        return jsonify(getCacheResult)
+
+    else:
+        queryValue = []
+        if not request.args.get('values'):
+            # Using default : none
+            queryValue=[]
+        else:
+            for i in urllib.parse.unquote_plus(request.args.get('values')).split(','):
+                queryValue.append(i)
+
+        # check start / end times
+        # gte
+        if not request.args.get('gte'):
+            gte = (datetime.datetime.utcnow()+datetime.timedelta(days=-1)).strftime('%Y-%m-%d %H:%M:%S')
+            app.logger.error("getStats: no gte value given, setting to default now-24h")
+
+        else:
+
+            try:
+                datetime.datetime.strptime(urllib.parse.unquote_plus(request.args.get('gte')), '%Y-%m-%d %H:%M:%S')
+                gte = urllib.parse.unquote_plus(request.args.get('gte'))
+            except ValueError:
+                app.logger.debug("getStats: Incorrect date format for gte, falling back to default gte")
+                gte = (datetime.datetime.utcnow() + datetime.timedelta(days=-1)).strftime('%Y-%m-%d %H:%M:%S')
+        # lt
+        if not request.args.get('lt'):
+            lt = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            app.logger.error("getStats: no lt value given, setting to default now()")
+        else:
+            try:
+                datetime.datetime.strptime(urllib.parse.unquote_plus(request.args.get('lt')), '%Y-%m-%d %H:%M:%S')
+                lt = urllib.parse.unquote_plus(request.args.get('lt'))
+            except ValueError:
+                app.logger.debug("getStats: Incorrect date format for lt, falling back to default lt")
+                lt = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+
+        returnResult = getStats(app, es, statisticIndex, gte, lt, queryValue)
+
+        if not returnResult:
+            return app.config['DEFAULTRESPONSE']
+
+        else:
+            setCache(urllib.parse.quote_plus(request.url), returnResult, 60*30, "url")
+            return jsonify(returnResult)
+
 
 
 # PUT Service
