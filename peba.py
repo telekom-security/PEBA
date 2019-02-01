@@ -28,7 +28,7 @@ from werkzeug.contrib.cache import MemcachedCache
 import ipaddress
 import botocore.session, botocore.client
 from botocore.exceptions import ClientError
-from tpotstats import getTPotAlertStatsJson, getStats
+from tpotstats import getTPotAlertStatsJson, getStats, getTops
 
 
 ###################
@@ -1618,6 +1618,56 @@ def stats():
             setCache(urllib.parse.quote_plus(request.url), returnResult, 60*30, "url")
             return jsonify(returnResult)
 
+@app.route("/alert/tops", methods=['GET'])
+def topx():
+    """ Retrieve the top x URLs/ports and gather their timeline .
+    """
+
+    # get result from cache
+    getCacheResult = getCache(urllib.parse.quote_plus(request.url), "url")
+    if getCacheResult is not False:
+        return jsonify(getCacheResult)
+
+    else:
+        # get topx
+        if not request.args.get('topx'):
+            topnumber = 10
+        elif request.args.get('topx').isdecimal() and int(request.args.get('topx')) <= 30:
+            topnumber = request.args.get('topx')
+        else:
+            return app.config['DEFAULTRESPONSE']
+
+        # check Type
+        if not request.args.get('type'):
+            return app.config['DEFAULTRESPONSE']
+        else:
+            if request.args.get('type') in ['destports', 'urls']:
+                toptype = request.args.get('type')
+            else:
+                return app.config['DEFAULTRESPONSE']
+
+        # check timespan
+        # days
+        if not request.args.get('days'):
+            days = 1
+            indices = getRelevantIndices(days + 1)
+        elif request.args.get('days') in ["1", "7", "28"]:
+            days = int(request.args.get('days'))
+            if days == 28:
+                indices = getRelevantIndices(0)
+            else:
+                indices = getRelevantIndices(days + 1)
+        else:
+            return app.config['DEFAULTRESPONSE']
+
+        returnResult = getTops(app, es, indices, days, toptype, topnumber)
+
+        if not returnResult:
+            return app.config['DEFAULTRESPONSE']
+
+        else:
+            setCache(urllib.parse.quote_plus(request.url), returnResult, 3600*2, "url")
+            return jsonify(returnResult)
 
 
 # PUT Service

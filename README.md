@@ -77,8 +77,10 @@ The above private endpoints cannot be queried using the community credentials (1
                - 'Webpage',
                - 'Unclassified'
     example:  */alert/getStats?values=Network(Dionaea),Network(honeytrap),SSH%2Fconsole(cowrie),Unclassified&lt=2019-01-22+15%3A24%3A52&gte=2019-01-22+15%3A30%3A07* 
+   
+ - [GET] */alert/tops* ==> Returns detailed statistics on topx urls and destination ports in timeframe. Parameter *type* {url,destports}, *days* {1,7,28} and topx {1...30}, e.g. */alert/tops?type=urls&topx=5&days=28*
+ 
 
-  
 **Data domain:**
 
 By default, querying the above endpoints, data from the **T-Pot community honeypots** is returned. To retrieve data from the **private domain honeypots**, add a GET parameter *ci=0*. To retrieve data from both domains,community and private, use *ci=-1*.

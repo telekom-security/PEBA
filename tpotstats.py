@@ -8,6 +8,7 @@ import datetime
 from elasticsearch import Elasticsearch, ElasticsearchException
 import ipaddress
 from collections import OrderedDict
+import json
 
 ########################
 ### Functions to GET data
@@ -565,3 +566,233 @@ def getStats(app, es, statisticIndex, gte ,lt, queryValue):
         result[datefrom] = res2
 
     return result
+
+def getTops(app, es, esindex, days, toptype, topnumber):
+    # get the top 10
+    if toptype == "urls":
+
+        if days > 1:
+            if days == 7:
+                resolution="6h"
+            elif days == 28:
+                resolution = "day"
+            minday = "{:%Y-%m-%d}".format(datetime.datetime.utcnow() + datetime.timedelta(days=-(int(days)-1)))
+            maxday = "{:%Y-%m-%d}".format(datetime.datetime.utcnow())
+            esquery = """
+                {
+                  "query": {
+                    "bool": {
+                      "must": [
+                       {
+                        "range":{
+                            "recievedTime":{
+                                "gte":"%s"
+                                }}
+                                },
+                        {
+                        "term":{
+                            "peerType":"Webpage"}}
+                      ],
+                      "must_not": [],
+                      "should": []
+                    }
+                  },
+                  "from": 0,
+                  "size": 0,
+                  "sort": [],
+                  "aggs": {
+                    "url": {
+                      "terms": {
+                        "field": "originalRequestString",
+                        "size": %s
+                      },
+                  "aggs": {
+                     "range": {
+                          "date_histogram": {
+                            "field": "recievedTime",
+                            "interval": "%s",
+                            "keyed": false,
+                            "min_doc_count": 0,
+                            "extended_bounds": {
+                                "min": "%s", 
+                                "max": "%s"
+                            }                            
+                        }}}
+                    }
+                  }
+                }
+            """ % (minday, topnumber, resolution, minday, maxday)
+        else:
+            minday = "{:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.utcnow() + datetime.timedelta(days=-days))
+            maxday = "{:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.utcnow())
+            esquery = """
+                {
+                  "query": {
+                    "bool": {
+                      "must": [
+                        {
+                        "range":{
+                            "recievedTime":{
+                                "gte":"%s"
+                                }}
+                                },
+                        {
+                        "term":{
+                            "peerType":"Webpage"}}
+                      ],
+                      "must_not": [],
+                      "should": []
+                    }
+                  },
+                  "from": 0,
+                  "size": 0,
+                  "sort": [],
+                  "aggs": {
+                    "url": {
+                      "terms": {
+                        "field": "originalRequestString",
+                        "size": %s
+                      },
+                  "aggs": {
+                     "range": {
+                          "date_histogram": {
+                            "field": "recievedTime",
+                            "interval": "hour",
+                            "keyed": false,
+                            "min_doc_count": 0,
+                            "extended_bounds": {
+                                "min": "%s", 
+                                "max": "%s"
+                            }                            
+                        }}}
+                    }
+                  }
+                }
+            """ % (minday,topnumber, minday, maxday)
+
+        try:
+            res = es.search(index=esindex, body=esquery)
+        except ElasticsearchException as err:
+            app.logger.error('ElasticSearch error: %s' % err)
+            return False
+
+        stats = OrderedDict()
+        for url in res['aggregations']['url']['buckets']:
+            daystats = OrderedDict()
+            daystats['total'] = url['doc_count']
+            for day in url['range']['buckets']:
+                daystats[day['key_as_string']] = day['doc_count']
+            stats[url['key']] = daystats
+
+        return(stats)
+
+    if toptype == "destports":
+
+        if days > 1:
+            if days == 7:
+                resolution="6h"
+            elif days == 28:
+                resolution = "day"
+            minday = "{:%Y-%m-%d}".format(datetime.datetime.utcnow() + datetime.timedelta(days=-(int(days)-1)))
+            maxday = "{:%Y-%m-%d}".format(datetime.datetime.utcnow())
+            esquery = """
+                {
+                  "query": {
+                    "bool": {
+                      "must": [
+                       {
+                        "range":{
+                            "recievedTime":{
+                                "gte":"%s"
+                                }}
+                                }
+                      ],
+                      "must_not": [],
+                      "should": []
+                    }
+                  },
+                  "from": 0,
+                  "size": 0,
+                  "sort": [],
+                  "aggs": {
+                    "ports": {
+                      "terms": {
+                        "field": "targetEntryPort",
+                        "size": %s
+                      },
+                  "aggs": {
+                     "range": {
+                          "date_histogram": {
+                            "field": "recievedTime",
+                            "interval": "%s",
+                            "keyed": false,
+                            "min_doc_count": 0,
+                            "extended_bounds": {
+                                "min": "%s", 
+                                "max": "%s"
+                            }                            
+                        }}}
+                    }
+                  }
+                }
+            """ % (minday, topnumber, resolution, minday, maxday)
+        else:
+            minday = "{:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.utcnow() + datetime.timedelta(days=-days))
+            maxday = "{:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.utcnow())
+            esquery = """
+                {
+                  "query": {
+                    "bool": {
+                      "must": [
+                        {
+                        "range":{
+                            "recievedTime":{
+                                "gte":"%s"
+                                }}
+                                }
+                      ],
+                      "must_not": [],
+                      "should": []
+                    }
+                  },
+                  "from": 0,
+                  "size": 0,
+                  "sort": [],
+                  "aggs": {
+                    "ports": {
+                      "terms": {
+                        "field": "targetEntryPort",
+                        "size": %s
+                      },
+                  "aggs": {
+                     "range": {
+                          "date_histogram": {
+                            "field": "recievedTime",
+                            "interval": "hour",
+                            "keyed": false,
+                            "min_doc_count": 0,
+                            "extended_bounds": {
+                                "min": "%s", 
+                                "max": "%s"
+                            }                            
+                        }}}
+                    }
+                  }
+                }
+            """ % (minday,topnumber, minday, maxday)
+
+        try:
+            res = es.search(index=esindex, body=esquery)
+        except ElasticsearchException as err:
+            app.logger.error('ElasticSearch error: %s' % err)
+            return False
+
+        stats = OrderedDict()
+        for port in res['aggregations']['ports']['buckets']:
+            daystats = OrderedDict()
+            daystats['total'] = port['doc_count']
+            for day in port['range']['buckets']:
+                daystats[day['key_as_string']] = day['doc_count']
+            stats[port['key']] = daystats
+
+        return (stats)
