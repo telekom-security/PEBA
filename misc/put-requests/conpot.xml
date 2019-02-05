@@ -1,0 +1,166 @@
+<EWS-SimpleMessage version="3.0">
+  <Authentication>
+    <username>community-01-user</username>
+    <token>foth{a5maiCee8fineu7</token>
+  </Authentication>
+  <Alert>
+    <Analyzer id="conpot-community-01"/>
+    <CreateTime tz="+0100">2017-10-17 20:10:39</CreateTime>
+    <Source category="ipv4" port="54703" protocol="tcp">79.251.9.184</Source>
+    <Target category="ipv4" port="undefined" protocol="tcp">87.144.178.68</Target>
+    <Request type="description">Conpot Honeypot</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.3</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="conpot_sensor_id" type="string">conpot</AdditionalData>
+    <AdditionalData meaning="conpot_event_type" type="string">NEW_CONNECTION</AdditionalData>
+    <AdditionalData meaning="conpot_data_type" type="string">kamstrup_protocol</AdditionalData>
+    <AdditionalData meaning="conpot_response" type="string">None</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="conpot_request" type="string">None</AdditionalData>
+    <AdditionalData meaning="conpot_id" type="string">fa2dd3d5-1589-4a57-a3a2-f4ab6f5c33d7</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="conpot-community-01"/>
+    <CreateTime tz="+0100">2017-10-17 20:10:39</CreateTime>
+    <Source category="ipv4" port="54703" protocol="tcp">79.251.9.184</Source>
+    <Target category="ipv4" port="undefined" protocol="tcp">87.144.178.68</Target>
+    <Request type="description">Conpot Honeypot</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.3</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="conpot_sensor_id" type="string">conpot</AdditionalData>
+    <AdditionalData meaning="conpot_event_type" type="string">CONNECTION_LOST</AdditionalData>
+    <AdditionalData meaning="conpot_data_type" type="string">kamstrup_protocol</AdditionalData>
+    <AdditionalData meaning="conpot_response" type="string">None</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="conpot_request" type="string">None</AdditionalData>
+    <AdditionalData meaning="conpot_id" type="string">fa2dd3d5-1589-4a57-a3a2-f4ab6f5c33d7</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="conpot-community-01"/>
+    <CreateTime tz="+0100">2017-10-17 20:10:39</CreateTime>
+    <Source category="ipv4" port="54703" protocol="tcp">79.251.9.184</Source>
+    <Target category="ipv4" port="undefined" protocol="tcp">87.144.178.68</Target>
+    <Request type="description">Conpot Honeypot</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.3</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="conpot_sensor_id" type="string">conpot</AdditionalData>
+    <AdditionalData meaning="conpot_event_type" type="string">CONNECTION_LOST</AdditionalData>
+    <AdditionalData meaning="conpot_data_type" type="string">kamstrup_protocol</AdditionalData>
+    <AdditionalData meaning="conpot_response" type="string">None</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="conpot_request" type="string">None</AdditionalData>
+    <AdditionalData meaning="conpot_id" type="string">fa2dd3d5-1589-4a57-a3a2-f4ab6f5c33d7</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="conpot-community-01"/>
+    <CreateTime tz="+0100">2017-10-17 20:10:39</CreateTime>
+    <Source category="ipv4" port="54703" protocol="tcp">79.251.9.184</Source>
+    <Target category="ipv4" port="undefined" protocol="tcp">87.144.178.68</Target>
+    <Request type="description">Conpot Honeypot</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.3</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="conpot_sensor_id" type="string">conpot</AdditionalData>
+    <AdditionalData meaning="conpot_event_type" type="string">NEW_CONNECTION</AdditionalData>
+    <AdditionalData meaning="conpot_data_type" type="string">kamstrup_protocol</AdditionalData>
+    <AdditionalData meaning="conpot_response" type="string">None</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="conpot_request" type="string">None</AdditionalData>
+    <AdditionalData meaning="conpot_id" type="string">fa2dd3d5-1589-4a57-a3a2-f4ab6f5c33d7</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="conpot-community-01"/>
+    <CreateTime tz="+0100">2017-10-17 20:10:39</CreateTime>
+    <Source category="ipv4" port="54703" protocol="tcp">79.251.9.184</Source>
+    <Target category="ipv4" port="undefined" protocol="tcp">87.144.178.68</Target>
+    <Request type="description">Conpot Honeypot</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.3</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="conpot_sensor_id" type="string">conpot</AdditionalData>
+    <AdditionalData meaning="conpot_event_type" type="string">CONNECTION_LOST</AdditionalData>
+    <AdditionalData meaning="conpot_data_type" type="string">kamstrup_protocol</AdditionalData>
+    <AdditionalData meaning="conpot_response" type="string">None</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="conpot_request" type="string">None</AdditionalData>
+    <AdditionalData meaning="conpot_id" type="string">fa2dd3d5-1589-4a57-a3a2-f4ab6f5c33d7</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="conpot-community-01"/>
+    <CreateTime tz="+0100">2017-10-17 20:10:39</CreateTime>
+    <Source category="ipv4" port="54703" protocol="tcp">79.251.9.184</Source>
+    <Target category="ipv4" port="undefined" protocol="tcp">87.144.178.68</Target>
+    <Request type="description">Conpot Honeypot</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.3</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="conpot_sensor_id" type="string">conpot</AdditionalData>
+    <AdditionalData meaning="conpot_event_type" type="string">CONNECTION_LOST</AdditionalData>
+    <AdditionalData meaning="conpot_data_type" type="string">kamstrup_protocol</AdditionalData>
+    <AdditionalData meaning="conpot_response" type="string">None</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="conpot_request" type="string">None</AdditionalData>
+    <AdditionalData meaning="conpot_id" type="string">fa2dd3d5-1589-4a57-a3a2-f4ab6f5c33d7</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="conpot-community-01"/>
+    <CreateTime tz="+0100">2017-10-17 20:11:10</CreateTime>
+    <Source category="ipv4" port="54708" protocol="tcp">79.251.9.184</Source>
+    <Target category="ipv4" port="undefined" protocol="tcp">87.144.178.68</Target>
+    <Request type="description">Conpot Honeypot</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.3</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="conpot_sensor_id" type="string">conpot</AdditionalData>
+    <AdditionalData meaning="conpot_event_type" type="string">NEW_CONNECTION</AdditionalData>
+    <AdditionalData meaning="conpot_data_type" type="string">kamstrup_management_protocol</AdditionalData>
+    <AdditionalData meaning="conpot_response" type="string">None</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="conpot_request" type="string">None</AdditionalData>
+    <AdditionalData meaning="conpot_id" type="string">bc2183f2-c8c9-41a7-93dc-68008cd6a21e</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="conpot-community-01"/>
+    <CreateTime tz="+0100">2017-10-17 20:11:10</CreateTime>
+    <Source category="ipv4" port="54708" protocol="tcp">79.251.9.184</Source>
+    <Target category="ipv4" port="undefined" protocol="tcp">87.144.178.68</Target>
+    <Request type="description">Conpot Honeypot</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.3</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="conpot_sensor_id" type="string">conpot</AdditionalData>
+    <AdditionalData meaning="conpot_event_type" type="string">None</AdditionalData>
+    <AdditionalData meaning="conpot_data_type" type="string">kamstrup_management_protocol</AdditionalData>
+    <AdditionalData meaning="conpot_response" type="string">%0D%0A%3F%20Command%20not%20found.%0D%0ASend%20%27H%27%20for%20help.%0D%0A</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="conpot_request" type="string">sup%20dud%3F%0A</AdditionalData>
+    <AdditionalData meaning="conpot_id" type="string">bc2183f2-c8c9-41a7-93dc-68008cd6a21e</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="conpot-community-01"/>
+    <CreateTime tz="+0100">2017-10-17 20:11:10</CreateTime>
+    <Source category="ipv4" port="54708" protocol="tcp">79.251.9.184</Source>
+    <Target category="ipv4" port="undefined" protocol="tcp">87.144.178.68</Target>
+    <Request type="description">Conpot Honeypot</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.3</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="conpot_sensor_id" type="string">conpot</AdditionalData>
+    <AdditionalData meaning="conpot_event_type" type="string">None</AdditionalData>
+    <AdditionalData meaning="conpot_data_type" type="string">kamstrup_management_protocol</AdditionalData>
+    <AdditionalData meaning="conpot_response" type="string">%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%0D%0AService%20Menu%0D%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%0D%0AH%3A%20%20%20Help%20%5Bcmd%5D.%0D%0AQ%3A%20%20%20Close%20connection.%0D%0A%21AC%3A%20Access%20control.%0D%0A%21AS%3A%20Alarm%20Server.%0D%0A%21GC%3A%20Get%20Config.%0D%0A%21GV%3A%20Software%20version.%0D%0A%21SA%3A%20Set%20KAP%20Server%20IP%20and%20port%20%28%2A1%29.%0D%0A%21SB%3A%20Set%202nd%20KAP%20Server%20IP%20and%20port.%0D%0A%21SC%3A%20Set%20Config%20%28%2A1%29.%0D%0A%21SD%3A%20Set%20device%20name%20%28%2A1%29.%0D%0A%21SH%3A%20Set%20KAP%20Server%20lookup%20%28DNS%20or%20DHCP%29%0D%0A%21SI%3A%20Set%20IP%20%28enter%20either%20valid%20IP%20or%200%20to%20force%20DHCP%29%28%2A1%29.%0D%0A%21SK%3A%20Set%20KAP%20watchdog%20timeout%28WDT%29.%0D%0A%21SN%3A%20Set%20IP%20for%20DNS%20Name%20servers%20to%20use.%0D%0A%21SP%3A%20Set%20IP%20Ports%0D%0A%21SS%3A%20Set%20Serial%20Settings.%0D%0A%21RC%3A%20Request%20connect%0D%0A%21RR%3A%20Request%20restart%20%28%2A1%29.%0D%0A%21WM%3A%20Wink%20module.%0D%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%0D%0A%28%2A1%29%20Forces%20system%20restart%0D%0A%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%0D%0AKamstrup%20%28R%29%0D%0A</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="conpot_request" type="string">H%0A</AdditionalData>
+    <AdditionalData meaning="conpot_id" type="string">bc2183f2-c8c9-41a7-93dc-68008cd6a21e</AdditionalData>
+  </Alert>
+  <Alert>
+    <Analyzer id="conpot-community-01"/>
+    <CreateTime tz="+0100">2017-10-17 20:11:10</CreateTime>
+    <Source category="ipv4" port="54708" protocol="tcp">79.251.9.184</Source>
+    <Target category="ipv4" port="undefined" protocol="tcp">87.144.178.68</Target>
+    <Request type="description">Conpot Honeypot</Request>
+    <AdditionalData meaning="externalIP" type="string">5.4.4.3</AdditionalData>
+    <AdditionalData meaning="internalIP" type="string">10.1.1.1</AdditionalData>
+    <AdditionalData meaning="conpot_sensor_id" type="string">conpot</AdditionalData>
+    <AdditionalData meaning="conpot_event_type" type="string">CONNECTION_LOST</AdditionalData>
+    <AdditionalData meaning="conpot_data_type" type="string">kamstrup_management_protocol</AdditionalData>
+    <AdditionalData meaning="conpot_response" type="string">None</AdditionalData>
+    <AdditionalData meaning="hostname" type="string">liquidxtc</AdditionalData>
+    <AdditionalData meaning="conpot_request" type="string">None</AdditionalData>
+    <AdditionalData meaning="conpot_id" type="string">bc2183f2-c8c9-41a7-93dc-68008cd6a21e</AdditionalData>
+  </Alert>
+</EWS-SimpleMessage>
