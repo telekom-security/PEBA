@@ -263,6 +263,30 @@ def handleAlerts(tree, tenant, es, cache, s3client):
                     if child.text is not None:
                         additionalData["payload_md5"] = child.text
 
+                # for conpot
+                if (meaning == "conpot_sensor_id"):
+                    if child.text is not None:
+                        additionalData["conpot_sensor_id"] = child.text
+
+                if (meaning == "conpot_event_type"):
+                    if child.text is not None:
+                        additionalData["conpot_event_type"] = child.text
+
+                if (meaning == "conpot_data_type"):
+                    if child.text is not None:
+                        additionalData["conpot_data_type"] = child.text
+
+                if (meaning == "conpot_response"):
+                    if child.text is not None:
+                        additionalData["conpot_response"] = child.text
+
+                if (meaning == "conpot_request"):
+                    if child.text is not None:
+                        additionalData["conpot_request"] = child.text
+
+                if (meaning == "conpot_id"):
+                    if child.text is not None:
+                        additionalData["conpot_id"] = child.text
 
         if parsingError is not "":
             app.logger.debug("Skipping incomplete ews xml alert element : " + parsingError)

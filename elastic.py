@@ -7,6 +7,7 @@ import json
 import magic
 import botocore.session, botocore.client
 from botocore.exceptions import ClientError
+import uuid
 
 
 from flask_elasticsearch import FlaskElasticsearch
@@ -330,13 +331,12 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
     """stores an alarm in the index"""
 
     m = hashlib.md5()
-    m.update((createTime + sourceip + destinationip + url + analyzerID + docType).encode())
+    m.update((createTime + sourceip + destinationip + url + analyzerID + docType + str(uuid.uuid4())).encode())
 
     (lat, long, country, asn, countryName) = getGeoIP(sourceip, cache)
     (latDest, longDest, countryTarget, asnTarget, countryTargetName) = getGeoIP(destinationip, cache)
 
     currentTime = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
 
     if (len(str(packetdata)) > 0):
         # process payloads up to 5MB
