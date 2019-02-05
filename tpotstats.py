@@ -497,16 +497,16 @@ def getStats(app, es, statisticIndex, gte ,lt, queryValue):
 
     queryValues = ['UTCtimeFrom',
                    'UTCtimeTo',
-                   'comm_totalNumberAlerts',
-                   'comm_totalNumberHoneypots',
-                   'comm_totalNumberDaemons',
+    #               'comm_totalNumberAlerts',
+    #               'comm_totalNumberHoneypots',
+    #               'comm_totalNumberDaemons',
                    'comm_totalRatio'
                    ]
 
     for i in queryValue:
         if i in HPItems:
-            queryValues.append('comm_totalAlerts_'+i)
-            queryValues.append('comm_totalHPs_'+i)
+     #       queryValues.append('comm_totalAlerts_'+i)
+     #       queryValues.append('comm_totalHPs_'+i)
             queryValues.append('comm_ratio_'+i)
         else:
             app.logger.error("getStats: unrecognized honeypot value: %s" % i)
