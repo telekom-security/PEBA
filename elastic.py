@@ -58,9 +58,9 @@ def getGeoIPNative(sourceip, cache):
 
     """ get geoip and ASN information from IP """
 
-    gi = pygeoip.GeoIP("/var/lib/GeoIP/GeoIP.dat")
-    giCity = pygeoip.GeoIP("/var/lib/GeoIP/GeoLiteCity.dat")
-    giASN = pygeoip.GeoIP('/var/lib/GeoIP/GeoIPASNum.dat')
+    gi = pygeoip.GeoIP("/var/lib/GeoIP/GeoLite2-Country.mmdb")
+    giCity = pygeoip.GeoIP("/var/lib/GeoIP/GeoLite2-City.mmdb")
+    giASN = pygeoip.GeoIP('/var/lib/GeoIP/GeoLite2-ASN.mmdb')
 
     ASN_fail = "-"
     country_fail = "-"
