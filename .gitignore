@@ -27,11 +27,8 @@ error.log
 *.pid
 
 ews-webservice-put/vagrant/.vagrant/
-var/lib/GeoIP/GeoIP.dat
-
-var/lib/GeoIP/GeoIPASNum.dat
-
-var/lib/GeoIP/GeoLiteCity.dat
+var/lib/GeoIP/*.dat
+var/lib/old/*
 
 misc/get-requests/request.av.xml
 
@@ -48,3 +45,7 @@ analysis/daystats.json
 analysis/result.json
 ansible/hosts
 etc/ews/peba.cfg
+var/lib/GeoIP/*.mmdb
+
+
+var/lib/GeoIP/old/*.dat

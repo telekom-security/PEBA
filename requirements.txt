@@ -8,7 +8,7 @@ gunicorn
 defusedxml
 python-dateutil
 slackclient
-pygeoip
+geoip2
 filemagic
 botocore
 python-memcached
