@@ -112,7 +112,7 @@ PEBA requires an installation of Elasticsearch (5.4, 5.5 and 6.2.4 tested).
     # download Maxmind's GeoIP database and copy it to the right destination
     cd var/lib/GeoIP/
 	./download.sh
-	sudo cp *.dat /var/lib/GeoIP/
+	sudo cp *.mmdb /var/lib/GeoIP/
 
 *Note:*  When installing on MacOS, you need to install the following additional packets: 
 `brew install libmemcached`, `brew install libmagic` and `pip3 install pylibmc`

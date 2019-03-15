@@ -73,9 +73,9 @@
 - name: copy software from maxmind
   copy: src={{ item.src }} dest={{ item.dest }}
   with_items:
-    - { src: './../../../../var/lib/GeoIP/GeoLiteCity.dat', dest: '/var/lib/GeoIP/GeoLiteCity.dat' }
-    - { src: './../../../../var/lib/GeoIP/GeoIP.dat', dest: '/var/lib/GeoIP/GeoIP.dat' }
-    - { src: './../../../../var/lib/GeoIP/GeoIPASNum.dat', dest: '/var/lib/GeoIP/GeoIPASNum.dat' }
+    - { src: './../../../../var/lib/GeoIP/GeoLite2-City.mmdb', dest: '/var/lib/GeoIP/GeoLite2-City.mmdb' }
+    - { src: './../../../../var/lib/GeoIP/GeoLite2-Country.mmdb', dest: '/var/lib/GeoIP/GeoLite2-Country.mmdb' }
+    - { src: './../../../../var/lib/GeoIP/GeoLite2-ASN.mmdb', dest: '/var/lib/GeoIP/GeoLite2-ASN.mmdb' }
 
 
 - name: Install peba.service Unitfile
