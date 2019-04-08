@@ -7,7 +7,7 @@ PEBA is a lightweight python3 backend service to collect and process attack even
 
 PEBA is running in production @DTAG since October 2017 and serves as a replacement for our previous grails-based backend, which was developed by our friend Lutz Wischmann. We use PEBA to collect honeypot events from both our own private DTAG honeypot network as well as community data contribution from T-Pots running all over the world. 
 
-The data is visualized on our new [sicherheitstacho.eu](http://community.sicherheitstacho.eu) website.
+The data is visualized on our new [sicherheitstacho.eu](https://sicherheitstacho.eu/) website.
 
 
 ## **Overview:**
