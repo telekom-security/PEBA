@@ -183,6 +183,7 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
     fuzzyHashCount=0
     count=1
     fileMagic="unknown"
+    artefactPath="not stored (error)"
 
     with magic.Magic(flags=magic.MAGIC_MIME_TYPE) as m:
         try:
@@ -199,11 +200,11 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
 
     if not(statusContent or statusFuzzy):
         app.logger.debug("Unable to work with ES (handlePacketData)")
-        return False;
+        return False
 
     if (packetContent and statusContent):
         app.logger.debug("Packet with same md5 hash %s already existing. Adjusting counts."  % packetHash)
-
+        artefactPath = packetContent['_source']['data']
         id = packetContent['_id']
         destport = packetContent['_source']['initialDestPort']
         sourceip = packetContent['_source']['initialIP']
@@ -220,7 +221,7 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
 
     elif (fuzzyHashContent and statusFuzzy):
         app.logger.debug("Packet with same fuzzyHash %s already existing. Adjusting counts."  % fuzzyHash)
-
+        artefactPath = fuzzyHashContent['_source']['data']
         id = fuzzyHashContent['_id']
         destport = fuzzyHashContent['_source']['initialDestPort']
         sourceip = fuzzyHashContent['_source']['initialIP']
@@ -250,8 +251,16 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
     # store to s3
     if s3client and (not packetContent and not fuzzyHashContent):
         try:
+            try:
+                subfolder = datetime.datetime.strptime(createTime, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d')
+            except ValueError:
+                app.logger.error(
+                    "Could not determine date from createTime timestamp: '%s'. Using now()." % createTime)
+                subfolder = datetime.datetime.now().strftime('%Y-%m-%d')
+
+            artefactPath = app.config['S3ENDPOINT']+"/"+app.config['S3BUCKET']+"/"+subfolder+"/"+packetHash
             # upload file to s3
-            s3client.put_object(Bucket=app.config['S3BUCKET'], Body=decodedPayload, Key=packetHash)
+            s3client.put_object(Bucket=app.config['S3BUCKET'], Body=decodedPayload, Key=subfolder+"/"+packetHash)
             app.logger.debug(
                 'Storing file ({0}) using s3 bucket "{1}" on {2}'.format(packetHash,
                                                                          app.config['S3BUCKET'],
@@ -263,7 +272,7 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
         app.logger.debug("Not storing md5 {0} / FuzzyHash {1} to s3 as it is already present in packets index.".format(packetHash, fuzzyHash))
 
     packet = {
-        "data" : "raw payload in s3",
+        "data" : artefactPath,
         "createTime" : createTime,
         "lastSeen" : lastSeenTime,
         "hash" : packetHash,
