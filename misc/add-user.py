@@ -59,7 +59,7 @@ print("Add new user to ES users index.")
 print("******************************************")
 
 # input username
-usernameInput = input("Enter Username: ")
+usernameInput = input("Enter new API UserID: ")
 username=usernameInput.replace(" ", "_")
 
 # check if user exists
@@ -72,15 +72,15 @@ if not newIndex:
                   }
                 })
     if res["hits"]["total"] > 0:
-        print("User '"+ username + "' already exists in index. Choose a different username or delete _id : '" + str(res['hits']['hits'][0]['_id'])  + "'. Aborting.")
+        print("User ID '"+ username + "' already exists in index. Choose a different User ID or delete _id : '" + str(res['hits']['hits'][0]['_id'])  + "'. Aborting.")
         exit(1)
 
 # input password
-tokenInput = input("Enter Password: ")
+tokenInput = input("Enter new Token: ")
 token = hashlib.sha512(tokenInput.encode('utf-8')).hexdigest()
 
 # input email
-emailInput = input("Enter Email: ")
+emailInput = input("Enter Contact Email: ")
 if re.match("^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$", emailInput) != None:
     email=emailInput
 else:
@@ -88,12 +88,12 @@ else:
     exit(1)
 
 # input getOnly
-getonlyInput = input("Is this user 'read only' who cannot submit data? (y/N): ")
+getonlyInput = input("Is this API user 'read only' who cannot submit data? (y/N): ")
 if getonlyInput.lower() == "y":
     getonly = True
 
 # input getOnly
-communityInput = input("Can this user only access 'community data'? (y/N): ")
+communityInput = input("Can this API user only access 'community data'? (y/N): ")
 if communityInput.lower() == "y":
     community = True
 
@@ -101,8 +101,8 @@ if communityInput.lower() == "y":
 print("")
 print("You entered:")
 print("**************")
-print("Username: " + username)
-print("Password: " + tokenInput)
+print("API User: " + username)
+print("API Token: " + tokenInput)
 print("Email: " + email)
 print("getOnly: " + str(getonly))
 print("community: " + str(community))
