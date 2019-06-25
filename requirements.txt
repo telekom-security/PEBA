@@ -3,7 +3,7 @@ Flask-cors
 Flask-Elasticsearch
 Flask_elasticsearch
 pymongo
-elasticsearch
+elasticsearch==5.5.3
 gunicorn
 defusedxml
 python-dateutil
