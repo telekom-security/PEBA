@@ -481,6 +481,7 @@ def getStats(app, es, statisticIndex, gte ,lt, queryValue):
                 'Industrial(conpot)',
                 'Network(cisco-asa)',
                 'Network(Dionaea)',
+                'Network(glutton)',
                 'Network(honeytrap)',
                 'Network(suricata)',
                 'Passwords(heralding)',
