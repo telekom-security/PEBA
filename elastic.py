@@ -327,7 +327,7 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
     if (len(str(packetdata)) > 0):
         # process payloads up to 5MB
         if (len(str(packetdata)) <= 5242880):
-            if ("honeytrap" in peerType or "Dionaea" in peerType or "Webpage" in peerType):
+            if ("honeytrap" in peerType or "Dionaea" in peerType or "Webpage" in peerType or "glutton" in peerType ):
                 if ("ewscve" not in index):
                     status = handlePacketData(packetdata, m.hexdigest(), createTime, debug, es, sourceip, destinationPort, s3client)
                     if (status == False):

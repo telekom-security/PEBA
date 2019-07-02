@@ -47,6 +47,7 @@ peerIdents = ["WebHoneypot", "Webpage",
               "emobility", "Service(emobility)",
               "conpot", "Industrial(conpot)",
               ".con", "Industrial(conpot)",
+              "glutton", "Network(glutton)"
               "", ""]
 
 ################
@@ -252,6 +253,23 @@ def handleAlerts(tree, tenant, es, cache, s3client):
                 if (meaning == "protocol"):
                     if child.text is not None:
                         additionalData["protocol"] = child.text
+
+                # for glutton
+                if (meaning == "binary"):
+                    if child.text is not None:
+                        try:
+                            m = hashlib.md5()
+                            m.update(base64.b64decode(urllib.parse.unquote(child.text)))
+                            md5sum = m.hexdigest()
+                            packetdata = urllib.parse.unquote(child.text)
+                            additionalData["payload_md5"] = md5sum
+                        except:
+                            app.logger.debug(
+                                "Glutton Paylaod: %s - Could not decode BINARY payload (base64): %s" % (
+                                peerType, str(base64.b64decode(urllib.parse.unquote(child.text)))[0:50] + "..."))
+
+                    else:
+                        parsingError += "| binary = NONE "
 
                 # for cisco-asa
                 if (meaning == "payload"):
