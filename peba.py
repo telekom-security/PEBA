@@ -57,7 +57,6 @@ if app.config['USES3']:
     )
 
 statisticIndex="statistics"
-payloadsIndex="payloads"
 
 ###############
 ### Functions

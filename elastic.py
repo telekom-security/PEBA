@@ -17,6 +17,7 @@ from flask_elasticsearch import FlaskElasticsearch
 # PUT ES Variables
 ##################
 
+payloadsIndex="payloads"
 
 ##################
 # ES PUT functions
