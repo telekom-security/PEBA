@@ -17,6 +17,7 @@ from flask_elasticsearch import FlaskElasticsearch
 # PUT ES Variables
 ##################
 
+payloadsIndex="payloads"
 
 ##################
 # ES PUT functions
@@ -192,11 +193,11 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
             app.logger.debug("Could not determine MIME for payload %s." % packetHash)
 
     # check if packet is existing in index via hash
-    statusContent, packetContent = packetExisting(packetHash, "payloads", es, debug, "hash")
+    statusContent, packetContent = packetExisting(packetHash, payloadsIndex, es, debug, "hash")
 
     # check if packet is existing in index via fuzzyhash
     fuzzyHash=getFuzzyHash(packetdata, packetHash)
-    statusFuzzy, fuzzyHashContent = packetExisting(fuzzyHash, "payloads", es, debug, "hashfuzzyhttp")
+    statusFuzzy, fuzzyHashContent = packetExisting(fuzzyHash, payloadsIndex, es, debug, "hashfuzzyhttp")
 
     if not(statusContent or statusFuzzy):
         app.logger.debug("Unable to work with ES (handlePacketData)")
@@ -291,7 +292,7 @@ def handlePacketData(packetdata, id, createTime, debug, es, sourceip, destport, 
     try:
         app.logger.debug("Storing/Updating packet in index packets (handlePacketData)")
 
-        res = es.index(index="payloads", doc_type="Packet", id=id, body=packet, refresh=True)
+        res = es.index(index=payloadsIndex, doc_type="Packet", id=id, body=packet, refresh=True)
         return True
 
     except:

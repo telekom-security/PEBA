@@ -53,7 +53,6 @@ if app.config['USES3']:
     s3client = s3session.create_client(
         's3',
         endpoint_url=app.config['S3ENDPOINT'],
-        region_name=app.config['S3REGION'],
         config=botocore.config.Config(signature_version=app.config['S3SIGNATUREVERSION'])
     )
 
