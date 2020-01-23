@@ -1684,7 +1684,7 @@ def postSimpleMessage():
             message = "<Result><StatusCode>Handling failed</StatusCode><Text></Text></Result>"
             statusHTTP = 503
 
-            if (status):
+            if (True): #fix for resubmissions
                 message = "<Result><StatusCode>OK</StatusCode><Text></Text></Result>"
                 statusHTTP = 200
 

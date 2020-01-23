@@ -318,7 +318,12 @@ def putDoc(vulnid, index, sourceip, destinationip, createTime, tenant, url, anal
     """stores an alarm in the index"""
 
     m = hashlib.md5()
-    m.update((createTime + sourceip + destinationip + url + analyzerID + docType + str(uuid.uuid4())).encode())
+    m.update((createTime + sourceip + destinationip + url + analyzerID + docType).encode())
+
+    if peerType == "Industrial(conpot)":
+        m.update((createTime + sourceip + destinationip + url + analyzerID + docType + str(uuid.uuid4())).encode())
+    else:
+        m.update((createTime + sourceip + destinationip + url + analyzerID + docType).encode())
 
     (lat, long, country, asn, countryName) = getGeoIP(sourceip, cache)
     (latDest, longDest, countryTarget, asnTarget, countryTargetName) = getGeoIP(destinationip, cache)
