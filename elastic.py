@@ -63,9 +63,12 @@ def getGeoIPNative(sourceip, cache):
 
         # resolve IPs
         else:
-            asn = "AS"+ str(giASN.asn(sourceip).autonomous_system_number) + " " + giASN.asn(sourceip).autonomous_system_organization
-            long = str(giCity.city(sourceip).location.longitude)
-            lat = str(giCity.city(sourceip).location.latitude)
+            if (giASN.asn(sourceip).autonomous_system_number != None) and (giASN.asn(sourceip).autonomous_system_organization != None):
+                asn = "AS"+ str(giASN.asn(sourceip).autonomous_system_number) + " " + giASN.asn(sourceip).autonomous_system_organization
+            if giCity.city(sourceip).location.longitude != None:
+                long = str(giCity.city(sourceip).location.longitude)
+            if giCity.city(sourceip).location.latitude != None:
+                lat = str(giCity.city(sourceip).location.latitude)
             if gi.country(sourceip).country.name != None:
                 countryName = gi.country(sourceip).country.name
             if gi.country(sourceip).country.iso_code != None:

@@ -51,3 +51,7 @@ var/lib/GeoIP/*.mmdb
 var/lib/GeoIP/old/*.dat
 
 *.retry
+venv/*
+.DS_Store
+analysis/hosts
+

@@ -1,4 +1,4 @@
-Flask
+Flask==0.12.2
 Flask-cors
 Flask-Elasticsearch
 Flask_elasticsearch
@@ -7,8 +7,9 @@ elasticsearch==5.5.3
 gunicorn
 defusedxml
 python-dateutil
-slackclient
+slackclient==1.0.9
 geoip2
 filemagic
 botocore
 python-memcached
+Werkzeug=0.12.2
