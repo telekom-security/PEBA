@@ -1,4 +1,4 @@
-from slackclient import SlackClient
+import slack
 from flask import current_app as app
 
 def sendSlack(channel, token, message, debug):
@@ -13,10 +13,9 @@ def sendSlack(channel, token, message, debug):
     if channel is None or token is None or message is None:
         return
 
-    sc = SlackClient(token)
+    sc = slack.WebClient(token)
 
-    sc.api_call(
-        "chat.postMessage",
+    sc.chat_postMessage(
         channel=channel,
         text=message
     )

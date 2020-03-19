@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # PEBA (Python EWS Backend API)
-# v0.8.5 2018-07-19
+# v0.8.6 2020-03-19
 # Authors: @vorband & @schmalle
 
 import xml.etree.ElementTree as ET
@@ -20,11 +20,11 @@ from flask_cors import CORS, cross_origin
 from flask_elasticsearch import FlaskElasticsearch
 
 from elasticsearch import Elasticsearch, ElasticsearchException
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from functools import wraps
 import putservice
-from werkzeug.contrib.cache import MemcachedCache
+from flask_caching.backends import MemcachedCache
 import ipaddress
 import botocore.session, botocore.client
 from botocore.exceptions import ClientError
