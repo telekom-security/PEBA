@@ -26,9 +26,6 @@ WSUSERINDEX="users"
 # Timeout for elasticsearch connection (default: 10 seconds)
 ELASTICTIMEOUT=10
 
-# Memcache server
-MEMCACHE="127.0.0.1:11211"
-
 ### REQUESTS SECTION
 # maximum alerts to be considered in /retrieveAlertsCyber (default: 5)
 MAXALERTS=5
@@ -40,17 +37,6 @@ BADIPTIMESPAN=120
 COMMUNITYUSER="community-01-user"
 COMMUNITYTOKEN="foth{a5maiCee8fineu7"
 
-# Slack
-USESLACK=False
-SLACKTOKEN="slacktokeninparenthesis"
-
 # DevMode Debug (if set to True does not send ews events to es and no slack submission on new CVEs)
 DEVMODE=True
 
-# S3
-USES3=False
-S3ENDPOINT="http://localhost"
-S3AWSACCESSKEYID="AKIAIOSFODNN7EXAMPLE"
-S3AWSSECRETACCESSKEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-S3BUCKET="artefacts"
-S3SIGNATUREVERSION="s3"

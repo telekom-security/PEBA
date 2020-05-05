@@ -1,30 +1,26 @@
-#!/usr/bin/env python3
-
 from elasticsearch import Elasticsearch
 import json, sys
 import time
 
-host = "{{ ELASTIC_IP }}"
-port = {{ ELASTIC_PORT }}
-index_alias_alert = "{{ ELASTIC_INDEX }}"
-index_name_cve = "ewscve"
+
+##############################################################
+##############################################################
+
+#     NOTE to myself: ALL Changes must be reflected in
+#     /ansible/peba-masternode/templates/setup-es-indices.py
+#     /misc/cron/rollindex_cron.sh
+
+##############################################################
+##############################################################
+
+host = "127.0.0.1"
+port = 9200
+index_alias_alert= "ews2017.1"
+index_name_cve= "ewscve"
 index_name_packets = "payloads"
 index_name_notifications = "notifications"
 index_name_users = "users"
-
-
-###
-
-es = Elasticsearch([{'host': host, 'port': port}])
-
-def getTargetIds(jsonData):
-    data = json.loads(jsonData)
-    if 'error' in data:
-        return "fail"
-    if 'data' not in data['to']:
-        return "success"
-
-
+es = Elasticsearch([{'host': host, 'port': 9200}])
 
 ###### Alert Index
 def setup_alertsIndex():

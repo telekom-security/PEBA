@@ -2,16 +2,9 @@ Flask
 Flask-cors
 Flask-Elasticsearch
 Flask_elasticsearch
-pymongo
 elasticsearch==5.5.3
 gunicorn
 defusedxml
 python-dateutil
-slackclient
-geoip2
 filemagic
-botocore
-python-memcached
 Werkzeug
-pymemcache
-pylibmc==1.5.0

@@ -11,6 +11,7 @@ v.01
 from elasticsearch import Elasticsearch
 import hashlib
 import re
+from setupESindices import setup_UserIndex
 
 es = Elasticsearch()
 username, token, tokenInput, email, getonly, community = "", "","", "ex@ample.com", False, False
@@ -18,37 +19,8 @@ newIndex=False
 
 # check if 'users' index exists, otherwise create index
 
-request_body = {
-    "settings" : {
-        "number_of_shards": 1,
-        "number_of_replicas": 1
-    },
-    "mappings": {
-        "wsUser": {
-            "properties": {
-                "peerName": {
-                    "type": "text"
-                },
-                "token": {
-                    "type": "text"
-                },
-                "getOnly": {
-                    "type": "boolean"
-                },
-                "community": {
-                    "type": "text"
-                ,
-                "email": {
-                    "type": "text"
-                }
-            }
-        }
-    }
-}
-}
-
 if not es.indices.exists("users"):
-    res = es.indices.create(index = 'users', body = request_body, ignore=400)
+    setup_UserIndex()
     newIndex=True
 
 # gather user information

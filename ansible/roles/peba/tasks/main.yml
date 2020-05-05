@@ -53,10 +53,7 @@
   copy: src={{ item.src }} dest={{ item.dest }}
   with_items:
     - { src: './../../../../peba.py', dest: '/opt/peba/peba.py' }
-    - { src: './../../../../putservice.py', dest: '/opt/peba/putservice.py' }
-    - { src: './../../../../elastic.py', dest: '/opt/peba/elastic.py' }
     - { src: './../../../../tpotstats.py', dest: '/opt/peba/tpotstats.py' }
-    - { src: './../../../../communication.py', dest: '/opt/peba/communication.py' }
     - { src: './../../../../requirements.txt', dest: '/opt/peba/requirements.txt' }
 
 - name: install configuration file
@@ -106,8 +103,6 @@
     - python3-dev
     - python3-pip
     - python3-venv
-    - python3-pylibmc
-    - memcached
 
 - name: Installing virtualenv via pip
   pip:
