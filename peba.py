@@ -21,8 +21,8 @@ from flask_cors import CORS
 from flask_elasticsearch import FlaskElasticsearch
 from elasticsearch import ElasticsearchException
 from werkzeug.middleware.proxy_fix import ProxyFix
-from tpotstats import getTPotAlertStatsJson, getStats, getTops
-from usercache import cacheGetUserToken, cacheSaveUser, UserNotFoundException
+from modules.tpotstats import getTPotAlertStatsJson, getStats, getTops
+from modules.usercache import cacheGetUserToken, cacheSaveUser, UserNotFoundException
 
 
 ###################
