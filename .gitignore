@@ -1,57 +1,209 @@
 
-*.pyc
+# Created by https://www.gitignore.io/api/python,pycharm,visualstudiocode
+# Edit at https://www.gitignore.io/?templates=python,pycharm,visualstudiocode
 
-*.iml
+### PyCharm ###
+# Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and WebStorm
+# Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
-.idea/*
-misc/mongo/*
+# User-specific stuff
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
 
-misc/request.av.xml
+# Generated files
+.idea/**/contentModel.xml
 
-misc/test.av.sh
+# Sensitive or high-churn files
+.idea/**/dataSources/
+.idea/**/dataSources.ids
+.idea/**/dataSources.local.xml
+.idea/**/sqlDataSources.xml
+.idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+.idea/**/dbnavigator.xml
 
-misc/alerts.txt
+# Gradle
+.idea/**/gradle.xml
+.idea/**/libraries
 
-misc/test-alerts.sh
+# Gradle and Maven with auto-import
+# When using Gradle or Maven with auto-import, you should exclude module files,
+# since they will be recreated, and may cause churn.  Uncomment if using
+# auto-import.
+# .idea/modules.xml
+# .idea/*.iml
+# .idea/modules
+# *.iml
+# *.ipr
 
-misc/test-ip.sh
+# CMake
+cmake-build-*/
 
-misc/test-lokal-dev.sh
+# Mongo Explorer plugin
+.idea/**/mongoSettings.xml
 
-misc/test-lokal.sh
+# File-based project format
+*.iws
 
-misc/test-remote.sh
+# IntelliJ
+out/
 
-error.log
+# mpeltonen/sbt-idea plugin
+.idea_modules/
 
-*.pid
+# JIRA plugin
+atlassian-ide-plugin.xml
 
-ews-webservice-put/vagrant/.vagrant/
-var/lib/GeoIP/*.dat
-var/lib/old/*
+# Cursive Clojure plugin
+.idea/replstate.xml
 
-misc/get-requests/request.av.xml
+# Crashlytics plugin (for Android Studio and IntelliJ)
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
 
-analysis/stats.json
+# Editor-based Rest Client
+.idea/httpRequests
 
-misc/tools/export s3.txt
+# Android studio 3.1+ serialized cache file
+.idea/caches/build_file_checksums.ser
 
-ansible/hosts
+### PyCharm Patch ###
+# Comment Reason: https://github.com/joeblau/gitignore.io/issues/186#issuecomment-215987721
 
-etc/ews/peba.cfg
+# *.iml
+# modules.xml
+# .idea/misc.xml
+# *.ipr
 
-analysis/daystats.json
+# Sonarlint plugin
+.idea/**/sonarlint/
 
-analysis/result.json
-ansible/hosts
-etc/ews/peba.cfg
-var/lib/GeoIP/*.mmdb
+# SonarQube Plugin
+.idea/**/sonarIssues.xml
 
+# Markdown Navigator plugin
+.idea/**/markdown-navigator.xml
+.idea/**/markdown-navigator/
 
-var/lib/GeoIP/old/*.dat
+### Python ###
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
 
-*.retry
-venv/*
-.DS_Store
-analysis/hosts
+# C extensions
+*.so
 
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# pyenv
+.python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+
+# End of https://www.gitignore.io/api/python,pycharm,visualstudiocode
