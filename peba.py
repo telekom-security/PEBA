@@ -38,7 +38,7 @@ es = FlaskElasticsearch(app,
     timeout=app.config['ELASTICTIMEOUT']
 )
 
-statisticIndex="statistics"
+statisticIndex=app.config['STATISTICINDEX']
 
 ###############
 ### Functions
@@ -111,7 +111,7 @@ def authenticate(username, token):
 
     # query ES
     try:
-        res = es.search(index=app.config['WSUSERINDEX'], body={
+        res = es.search(index=app.config['USERINDEX'], body={
               "query": {
                 "term": {
                   "peerName.keyword": username
@@ -192,13 +192,13 @@ def getRelevantIndices(dayIndices):
     """
     if not dayIndices:
         app.logger.debug('getRelevantIndices: Returning search over all indices: ews-*')
-        return "ews-*"
+        return app.config['ALERTINDEX']+"-*"
     else:
         allDates=""
-        currentDay = "<ews-{now/d}-*>"
+        currentDay = "<" + app.config['ALERTINDEX'] + "-{now/d}-*>"
         allDates+=currentDay
         for i in range (1, dayIndices):
-            prevDay= "<ews-{now/d-"+str(i)+"d}-*>"
+            prevDay = "<" + app.config['ALERTINDEX']+ "-{now/d-"+str(i)+"d}-*>"
             allDates+=","+prevDay
         app.logger.debug('getRelevantIndices: Returning search over %s' % allDates)
         return allDates
