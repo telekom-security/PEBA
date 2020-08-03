@@ -8,6 +8,8 @@
 import xml.etree.ElementTree as ET
 import defusedxml.ElementTree as ETdefused
 
+import logging
+
 import hashlib
 import urllib.request, urllib.parse, urllib.error
 import html
