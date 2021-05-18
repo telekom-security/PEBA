@@ -32,7 +32,7 @@ from modules.usercache import cacheGetUserToken, cacheSaveUser, UserNotFoundExce
 ###################
 
 app = Flask(__name__)
-app.config.from_pyfile('/etc/ews/peba.cfg')
+app.config.from_pyfile('/etc/peba/peba.cfg')
 app.wsgi_app = ProxyFix(app.wsgi_app)
 cors = CORS(app, resources={r"/alert/*": {"origins": app.config['CORSDOMAIN']}})
 
@@ -219,7 +219,7 @@ def queryBadIPs(badIpTimespan, clientDomain, relevantIndex):
                 {
                   "range": {
                     "recievedTime": {
-                        "gte": "now-%sm" 
+                        "gte": "now-%sm"
                     }
                   }
                 },
@@ -240,7 +240,7 @@ def queryBadIPs(badIpTimespan, clientDomain, relevantIndex):
             }
           },
           "size": 0
-        } 
+        }
     """ % (badIpTimespan, clientDomain)
 
     try:
@@ -387,7 +387,7 @@ def queryAlertsCountWithType(timeframe, clientDomain, relevantIndex):
         app.logger.error('Non numeric value in retrieveAlertsCountWithType timespan. Must be decimal number (in minutes) or string "day"')
         return False
 
-    esquery=""" 
+    esquery="""
     {
           "query": {
             "range": {
@@ -400,7 +400,7 @@ def queryAlertsCountWithType(timeframe, clientDomain, relevantIndex):
             "communityfilter": {
               "filter": {
                 "terms": {
-                  "clientDomain": [ %s ] 
+                  "clientDomain": [ %s ]
                 }
               },
               "aggs": {
@@ -1183,7 +1183,7 @@ def heartbeat():
 @app.route("/alert/retrieveAlertsCyber", methods=['POST'])
 @authentication_required
 def retrieveAlertsCyber():
-    """ Retrieve Alerts from ElasticSearch and return formatted 
+    """ Retrieve Alerts from ElasticSearch and return formatted
         XML with limited alert content
     """
 
@@ -1473,7 +1473,7 @@ def topx():
 
 if __name__ == '__main__':
     app.run(host=app.config['BINDHOST'].split(':')[0], port=int(app.config['BINDHOST'].split(':')[1]))
-    
+
 if __name__ != '__main__':
     gunicorn_logger = logging.getLogger('gunicorn.error')
     app.logger.handlers = gunicorn_logger.handlers

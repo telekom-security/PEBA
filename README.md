@@ -103,8 +103,8 @@ PEBA requires an installation of Elasticsearch (5.4, 5.5 and 6.2.4 tested).
 	cd PEBA
 	
     # copy the config file to the required destination
-    sudo mkdir -p /etc/ews/
-	sudo cp etc/ews/peba.cfg /etc/ews/peba.cfg
+    sudo mkdir -p /etc/peba/
+	sudo cp etc/peba/peba.cfg /etc/peba/peba.cfg
 	
 	# install python3 requirements 
 	pip3 install -r requirements.txt
@@ -140,11 +140,11 @@ For elasticsearch 6 use
 
     ./misc/setupES6Indeces.sh
 
-The index name as well as the Elasticsearch connection parameters have to be reflected in */etc/ews/peba.cfg*.
+The index name as well as the Elasticsearch connection parameters have to be reflected in */etc/peba/peba.cfg*.
 
 **Adding users:**
 
-Data can be submitted with the community credentials (as specified in `/etc/ews/peba.cfg`) and it will be added to the community domain. If you want to add data to the private domain or query one of the APIs above which require authentication,  users have to be added. In order to add users to the authentication pool, the script `./misc/add-user.py` can be used. It will ask you for a username and a password and add the user to the authentication index "users". You should at least have one user setup here. 
+Data can be submitted with the community credentials (as specified in `/etc/peba/peba.cfg`) and it will be added to the community domain. If you want to add data to the private domain or query one of the APIs above which require authentication,  users have to be added. In order to add users to the authentication pool, the script `./misc/add-user.py` can be used. It will ask you for a username and a password and add the user to the authentication index "users". You should at least have one user setup here. 
 
 	python3 misc/add-user.py
 
@@ -152,7 +152,7 @@ You can safely ignore the last two questions in the script, as the are not yet i
 
 ## **Configuration:**
 
-By default, and if you have everything running on localhost, you do not need to modify the `/etc/ews/peba.cfg`. However, if your elasticsearch or memcache is running on another host, you may want to edit the configuration file. 
+By default, and if you have everything running on localhost, you do not need to modify the `/etc/peba/peba.cfg`. However, if your elasticsearch or memcache is running on another host, you may want to edit the configuration file. 
 
 You should therefore check the following paramters and make sure they match your environment: ELASTICSEARCH_HOST, ELASTICINDEX, MEMCACHE. 
 
@@ -195,7 +195,7 @@ It would be something like this, **note that this is *not* tested**:
 		# make directories
 		sudo mkdir -p /opt/peba
 		sudo mkdir -p /var/run/peba
-		sudo mkdir -p /etc/ews
+		sudo mkdir -p /etc/peba
 		
 		# copy the peba scripts to the right location
 		sudo cp peba.py putservice.py elastic.py communication.py requirements.txt /opt/peba
@@ -215,8 +215,8 @@ It would be something like this, **note that this is *not* tested**:
 		sudo cp etc/systemd/system/peba.service /etc/systemd/system/peba.service 
 		
 		# don't forget to copy the config file - ONLY if you haven't already done it before
-		# sudo mkdir -p /etc/ews/
-		# sudo cp etc/ews/peba.cfg /etc/ews/peba.cfg
+		# sudo mkdir -p /etc/peba/
+		# sudo cp etc/peba/peba.cfg /etc/peba/peba.cfg
 
 		
 		# don't forget to install the pip3 requirements - ONLY if you haven't already done it
@@ -244,7 +244,7 @@ The script is located at `misc/fillcaches.py` and is tailored to our frontend us
 
 **Configuration of ewsposter:**
 
-When setting up your own backend for honeypot data collection, you need to change the submission url of ewsposter's `ews.cfg` in the `[EWS]`-section to whatever domain your backend is running on (`rhost_first` / `rhost_second`). Further, make sure your ewsposter's `ews.cfg` has matching community username and token as defined in `/etc/ews/peba.cfg`.
+When setting up your own backend for honeypot data collection, you need to change the submission url of ewsposter's `ews.cfg` in the `[EWS]`-section to whatever domain your backend is running on (`rhost_first` / `rhost_second`). Further, make sure your ewsposter's `ews.cfg` has matching community username and token as defined in `/etc/peba/peba.cfg`.
 
 ## **Development:**
 
