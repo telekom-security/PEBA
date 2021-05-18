@@ -1280,7 +1280,7 @@ def retrieveAlertsCountWithType():
     else:
         indexDays = 0
     returnResult = formatAlertsCountWithType(queryAlertsCountWithType(request.args.get('time'), checkCommunityIndex(request), getRelevantIndices(indexDays)))
-    app.logger.debug('UNCACHED %s' % str(request.url))
+    app.logger.debug(' %s' % str(request.url))
     return jsonify(returnResult)
 
 @app.route("/alert/retrieveAlertsJson", methods=['GET'])
@@ -1290,7 +1290,7 @@ def retrieveAlertsJson():
     numAlerts = 35
     # Retrieve last X Alerts from ElasticSearch and return JSON formatted with limited alert content
     returnResult =  formatAlertsJson(queryAlertsWithoutIP(numAlerts, checkCommunityIndex(request), getRelevantIndices(2)))
-    app.logger.debug('UNCACHED %s' % str(request.url))
+    app.logger.debug('REPLY %s' % str(request.url))
     return jsonify(returnResult)
 
 @app.route("/alert/datasetAlertsPerMonth", methods=['GET'])
@@ -1337,7 +1337,7 @@ def retrieveAlertStats():
     """
 
     returnResult = formatAlertStats(queryAlertStats(checkCommunityIndex(request), getRelevantIndices(2)))
-    app.logger.debug('UNCACHED %s' % str(request.url))
+    app.logger.debug('REPLY %s' % str(request.url))
     return jsonify(returnResult)
 
 @app.route("/alert/topCountriesAttacks", methods=['GET'])
@@ -1349,7 +1349,7 @@ def retrieveTopCountriesAttacks():
     topx = request.args.get('topx', None)
 
     returnResult = formatTopCountriesAttacks(queryTopCountriesAttacks(offset, topx, checkCommunityIndex(request), getRelevantIndices(0)))
-    app.logger.debug('UNCACHED %s' % str(request.url))
+    app.logger.debug('REPLY %s' % str(request.url))
     return jsonify(returnResult)
 
 @app.route("/alert/retrieveLatLonAttacks", methods=['GET'])
