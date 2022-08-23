@@ -116,7 +116,7 @@ def authenticate(username, token):
         res = es.search(index=app.config['USERINDEX'], body={
               "query": {
                 "term": {
-                  "peerName.keyword": username
+                  "peerName": username
                 }
               }
             })
