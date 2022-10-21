@@ -15,6 +15,8 @@ import urllib.request, urllib.parse, urllib.error
 import html
 import datetime
 import ipaddress
+import sys
+from os.path import exists
 from functools import wraps
 from dateutil.relativedelta import relativedelta
 
@@ -32,7 +34,20 @@ from modules.usercache import cacheGetUserToken, cacheSaveUser, UserNotFoundExce
 ###################
 
 app = Flask(__name__)
-app.config.from_pyfile('/etc/peba/peba.cfg')
+
+if exists('/etc/peba/peba.cfg'):
+    app.config.from_pyfile('/etc/peba/peba.cfg')
+else:
+    app.config.from_prefixed_env(prefix='PEBA')
+
+for index in [ 'DEFAULTRESPONSE', 'BINDHOST', 'CORSDOMAIN', 'ELASTICSEARCH_HOST',
+               'ALERTINDEX', 'USERINDEX', 'STATISTICINDEX', 'ELASTICTIMEOUT',
+               'MAXALERTS', 'BADIPTIMESPAN', 'COMMUNITYUSER', 'COMMUNITYTOKEN',
+               'DEVMODE' ]:
+    if index not in app.config:
+        print(f'Config Parameter \'{index}\' not in Config File or Enviroment! Exit.')
+        sys.exit()
+
 app.wsgi_app = ProxyFix(app.wsgi_app)
 cors = CORS(app, resources={r"/alert/*": {"origins": app.config['CORSDOMAIN']}})
 
@@ -967,7 +982,7 @@ def formatAlertsJson(alertslist):
                     requestString+= " | Status: "+ str(alert['_source']['login'])
                 requestStringOut = html.escape(requestString)
             elif ("SSH/console(cowrie)" in alert['_source']['peerType']
-                    and alert['_source']['originalRequestString'] is not ""):
+                    and alert['_source']['originalRequestString'] != ""):
                     requestStringOut = html.escape(alert['_source']['originalRequestString']).replace("\n", "; " )[2:]
             else:
                 requestStringOut = html.escape(urllib.parse.unquote(alert['_source']['originalRequestString']))
