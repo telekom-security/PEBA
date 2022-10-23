@@ -42,8 +42,7 @@ else:
 
 for index in [ 'DEFAULTRESPONSE', 'BINDHOST', 'CORSDOMAIN', 'ELASTICSEARCH_HOST',
                'ALERTINDEX', 'USERINDEX', 'STATISTICINDEX', 'ELASTICTIMEOUT',
-               'MAXALERTS', 'BADIPTIMESPAN', 'COMMUNITYUSER', 'COMMUNITYTOKEN',
-               'DEVMODE' ]:
+               'MAXALERTS', 'BADIPTIMESPAN', 'COMMUNITYUSER', 'COMMUNITYTOKEN' ]:
     if index not in app.config:
         print(f'Config Parameter \'{index}\' not in Config File or Enviroment! Exit.')
         sys.exit()
