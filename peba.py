@@ -40,9 +40,9 @@ if exists('/etc/peba/peba.cfg'):
 else:
     app.config.from_prefixed_env(prefix='PEBA')
 
-for index in [ 'DEFAULTRESPONSE', 'BINDHOST', 'CORSDOMAIN', 'ELASTICSEARCH_HOST',
-               'ALERTINDEX', 'USERINDEX', 'STATISTICINDEX', 'ELASTICTIMEOUT',
-               'MAXALERTS', 'BADIPTIMESPAN', 'COMMUNITYUSER', 'COMMUNITYTOKEN' ]:
+for index in ['DEFAULTRESPONSE', 'BINDHOST', 'CORSDOMAIN', 'ELASTICSEARCH_HOST',
+              'ALERTINDEX', 'USERINDEX', 'STATISTICINDEX', 'ELASTICTIMEOUT',
+              'MAXALERTS', 'BADIPTIMESPAN', 'COMMUNITYUSER', 'COMMUNITYTOKEN']:
     if index not in app.config:
         print(f'Config Parameter \'{index}\' not in Config File or Enviroment! Exit.')
         sys.exit()

@@ -1,0 +1,42 @@
+version: '3.6'
+
+services:
+  peba:
+    container_name: "${NAME}"
+    image: "${NAME}:v${VERSION}"
+    restart: always
+    read_only: true
+    tmpfs:
+      - "/var/run/peba:rw,uid=${UID},gid=${GID}"
+      - "/tmp:rw"
+    ports:
+      - "${PORT_EXPOSE}:${PORT}"
+    environment:
+      - "PEBA_DEFAULTRESPONSE=${PEBA_DEFAULTRESPONSE}"
+      - "PEBA_BINDHOST=${PEBA_BINDHOST}"
+      - "PEBA_CORSDOMAIN=${PEBA_CORSDOMAIN}"
+      - "PEBA_ELASTICSEARCH_HOST=${PEBA_ELASTICSEARCH_HOST}"
+      - "PEBA_ALERTINDEX=${PEBA_ALERTINDEX}"
+      - "PEBA_USERINDEX=${PEBA_USERINDEX}"
+      - "PEBA_STATISTICINDEX=${PEBA_STATISTICINDEX}"
+      - "PEBA_ELASTICTIMEOUT=${PEBA_ELASTICTIMEOUT}"
+      - "PEBA_MAXALERTS=${PEBA_MAXALERTS}"
+      - "PEBA_BADIPTIMESPAN=${PEBA_BADIPTIMESPAN}"
+      - "PEBA_COMMUNITYUSER=${PEBA_COMMUNITYUSER}"
+      - "PEBA_COMMUNITYTOKEN=${PEBA_COMMUNITYTOKEN}"
+    stop_signal: SIGKILL
+    healthcheck:
+      test: "curl --fail --silent http://localhost:${PORT}/heartbeat || exit 1"
+      interval: 60s
+      retries: 3
+      start_period: 5s
+      timeout: 3s
+    cpus: 1
+    mem_limit: 512m
+    mem_reservation: 128m
+    build:
+      context: .
+      tags:
+        - "${NAME}:v${VERSION}"
+      ssh:
+        - "default=$SSH_AUTH_SOCK"
