@@ -6,7 +6,7 @@ RUN apk -U --no-cache add \
     python3-dev && \
     mkdir -p /opt/peba && \
     cd /opt/peba && \
-    git clone https://github.com/trixam/PEBA.git /opt/peba && \
+    git clone https://github.com/telekom-security/PEBA.git /opt/peba && \
     python3 -m venv peba-env && \
     . peba-env/bin/activate && \
     pip install --no-cache-dir --upgrade pip && \
