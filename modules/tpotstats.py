@@ -440,7 +440,7 @@ def getAlertsPerHoneypotType(app,clientDomain, es, esindex, utcTimeFrom,utcTimeT
 
 
 def getTPotAlertStatsJson(app, es, index, sdate):
-    if sdate and sdate.isdecimal() and len(sdate) is 8:
+    if sdate and sdate.isdecimal() and len(sdate) == 8:
         try:
             utcTimeFrom= datetime.datetime(int(sdate[0:4]),int(sdate[4:6]),int(sdate[6:8]))
         except:
@@ -615,9 +615,9 @@ def getTops(app, es, esindex, days, toptype, topnumber):
                             "keyed": false,
                             "min_doc_count": 0,
                             "extended_bounds": {
-                                "min": "%s", 
+                                "min": "%s",
                                 "max": "%s"
-                            }                            
+                            }
                         }}}
                     }
                   }
@@ -662,9 +662,9 @@ def getTops(app, es, esindex, days, toptype, topnumber):
                             "keyed": false,
                             "min_doc_count": 0,
                             "extended_bounds": {
-                                "min": "%s", 
+                                "min": "%s",
                                 "max": "%s"
-                            }                            
+                            }
                         }}}
                     }
                   }
@@ -729,9 +729,9 @@ def getTops(app, es, esindex, days, toptype, topnumber):
                             "keyed": false,
                             "min_doc_count": 0,
                             "extended_bounds": {
-                                "min": "%s", 
+                                "min": "%s",
                                 "max": "%s"
-                            }                            
+                            }
                         }}}
                     }
                   }
@@ -773,9 +773,9 @@ def getTops(app, es, esindex, days, toptype, topnumber):
                             "keyed": false,
                             "min_doc_count": 0,
                             "extended_bounds": {
-                                "min": "%s", 
+                                "min": "%s",
                                 "max": "%s"
-                            }                            
+                            }
                         }}}
                     }
                   }
