@@ -3,7 +3,7 @@ click==8.1.7
 defusedxml==0.7.1
 elasticsearch==5.5.3
 filemagic==1.6
-Flask==2.2.2
+Flask==2.2.5
 Flask-Cors==3.0.10
 Flask-Elasticsearch==0.2.5
 gunicorn==20.1.0
